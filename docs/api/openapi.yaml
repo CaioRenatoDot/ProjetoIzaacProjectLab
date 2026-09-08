@@ -1,0 +1,2740 @@
+openapi: 3.1.0
+
+info:
+  title: API - Sistema de Gestão de Filas para Clínicas-Escola
+  version: 1.0.0
+  description: |
+    Contrato da API do sistema de gestão de filas de atendimento em clínicas-escola.
+
+    Convenções gerais, autenticação, erros, paginação e eventos de tempo real estão em
+    `docs/04-contrato-api.md`. Cada operação cita os identificadores da especificação
+    original (RF, RN, UC) no campo `description`.
+
+    Regra do projeto: este arquivo é alterado por PR próprio e mergeado antes da
+    implementação em qualquer uma das pontas.
+  contact:
+    name: Time do projeto
+
+servers:
+  - url: http://localhost:3333/api/v1
+    description: Desenvolvimento
+  - url: https://hml.filas.local/api/v1
+    description: Homologação
+
+tags:
+  - name: Autenticação
+    description: Login, refresh e sessão (T-01, RNF-01)
+  - name: Perfis e permissões
+    description: RF-02, UC-04, RNF-01
+  - name: Cadastros base
+    description: RF-01, UC-01 a UC-03
+  - name: Triagem
+    description: RF-03, UC-05
+  - name: Senhas
+    description: RF-04, UC-06, UC-07
+  - name: Filas e chamadas
+    description: RF-04, RF-05, UC-08, UC-09
+  - name: Alocação
+    description: RF-06, UC-10
+  - name: Atendimento
+    description: RF-07, UC-11 a UC-13
+  - name: Encaminhamento
+    description: RF-08, UC-14, UC-15
+  - name: Ausências e desistências
+    description: RF-09, UC-16, UC-17
+  - name: Indicadores
+    description: RF-10, UC-18
+  - name: Alertas de SLA
+    description: RF-11, UC-19
+  - name: Auditoria
+    description: RF-12, UC-20
+  - name: Público
+    description: Sem autenticação - telão e consulta de senha (W-09, W-10)
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ─────────────────────────────── Autenticação ───────────────────────────────
+  /auth/login:
+    post:
+      tags: [Autenticação]
+      summary: Autenticar usuário
+      operationId: autenticarUsuario
+      description: |
+        Retorna access token no corpo e refresh token em cookie httpOnly.
+        Credencial inválida retorna sempre a mesma mensagem, sem distinguir usuário
+        inexistente de senha incorreta. Cinco tentativas falhas bloqueiam temporariamente (T-01).
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identificacao, senha]
+              properties:
+                identificacao:
+                  type: string
+                  description: Matrícula ou e-mail institucional
+                  example: '2021001234'
+                senha:
+                  type: string
+                  format: password
+                manterConectado:
+                  type: boolean
+                  default: false
+                  description: Não deve ser oferecido em terminal compartilhado
+      responses:
+        '200':
+          description: Autenticado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken: { type: string }
+                  expiraEm: { type: integer, description: Segundos até expirar }
+                  usuario: { $ref: '#/components/schemas/UsuarioSessao' }
+        '401':
+          description: Credencial inválida ou conta bloqueada
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+              examples:
+                credencialInvalida:
+                  value:
+                    title: Não foi possível entrar
+                    status: 401
+                    codigo: CREDENCIAL_INVALIDA
+                    detail: Identificação ou senha incorreta. Verifique os dados e tente novamente.
+                bloqueado:
+                  value:
+                    title: Acesso bloqueado temporariamente
+                    status: 401
+                    codigo: BLOQUEIO_TEMPORARIO
+                    detail: Excesso de tentativas. Tente novamente em 12 minutos.
+        '403':
+          description: Conta sem perfil vinculado
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+
+  /auth/refresh:
+    post:
+      tags: [Autenticação]
+      summary: Renovar access token
+      operationId: renovarAccessToken
+      description: Usa o refresh token do cookie httpOnly.
+      security: []
+      responses:
+        '200':
+          description: Token renovado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken: { type: string }
+                  expiraEm: { type: integer }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+
+  /auth/logout:
+    post:
+      tags: [Autenticação]
+      summary: Encerrar sessão
+      operationId: encerrarSessao
+      description: Invalida o refresh token e registra evento LOGOUT na auditoria (RNF-05).
+      responses:
+        '204': { description: Sessão encerrada }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /auth/me:
+    get:
+      tags: [Autenticação]
+      summary: Dados da sessão atual
+      operationId: dadosDaSessaoAtual
+      description: Usado pelo front para montar o menu por permissão (RNF-01).
+      responses:
+        '200':
+          description: Sessão atual
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UsuarioSessao' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+
+  # ───────────────────────── Perfis, permissões, usuários ─────────────────────
+  /permissoes:
+    get:
+      tags: [Perfis e permissões]
+      summary: Catálogo de permissões
+      operationId: catalogoDePermissoes
+      description: |
+        Alimenta a matriz de permissões de W-05. Módulos que envolvem dado de saúde ou
+        registro de auditoria vêm com `sensivel: true` para a marcação visual exigida em T-05.
+      responses:
+        '200':
+          description: Catálogo
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    modulo: { type: string, example: triagem }
+                    rotulo: { type: string, example: Triagem }
+                    sensivel: { type: boolean }
+                    operacoes:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          operacao: { type: string, example: consultar }
+                          permissao: { type: string, example: 'triagem:consultar' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /perfis:
+    get:
+      tags: [Perfis e permissões]
+      summary: Listar perfis
+      operationId: listarPerfis
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Perfil' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    post:
+      tags: [Perfis e permissões]
+      summary: Criar perfil
+      operationId: criarPerfil
+      description: |
+        UC-04, RF-02. Perfil salvo sem nenhuma permissão de consulta é aceito, mas a resposta
+        traz aviso em `avisos[]` para a confirmação descrita em T-05.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PerfilEntrada' }
+      responses:
+        '201':
+          description: Perfil criado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Perfil' }
+        '409': { $ref: '#/components/responses/Duplicidade' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
+
+  /perfis/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Perfis e permissões]
+      summary: Consultar perfil
+      operationId: consultarPerfil
+      responses:
+        '200':
+          description: Perfil
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Perfil' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    put:
+      tags: [Perfis e permissões]
+      summary: Atualizar perfil
+      operationId: atualizarPerfil
+      description: |
+        Perfil de sistema não é editável (T-05). A resposta traz `usuariosAfetados` para a
+        mensagem "altera permissões de N usuários".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PerfilEntrada' }
+      responses:
+        '200':
+          description: Perfil atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Perfil' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '409': { $ref: '#/components/responses/Conflito' }
+    delete:
+      tags: [Perfis e permissões]
+      summary: Excluir perfil
+      operationId: excluirPerfil
+      description: Bloqueado quando há usuários vinculados - retorna VINCULO_ATIVO (T-05).
+      responses:
+        '204': { description: Excluído }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /usuarios:
+    get:
+      tags: [Perfis e permissões]
+      summary: Listar usuários
+      operationId: listarUsuarios
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+        - { name: perfilId, in: query, schema: { type: string, format: uuid } }
+        - { name: ativo, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Usuario' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    post:
+      tags: [Perfis e permissões]
+      summary: Criar usuário
+      operationId: criarUsuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioEntrada' }
+      responses:
+        '201':
+          description: Criado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '409': { $ref: '#/components/responses/Duplicidade' }
+
+  # ─────────────────────────────── Cadastros base ─────────────────────────────
+  /pacientes:
+    get:
+      tags: [Cadastros base]
+      summary: Listar pacientes
+      operationId: listarPacientes
+      description: |
+        UC-03, RF-01. Filtros de W-03 - nome, vínculo e situação de restrição.
+        A resposta usa nome completo apenas aqui, onde o cadastro é o próprio objeto da tela;
+        em fila e painel o nome vem abreviado (P-03).
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+        - name: vinculo
+          in: query
+          schema: { $ref: '#/components/schemas/VinculoPaciente' }
+        - name: comRestricao
+          in: query
+          description: Filtra pacientes com restrição ativa por reincidência (RN-13)
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Paciente' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    post:
+      tags: [Cadastros base]
+      summary: Cadastrar paciente
+      operationId: cadastrarPaciente
+      description: UC-01, RF-01. Verifica duplicidade por documento (W-04).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PacienteEntrada' }
+      responses:
+        '201':
+          description: Cadastrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Paciente' }
+        '409': { $ref: '#/components/responses/Duplicidade' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
+
+  /pacientes/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Cadastros base]
+      summary: Consultar paciente
+      operationId: consultarPaciente
+      description: |
+        Traz `avisos[]` com PACIENTE_COM_RESTRICAO quando há reincidência de ausências.
+        O aviso não bloqueia a triagem (RN-13, W-06).
+      responses:
+        '200':
+          description: Paciente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PacienteDetalhe' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    put:
+      tags: [Cadastros base]
+      summary: Editar paciente
+      operationId: editarPaciente
+      description: UC-02, RF-01
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PacienteEntrada' }
+      responses:
+        '200':
+          description: Atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Paciente' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
+    delete:
+      tags: [Cadastros base]
+      summary: Excluir paciente
+      operationId: excluirPaciente
+      description: |
+        Só é permitido quando não há vínculo ativo com fila, alocação ou atendimento.
+        Com vínculo, retorna VINCULO_ATIVO e a UI oferece inativar (T-03).
+      responses:
+        '204': { description: Excluído }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /estudantes:
+    get:
+      tags: [Cadastros base]
+      summary: Listar estudantes/atendentes
+      operationId: listarEstudantesAtendentes
+      description: Filtros de W-03 - especialidade, nível e disponibilidade.
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+        - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
+        - { name: turno, in: query, schema: { $ref: '#/components/schemas/Turno' } }
+        - { name: disponivel, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Estudante' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    post:
+      tags: [Cadastros base]
+      summary: Cadastrar estudante/atendente
+      operationId: cadastrarEstudanteAtendente
+      description: RN-06 - especialidade, nível, habilitações e procedimentos autorizados.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EstudanteEntrada' }
+      responses:
+        '201':
+          description: Cadastrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Estudante' }
+        '409': { $ref: '#/components/responses/Duplicidade' }
+
+  /estudantes/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Cadastros base]
+      summary: Consultar estudante
+      operationId: consultarEstudante
+      responses:
+        '200':
+          description: Estudante
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Estudante' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    put:
+      tags: [Cadastros base]
+      summary: Editar estudante
+      operationId: editarEstudante
+      description: |
+        Alteração de especialidade ou habilitação que afete alocação em curso retorna
+        `avisos[]` com o impacto antes de aplicar (T-04).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EstudanteEntrada' }
+      responses:
+        '200':
+          description: Atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Estudante' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    delete:
+      tags: [Cadastros base]
+      summary: Excluir estudante
+      operationId: excluirEstudante
+      responses:
+        '204': { description: Excluído }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /supervisores:
+    get:
+      tags: [Cadastros base]
+      summary: Listar supervisores
+      operationId: listarSupervisores
+      description: |
+        A coluna de disponibilidade exibe ocupação sobre o limite configurado, no formato
+        "2 de 3" (RN-08, T-03) - vem em `ocupacaoAtual` e `limiteEstudantesSimultaneos`.
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+        - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
+        - { name: turno, in: query, schema: { $ref: '#/components/schemas/Turno' } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Supervisor' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    post:
+      tags: [Cadastros base]
+      summary: Cadastrar supervisor
+      operationId: cadastrarSupervisor
+      description: RN-07, RN-08 - especialidades habilitadas, turnos e limite de estudantes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SupervisorEntrada' }
+      responses:
+        '201':
+          description: Cadastrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Supervisor' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /supervisores/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Cadastros base]
+      summary: Consultar supervisor
+      operationId: consultarSupervisor
+      responses:
+        '200':
+          description: Supervisor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Supervisor' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    put:
+      tags: [Cadastros base]
+      summary: Editar supervisor
+      operationId: editarSupervisor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SupervisorEntrada' }
+      responses:
+        '200':
+          description: Atualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Supervisor' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    delete:
+      tags: [Cadastros base]
+      summary: Excluir supervisor
+      operationId: excluirSupervisor
+      responses:
+        '204': { description: Excluído }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /salas:
+    get:
+      tags: [Cadastros base]
+      summary: Listar salas
+      operationId: listarSalas
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+        - { name: recursoId, in: query, schema: { type: string, format: uuid } }
+        - { name: disponivel, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Sala' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    post:
+      tags: [Cadastros base]
+      summary: Cadastrar sala
+      operationId: cadastrarSala
+      description: RN-09 - características, equipamentos e recursos disponíveis.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SalaEntrada' }
+      responses:
+        '201':
+          description: Cadastrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sala' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /salas/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Cadastros base]
+      summary: Consultar sala
+      operationId: consultarSala
+      responses:
+        '200':
+          description: Sala
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sala' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    put:
+      tags: [Cadastros base]
+      summary: Editar sala
+      operationId: editarSala
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SalaEntrada' }
+      responses:
+        '200':
+          description: Atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sala' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    delete:
+      tags: [Cadastros base]
+      summary: Excluir sala
+      operationId: excluirSala
+      responses:
+        '204': { description: Excluída }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /especialidades:
+    get:
+      tags: [Cadastros base]
+      summary: Listar especialidades/serviços
+      operationId: listarEspecialidadesServicos
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+        - { name: ativa, in: query, schema: { type: boolean } }
+        - { name: exigeSupervisao, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Especialidade' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    post:
+      tags: [Cadastros base]
+      summary: Cadastrar especialidade/serviço
+      operationId: cadastrarEspecialidadeServico
+      description: |
+        Define se exige supervisão docente (RN-07), se exige validação de encerramento (RN-11)
+        e a política de tolerância da fila (RN-12).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EspecialidadeEntrada' }
+      responses:
+        '201':
+          description: Cadastrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Especialidade' }
+        '409': { $ref: '#/components/responses/Duplicidade' }
+
+  /especialidades/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Cadastros base]
+      summary: Consultar especialidade
+      operationId: consultarEspecialidade
+      responses:
+        '200':
+          description: Especialidade
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Especialidade' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    put:
+      tags: [Cadastros base]
+      summary: Editar especialidade
+      operationId: editarEspecialidade
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EspecialidadeEntrada' }
+      responses:
+        '200':
+          description: Atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Especialidade' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    delete:
+      tags: [Cadastros base]
+      summary: Excluir especialidade
+      operationId: excluirEspecialidade
+      responses:
+        '204': { description: Excluída }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  # ──────────────────────────────── Triagem ───────────────────────────────────
+  /triagens:
+    post:
+      tags: [Triagem]
+      summary: Registrar triagem
+      operationId: registrarTriagem
+      description: |
+        UC-05, RF-03. Implementa RN-01, RN-02 e RN-03.
+
+        - Enquadramento legal preenchido sinaliza automaticamente prioridade PREFERENCIAL (RN-02)
+        - Prioridade URGENTE sem `justificativaClinica` retorna 422 (RN-03)
+        - `motivo`, `justificativaClinica` e `observacoes` são dados sensíveis e não aparecem
+          em nenhuma resposta de listagem (ADR-003)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TriagemEntrada' }
+      responses:
+        '201':
+          description: Triagem registrada, pronta para emissão de senha
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TriagemDetalhe' }
+        '422':
+          description: Validação - inclui justificativa clínica ausente em prioridade Urgente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemaValidacao' }
+              example:
+                title: Dados inválidos
+                status: 422
+                codigo: VALIDACAO
+                campos:
+                  - campo: justificativaClinica
+                    mensagem: Justificativa é obrigatória para prioridade Urgente.
+    get:
+      tags: [Triagem]
+      summary: Listar triagens
+      operationId: listarTriagens
+      description: |
+        Resposta em projeção de resumo - sem motivo, justificativa ou observações (P-03).
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { name: pacienteId, in: query, schema: { type: string, format: uuid } }
+        - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
+        - { name: emAberto, in: query, description: Triagens sem senha emitida, schema: { type: boolean } }
+        - { name: de, in: query, schema: { type: string, format: date } }
+        - { name: ate, in: query, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/TriagemResumo' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /triagens/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Triagem]
+      summary: Consultar triagem completa
+      operationId: consultarTriagemCompleta
+      description: |
+        Endpoint sensível. Exige `triagem:consultar_sensivel` e grava evento
+        CONSULTAR_SENSIVEL na auditoria antes de responder (RNF-05, RNF-07).
+      responses:
+        '200':
+          description: Triagem completa
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TriagemDetalhe' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  # ──────────────────────────────── Senhas ────────────────────────────────────
+  /senhas:
+    post:
+      tags: [Senhas]
+      summary: Emitir senha
+      operationId: emitirSenha
+      description: |
+        UC-06, RF-04. Gera a senha vinculada à especialidade e à prioridade definida na triagem
+        e a posiciona na fila conforme RN-04.
+
+        - Especialidade sem fila ativa retorna 409 SEM_FILA_CONFIGURADA
+        - Especialidade com bloqueio ativo por ausência de supervisor **permite** a emissão,
+          mas a resposta traz aviso de que a chamada está suspensa (RN-10, T-07)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [triagemId]
+              properties:
+                triagemId: { type: string, format: uuid }
+                tipoAtendimento:
+                  $ref: '#/components/schemas/TipoAtendimento'
+                  description: Ajustável antes de confirmar a emissão (T-07)
+                temAgendamentoPrevio:
+                  type: boolean
+                  default: false
+                  description: Terceiro critério de ordenação da RN-04
+      responses:
+        '201':
+          description: Senha emitida com status AGUARDANDO
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SenhaEmitida' }
+        '409':
+          description: Especialidade sem fila configurada
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+
+  /senhas/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Senhas]
+      summary: Consultar senha
+      operationId: consultarSenha
+      description: |
+        Com `incluirTriagem=true` a resposta traz o conteúdo clínico, exige
+        `triagem:consultar_sensivel` e gera evento de auditoria (ADR-003).
+      parameters:
+        - name: incluirTriagem
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Senha
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/SenhaResumo'
+                  - $ref: '#/components/schemas/SenhaDetalhe'
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  /senhas/{id}/prioridade:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    patch:
+      tags: [Senhas]
+      summary: Reclassificar prioridade
+      operationId: reclassificarPrioridade
+      description: |
+        UC-07, RF-03. Implementa RN-01 - justificativa obrigatória, registrada na auditoria.
+        Só é permitido para senha ainda não atendida; senha em outro status retorna
+        TRANSICAO_INVALIDA (T-08). A resposta traz a nova posição na fila para o toast.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [prioridade, justificativa, versao]
+              properties:
+                prioridade:
+                  $ref: '#/components/schemas/Prioridade'
+                  description: Deve ser diferente da atual
+                justificativa:
+                  type: string
+                  minLength: 20
+                  description: Tamanho mínimo parametrizado por unidade
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Reclassificada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  senha: { $ref: '#/components/schemas/SenhaResumo' }
+                  novaPosicao: { type: integer }
+        '409': { $ref: '#/components/responses/Conflito' }
+        '422':
+          description: Justificativa ausente ou curta demais
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemaValidacao' }
+
+  /senhas/{id}/reclassificacoes:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Senhas]
+      summary: Histórico de reclassificações da senha
+      operationId: historicoDeReclassificacoesDaSenha
+      description: Exibido no modal de W-07. Vazio retorna lista vazia, não 404.
+      responses:
+        '200':
+          description: Histórico
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Reclassificacao' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /senhas/{id}/ausencia:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Ausências e desistências]
+      summary: Registrar ausência (no-show)
+      operationId: registrarAusenciaNoShow
+      description: |
+        UC-16, RF-09, RN-12. Registro manual antes do fim da tolerância exige
+        `confirmadoAntesDaTolerancia: true` (W-15). Ao confirmar, os recursos alocados são
+        liberados e a resposta informa isso em `recursosLiberados`.
+
+        Quando o paciente atinge o número de reincidências da política, a resposta traz
+        `restricaoAplicada` com a descrição do efeito (RN-13).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [versao]
+              properties:
+                observacao: { type: string }
+                confirmadoAntesDaTolerancia: { type: boolean, default: false }
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Ausência registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegistroAusencia' }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /senhas/{id}/desistencia:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Ausências e desistências]
+      summary: Registrar desistência voluntária
+      operationId: registrarDesistenciaVoluntaria
+      description: |
+        UC-17, RF-09. Distinta de ausência para efeito de indicadores (W-16).
+        Permitida em AGUARDANDO, CHAMADA, AGUARDANDO_RECURSO e EM_ATENDIMENTO.
+        Motivo é opcional.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [origem, versao]
+              properties:
+                origem: { $ref: '#/components/schemas/OrigemDesistencia' }
+                motivo: { type: string }
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Desistência registrada; senha sai da fila ativa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  senha: { $ref: '#/components/schemas/SenhaResumo' }
+                  recursosLiberados: { type: boolean }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  # ─────────────────────────── Filas e chamadas ───────────────────────────────
+  /filas:
+    get:
+      tags: [Filas e chamadas]
+      summary: Listar filas
+      operationId: listarFilas
+      description: |
+        UC-08, RF-04. Suporta a visão consolidada multiespecialidade de T-09 (RNF-08).
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
+        - { name: ativa, in: query, schema: { type: boolean } }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Fila' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    post:
+      tags: [Filas e chamadas]
+      summary: Criar fila
+      operationId: criarFila
+      description: RF-04. Uma fila ativa por especialidade e unidade.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FilaEntrada' }
+      responses:
+        '201':
+          description: Fila criada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fila' }
+        '409': { $ref: '#/components/responses/Duplicidade' }
+
+  /filas/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Filas e chamadas]
+      summary: Consultar fila
+      operationId: consultarFila
+      description: |
+        Traz `bloqueio` com estado, motivo e horário de início - fonte única do banner de
+        P-04 e do botão desabilitado em T-09 (RN-10).
+      responses:
+        '200':
+          description: Fila
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fila' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    put:
+      tags: [Filas e chamadas]
+      summary: Editar fila
+      operationId: editarFila
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/FilaEntrada' }
+      responses:
+        '200':
+          description: Atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Fila' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    delete:
+      tags: [Filas e chamadas]
+      summary: Excluir fila
+      operationId: excluirFila
+      description: Bloqueada quando há senha ativa vinculada.
+      responses:
+        '204': { description: Excluída }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /filas/{id}/senhas:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Filas e chamadas]
+      summary: Quadro de senhas da fila
+      operationId: quadroDeSenhasDaFila
+      description: |
+        UC-08, RF-04. Ordenação fixa da RN-04 - prioridade, depois horário de chegada, depois
+        existência de agendamento prévio. Sem conteúdo clínico e com nome parcial (P-03).
+      parameters:
+        - name: status
+          in: query
+          description: Filtra por um ou mais status
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/StatusSenha' }
+        - name: tipoAtendimento
+          in: query
+          schema: { $ref: '#/components/schemas/TipoAtendimento' }
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+      responses:
+        '200':
+          description: Quadro da fila
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fila: { $ref: '#/components/schemas/Fila' }
+                  metricas:
+                    type: object
+                    properties:
+                      aguardando: { type: integer }
+                      chamadas: { type: integer }
+                      emAtendimento: { type: integer }
+                      ausenciasHoje: { type: integer }
+                      tempoMedioEsperaMinutos: { type: [integer, 'null'] }
+                  dados:
+                    type: array
+                    items: { $ref: '#/components/schemas/SenhaResumo' }
+                  meta: { $ref: '#/components/schemas/Meta' }
+                  sincronizadoEm:
+                    type: string
+                    format: date-time
+                    description: Exibido como horário da última sincronização (T-09)
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /filas/{id}/chamadas:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Filas e chamadas]
+      summary: Chamar próxima senha
+      operationId: chamarProximaSenha
+      description: |
+        UC-09, RF-05. Ação única que respeita a ordenação da RN-04 - não existe chamada de
+        senha específica por linha (correção 1 dos wireframes v2).
+
+        Executa em transação com bloqueio de linha e SKIP LOCKED: dois atendentes chamando ao
+        mesmo tempo recebem senhas diferentes.
+
+        - Fila bloqueada por ausência de supervisor retorna 409 FILA_BLOQUEADA (RN-10)
+        - Fila vazia retorna 409 FILA_VAZIA
+        - Senha urgente vem com `furouFilaPorUrgencia: true`, para a confirmação de T-09 (RN-03)
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                localExibicao:
+                  type: string
+                  description: Texto exibido no telão, ex. "Sala 03"
+      responses:
+        '201':
+          description: Senha chamada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  senha: { $ref: '#/components/schemas/SenhaResumo' }
+                  chamada: { $ref: '#/components/schemas/Chamada' }
+                  furouFilaPorUrgencia: { type: boolean }
+                  toleranciaAte: { type: string, format: date-time }
+        '409':
+          description: Fila bloqueada ou vazia
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+              examples:
+                bloqueada:
+                  value:
+                    title: Fila bloqueada
+                    status: 409
+                    codigo: FILA_BLOQUEADA
+                    detail: Fisioterapia está sem supervisor habilitado disponível. As chamadas seguem suspensas até a regularização.
+                vazia:
+                  value:
+                    title: Nenhuma senha aguardando
+                    status: 409
+                    codigo: FILA_VAZIA
+                    detail: Não há senha aguardando nesta fila no momento.
+
+  /chamadas/{id}/rechamada:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Filas e chamadas]
+      summary: Rechamar senha
+      operationId: rechamarSenha
+      description: Repete o destaque e o sinal sonoro no telão, incrementando `sequencia` (T-11).
+      responses:
+        '201':
+          description: Rechamada registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Chamada' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /chamadas/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    delete:
+      tags: [Filas e chamadas]
+      summary: Cancelar chamada
+      operationId: cancelarChamada
+      description: |
+        RF-05. Devolve a senha ao status AGUARDANDO mantendo o horário de chegada original,
+        para não prejudicar a posição pela RN-04. Exige confirmação na UI (item 3.3).
+      responses:
+        '200':
+          description: Chamada cancelada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SenhaResumo' }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  # ─────────────────────────────── Alocação ───────────────────────────────────
+  /senhas/{id}/alocacao/sugestoes:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Alocação]
+      summary: Sugestões e alternativas de alocação
+      operationId: sugestoesEAlternativasDeAlocacao
+      description: |
+        UC-10, RF-06. Alimenta os três blocos de W-11. Cada alternativa vem com `apto` e, quando
+        não apto, o `motivo` textual - atendimento ativo, especialidade incompatível, fora do
+        turno, limite de supervisão atingido ou recurso indisponível na sala
+        (RN-05 a RN-09).
+
+        Quando a especialidade não exige supervisão docente, `supervisor` vem com
+        `aplicavel: false` e o bloco desaparece do layout (RN-07).
+      responses:
+        '200':
+          description: Sugestões
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SugestoesAlocacao' }
+        '409':
+          description: Senha em status que não permite alocação
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+
+  /senhas/{id}/alocacao:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Alocação]
+      summary: Confirmar alocação de recursos
+      operationId: confirmarAlocacaoDeRecursos
+      description: |
+        UC-10, RF-06. Revalida disponibilidade e compatibilidade dentro da transação -
+        recurso que deixou de estar disponível entre a sugestão e a confirmação retorna 409
+        RECURSO_INDISPONIVEL e o front recarrega as alternativas (T-10).
+
+        Sem supervisor disponível: retorna SUPERVISOR_INDISPONIVEL, a senha vai para
+        AGUARDANDO_RECURSO, a fila é bloqueada e a gestão é notificada (RN-10).
+      parameters:
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [estudanteId, salaId, versao]
+              properties:
+                estudanteId: { type: string, format: uuid }
+                supervisorId:
+                  type: [string, 'null']
+                  format: uuid
+                  description: Obrigatório quando a especialidade exige supervisão (RN-07)
+                salaId: { type: string, format: uuid }
+                versao: { type: integer }
+      responses:
+        '201':
+          description: Recursos alocados
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alocacao' }
+        '409':
+          description: Recurso indisponível, limite de supervisão atingido ou sem supervisor
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+    put:
+      tags: [Alocação]
+      summary: Trocar recurso de uma alocação
+      operationId: trocarRecursoDeUmaAlocacao
+      description: Reavaliação da alocação a partir do painel de T-09.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                estudanteId: { type: string, format: uuid }
+                supervisorId: { type: [string, 'null'], format: uuid }
+                salaId: { type: string, format: uuid }
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Alocação atualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alocacao' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /senhas/{id}/aguardando-recurso:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Alocação]
+      summary: Manter senha aguardando recurso
+      operationId: manterSenhaAguardandoRecurso
+      description: |
+        Ação "Manter aguardando" de W-11. Coloca a senha em AGUARDANDO_RECURSO com o recurso
+        faltante registrado, sem liberar a chamada.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recursoFaltante, versao]
+              properties:
+                recursoFaltante:
+                  type: string
+                  enum: [ESTUDANTE, SUPERVISOR, SALA]
+                observacao: { type: string }
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Senha em AGUARDANDO_RECURSO
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SenhaResumo' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  # ────────────────────────────── Atendimento ─────────────────────────────────
+  /atendimentos:
+    get:
+      tags: [Atendimento]
+      summary: Listar atendimentos
+      operationId: listarAtendimentos
+      description: |
+        Projeção de resumo, sem observações nem conteúdo de triagem (P-03).
+        Usado na home do estudante e do supervisor (W-02).
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { name: estudanteId, in: query, schema: { type: string, format: uuid } }
+        - { name: supervisorId, in: query, schema: { type: string, format: uuid } }
+        - name: status
+          in: query
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/StatusSenha' }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/AtendimentoResumo' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /atendimentos/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Atendimento]
+      summary: Consultar atendimento
+      operationId: consultarAtendimento
+      description: |
+        Endpoint sensível - inclui os dados da triagem exibidos em W-12. Exige
+        `atendimento:consultar_sensivel` e grava CONSULTAR_SENSIVEL na auditoria (RNF-07).
+      responses:
+        '200':
+          description: Atendimento
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AtendimentoDetalhe' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  /senhas/{id}/atendimento:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Atendimento]
+      summary: Iniciar atendimento
+      operationId: iniciarAtendimento
+      description: |
+        UC-11, RF-07. Registra o horário de início e muda o status para EM_ATENDIMENTO.
+        Recurso alocado que não esteja mais disponível impede o início e retorna
+        RECURSO_INDISPONIVEL, devolvendo o fluxo para a alocação (T-13).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [versao]
+              properties:
+                versao: { type: integer }
+      responses:
+        '201':
+          description: Atendimento iniciado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AtendimentoResumo' }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /atendimentos/{id}/pausa:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Atendimento]
+      summary: Pausar atendimento
+      operationId: pausarAtendimento
+      description: |
+        UC-12, RF-07. Motivo é obrigatório quando o protocolo do serviço exige; nesse caso,
+        motivo ausente retorna 422 (T-13).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [versao]
+              properties:
+                motivo: { type: string }
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Atendimento pausado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AtendimentoResumo' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
+
+  /atendimentos/{id}/retomada:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Atendimento]
+      summary: Retomar atendimento
+      operationId: retomarAtendimento
+      description: |
+        UC-12. Sala ou estudante indisponível na retomada retorna RECURSO_INDISPONIVEL e
+        solicita nova alocação (T-13).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [versao]
+              properties:
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Atendimento retomado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AtendimentoResumo' }
+        '409': { $ref: '#/components/responses/Conflito' }
+
+  /atendimentos/{id}/encerramento:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Atendimento]
+      summary: Encerrar atendimento
+      operationId: encerrarAtendimento
+      description: |
+        UC-13, RF-07, RN-11. Desfecho é obrigatório. Quando o protocolo do serviço exige
+        validação do supervisor, a senha vai para PENDENTE_VALIDACAO e o supervisor é
+        notificado; caso contrário, o encerramento é imediato (ENCERRADO).
+
+        Desfecho de encaminhamento encadeia diretamente para o registro do encaminhamento (T-14).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [desfecho, versao]
+              properties:
+                desfecho: { $ref: '#/components/schemas/Desfecho' }
+                observacoes: { type: string, description: Dado sensível }
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Encerrado ou pendente de validação
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  atendimento: { $ref: '#/components/schemas/AtendimentoResumo' }
+                  exigeValidacao: { type: boolean }
+                  exigeEncaminhamento: { type: boolean }
+        '422':
+          description: Desfecho não informado
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemaValidacao' }
+
+  /atendimentos/{id}/validacao:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Atendimento]
+      summary: Validar ou recusar encerramento
+      operationId: validarOuRecusarEncerramento
+      description: |
+        UC-13, RN-11. Exige perfil com `atendimento:validar`. Recusa mantém o status
+        PENDENTE_VALIDACAO e registra o parecer para auditoria (W-13).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [aprovado, versao]
+              properties:
+                aprovado: { type: boolean }
+                parecer:
+                  type: string
+                  description: Obrigatório quando `aprovado` é false
+                versao: { type: integer }
+      responses:
+        '200':
+          description: Validação registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AtendimentoResumo' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
+
+  # ──────────────────────────── Encaminhamento ────────────────────────────────
+  /atendimentos/{id}/encaminhamentos:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Encaminhamento]
+      summary: Registrar encaminhamento
+      operationId: registrarEncaminhamento
+      description: |
+        UC-14, UC-15, RF-08.
+
+        - INTERNO gera automaticamente uma nova entrada de fila vinculada ao atendimento
+          original; a resposta traz `senhaGerada` para a mensagem de confirmação (T-14)
+        - EXTERNO é apenas registrado, sem gerar entrada de fila
+        - Especialidade de destino inativa retorna 409 ESPECIALIDADE_INATIVA
+        - Destino com bloqueio ativo por ausência de supervisor **permite** o encaminhamento,
+          com aviso de que a chamada está suspensa (RN-10)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/EncaminhamentoInternoEntrada'
+                - $ref: '#/components/schemas/EncaminhamentoExternoEntrada'
+              discriminator:
+                propertyName: tipo
+      responses:
+        '201':
+          description: Encaminhamento registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Encaminhamento' }
+        '409':
+          description: Especialidade de destino inexistente ou inativa
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+
+  # ───────────────────────────── Indicadores ──────────────────────────────────
+  /indicadores/resumo:
+    get:
+      tags: [Indicadores]
+      summary: Indicadores consolidados do período
+      operationId: indicadoresConsolidadosDoPeriodo
+      description: |
+        UC-18, RF-10. Granularidade mínima é especialidade e período - nenhum indicador expõe
+        dado individual identificável de paciente (RNF-02, T-16).
+
+        Volume baixo no período vem com `amostraPequena: true`, para a nota de que a média
+        pode não ser representativa.
+      parameters:
+        - { name: de, in: query, required: true, schema: { type: string, format: date } }
+        - { name: ate, in: query, required: true, schema: { type: string, format: date } }
+        - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
+        - { name: turno, in: query, schema: { $ref: '#/components/schemas/Turno' } }
+      responses:
+        '200':
+          description: Indicadores
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/IndicadoresResumo' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  /indicadores/volume-por-especialidade:
+    get:
+      tags: [Indicadores]
+      summary: Volume de atendimentos por especialidade
+      operationId: volumeDeAtendimentosPorEspecialidade
+      description: |
+        Alimenta o gráfico de W-17 e a tabela equivalente acessível exigida pelo RNF-06 -
+        a mesma resposta serve às duas visualizações.
+      parameters:
+        - { name: de, in: query, required: true, schema: { type: string, format: date } }
+        - { name: ate, in: query, required: true, schema: { type: string, format: date } }
+        - { name: turno, in: query, schema: { $ref: '#/components/schemas/Turno' } }
+      responses:
+        '200':
+          description: Série por especialidade
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  series:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        especialidadeId: { type: string, format: uuid }
+                        especialidade: { type: string }
+                        atendimentos: { type: integer }
+                        ausencias: { type: integer }
+                        desistencias: { type: integer }
+                  semDados: { type: boolean }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /indicadores/exportacao:
+    get:
+      tags: [Indicadores]
+      summary: Exportar indicadores
+      operationId: exportarIndicadores
+      description: A exportação é registrada como evento de auditoria (RNF-05, T-18).
+      parameters:
+        - { name: de, in: query, required: true, schema: { type: string, format: date } }
+        - { name: ate, in: query, required: true, schema: { type: string, format: date } }
+        - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
+        - { name: formato, in: query, schema: { type: string, enum: [csv, xlsx], default: csv } }
+      responses:
+        '200':
+          description: Arquivo
+          content:
+            text/csv:
+              schema: { type: string }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  # ────────────────────────────── Alertas SLA ─────────────────────────────────
+  /alertas:
+    get:
+      tags: [Alertas de SLA]
+      summary: Listar alertas
+      operationId: listarAlertas
+      description: |
+        UC-19, RF-11. Ordenados por gravidade. Bloqueio por ausência de supervisor aparece
+        nesta lista como alerta de origem distinta, tipo FILA_BLOQUEADA (P-04, T-17).
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: array
+            items: { $ref: '#/components/schemas/StatusAlerta' }
+        - { name: filaId, in: query, schema: { type: string, format: uuid } }
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/Alerta' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  /alertas/{id}/reconhecimento:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Alertas de SLA]
+      summary: Reconhecer alerta
+      operationId: reconhecerAlerta
+      description: |
+        Alerta reconhecido muda de aparência e sai do topo, sem desaparecer da lista (T-17).
+        Registra autor e horário.
+      responses:
+        '200':
+          description: Alerta reconhecido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Alerta' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /alertas/{id}/escalonamento:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    post:
+      tags: [Alertas de SLA]
+      summary: Acionar medida de escalonamento
+      operationId: acionarMedidaDeEscalonamento
+      description: UC-19, RF-11. Registra autor e horário de cada ação (T-17).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [acao]
+              properties:
+                acao:
+                  type: string
+                  enum: [REFORCO_ATENDENTE, VAGA_EXTRA]
+                observacao: { type: string }
+      responses:
+        '201':
+          description: Escalonamento registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Escalonamento' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  # ─────────────────────────────── Auditoria ──────────────────────────────────
+  /auditoria:
+    get:
+      tags: [Auditoria]
+      summary: Consultar trilha de auditoria
+      operationId: consultarTrilhaDeAuditoria
+      description: |
+        UC-20, RF-12, RNF-05. Somente leitura - não existe operação de edição ou exclusão de
+        registro de auditoria em nenhuma circunstância.
+
+        Consultas a dado de prontuário vêm com `sensivel: true`, para a marcação distinta
+        exigida pelo RNF-07 (T-18).
+      parameters:
+        - { name: usuarioId, in: query, schema: { type: string, format: uuid } }
+        - { name: modulo, in: query, schema: { type: string } }
+        - { name: operacao, in: query, schema: { $ref: '#/components/schemas/OperacaoAuditoria' } }
+        - { name: entidadeId, in: query, schema: { type: string, format: uuid } }
+        - { name: de, in: query, schema: { type: string, format: date-time } }
+        - { name: ate, in: query, schema: { type: string, format: date-time } }
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+      responses:
+        '200':
+          description: Lista paginada, ordem cronológica decrescente
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/EventoAuditoria' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  /auditoria/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Auditoria]
+      summary: Detalhe do evento de auditoria
+      operationId: detalheDoEventoDeAuditoria
+      description: |
+        Inclui perfil no momento da ação, registro afetado, justificativa informada quando
+        aplicável (caso da reclassificação de prioridade) e origem do acesso (T-18).
+      responses:
+        '200':
+          description: Evento
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EventoAuditoriaDetalhe' }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  /auditoria/exportacao:
+    get:
+      tags: [Auditoria]
+      summary: Exportar trilha filtrada
+      operationId: exportarTrilhaFiltrada
+      description: A própria exportação é registrada como evento de auditoria (T-18).
+      parameters:
+        - { name: de, in: query, schema: { type: string, format: date-time } }
+        - { name: ate, in: query, schema: { type: string, format: date-time } }
+        - { name: usuarioId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Arquivo CSV
+          content:
+            text/csv:
+              schema: { type: string }
+
+        '403': { $ref: '#/components/responses/SemPermissao' }
+  # ──────────────────────────────── Público ───────────────────────────────────
+  /publico/painel/{unidadeId}:
+    parameters:
+      - name: unidadeId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    get:
+      tags: [Público]
+      summary: Estado do telão da sala de espera
+      operationId: estadoDoTelaoDaSalaDeEspera
+      description: |
+        W-09, UC-09, RF-05. Sem autenticação. Retorna exclusivamente número da senha,
+        especialidade e local - nunca nome, prioridade clínica ou dado de saúde (P-03, RNF-02).
+        Complementa o evento `chamada.exibir` do namespace `/painel`, e serve à reconexão.
+      security: []
+      responses:
+        '200':
+          description: Chamada atual e as quatro anteriores
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  atual:
+                    oneOf:
+                      - $ref: '#/components/schemas/ChamadaPublica'
+                      - type: 'null'
+                  anteriores:
+                    type: array
+                    maxItems: 4
+                    items: { $ref: '#/components/schemas/ChamadaPublica' }
+                  servidorEm: { type: string, format: date-time }
+        '404':
+          description: Unidade inexistente
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+
+  /publico/senhas/{numero}:
+    parameters:
+      - name: numero
+        in: path
+        required: true
+        schema: { type: string }
+        example: F015
+    get:
+      tags: [Público]
+      summary: Consultar posição da senha
+      operationId: consultarPosicaoDaSenha
+      description: |
+        W-10, UC-08, RF-04. Sem autenticação, mediante número da senha. Senha inexistente ou de
+        outro dia retorna 404 com mensagem neutra, sem revelar dados. Dados insuficientes para
+        estimar tempo retornam `tempoEstimadoMinutos: null` e apenas a posição.
+        Rate limit de 30 requisições por minuto por IP.
+      security: []
+      responses:
+        '200':
+          description: Situação da senha
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  numero: { type: string }
+                  especialidade: { type: string }
+                  status: { $ref: '#/components/schemas/StatusSenha' }
+                  posicao: { type: [integer, 'null'] }
+                  tempoEstimadoMinutos: { type: [integer, 'null'] }
+                  local: { type: [string, 'null'] }
+                  orientacao:
+                    type: string
+                    description: Texto pronto para exibição, conforme o status
+                    example: Dirija-se à Sala 03.
+        '404':
+          description: Mensagem neutra, sem revelar existência de dados
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+              example:
+                title: Senha não encontrada
+                status: 404
+                codigo: SENHA_NAO_ENCONTRADA
+                detail: Não localizamos essa senha para o dia de hoje. Procure a recepção.
+
+  /health:
+    get:
+      tags: [Público]
+      summary: Liveness
+      operationId: liveness
+      security: []
+      responses:
+        '200':
+          description: Aplicação no ar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    Pagina:
+      name: pagina
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    Tamanho:
+      name: tamanho
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Busca:
+      name: busca
+      in: query
+      description: Busca textual do filtro da tela
+      schema: { type: string }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: Repetição com a mesma chave em até 10 minutos devolve a resposta original
+      schema: { type: string, format: uuid }
+
+  responses:
+    NaoAutenticado:
+      description: Não autenticado
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+    SemPermissao:
+      description: |
+        Sem permissão. Corpo neutro, sem revelar existência ou volume de dados (RNF-01).
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+          example:
+            title: Acesso não autorizado
+            status: 403
+            codigo: SEM_PERMISSAO
+            detail: Seu perfil não tem acesso a esta operação. Procure a administração do sistema.
+    Duplicidade:
+      description: Registro já cadastrado; `recursoExistenteId` alimenta o link de W-04
+      content:
+        application/problem+json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Problema'
+              - type: object
+                properties:
+                  recursoExistenteId: { type: string, format: uuid }
+    Conflito:
+      description: Conflito de estado, versão, vínculo ou disponibilidade
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+    ErroValidacao:
+      description: Dados inválidos
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemaValidacao' }
+
+  schemas:
+    # ── Enums ──
+    StatusSenha:
+      type: string
+      description: Oito status da premissa P-01
+      enum:
+        - AGUARDANDO
+        - CHAMADA
+        - AGUARDANDO_RECURSO
+        - EM_ATENDIMENTO
+        - PAUSADO
+        - PENDENTE_VALIDACAO
+        - ENCERRADO
+        - AUSENTE
+        - DESISTENCIA
+    Prioridade:
+      type: string
+      enum: [NORMAL, PREFERENCIAL, URGENTE]
+      description: Atributo separado do status, nunca compartilha a mesma cor na UI (P-01)
+    TipoAtendimento:
+      type: string
+      enum: [PRIMEIRA_CONSULTA, RETORNO, ENCAIXE]
+    Desfecho:
+      type: string
+      enum: [ALTA, RETORNO_AGENDADO, ENCAMINHAMENTO_INTERNO, ENCAMINHAMENTO_EXTERNO]
+    VinculoPaciente:
+      type: string
+      enum: [EXTERNO, ALUNO, SERVIDOR]
+    Turno:
+      type: string
+      enum: [MANHA, TARDE, NOITE]
+    OrigemDesistencia:
+      type: string
+      enum: [PACIENTE, EQUIPE]
+    StatusAlerta:
+      type: string
+      enum: [ATIVO, RECONHECIDO, NORMALIZADO]
+    TipoAlerta:
+      type: string
+      enum: [SLA_EXCEDIDO, FILA_BLOQUEADA]
+    OperacaoAuditoria:
+      type: string
+      enum: [CRIAR, EDITAR, EXCLUIR, CONSULTAR_SENSIVEL, EXPORTAR, LOGIN, LOGOUT]
+
+    # ── Infraestrutura de resposta ──
+    Meta:
+      type: object
+      properties:
+        pagina: { type: integer }
+        tamanho: { type: integer }
+        total: { type: integer }
+        totalPaginas: { type: integer }
+    RespostaPaginada:
+      type: object
+      properties:
+        dados: { type: array, items: {} }
+        meta: { $ref: '#/components/schemas/Meta' }
+    Problema:
+      type: object
+      description: RFC 7807 com o campo adicional `codigo`
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail:
+          type: string
+          description: Descreve a causa e o próximo passo, nunca apenas "erro" (item 3.2 da UI)
+        codigo: { type: string }
+        instance: { type: string }
+    ProblemaValidacao:
+      allOf:
+        - $ref: '#/components/schemas/Problema'
+        - type: object
+          properties:
+            campos:
+              type: array
+              items:
+                type: object
+                properties:
+                  campo: { type: string }
+                  mensagem:
+                    type: string
+                    description: Exibida abaixo do campo no formulário
+    Aviso:
+      type: object
+      description: Informação que não bloqueia a operação
+      properties:
+        codigo: { type: string, example: PACIENTE_COM_RESTRICAO }
+        mensagem: { type: string }
+
+    # ── Sessão ──
+    UsuarioSessao:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        perfilId: { type: string, format: uuid }
+        perfilNome: { type: string }
+        unidadeId: { type: string, format: uuid }
+        unidadeNome: { type: string }
+        permissoes:
+          type: array
+          items: { type: string, example: 'fila:chamar' }
+    Usuario:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        identificacao: { type: string }
+        perfilId: { type: string, format: uuid }
+        perfilNome: { type: string }
+        ativo: { type: boolean }
+        ultimoLoginEm: { type: [string, 'null'], format: date-time }
+    UsuarioEntrada:
+      type: object
+      required: [nome, identificacao, perfilId]
+      properties:
+        nome: { type: string }
+        identificacao: { type: string }
+        senhaInicial: { type: string, format: password }
+        perfilId: { type: string, format: uuid }
+        ativo: { type: boolean, default: true }
+    Perfil:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        descricao: { type: string }
+        sistema:
+          type: boolean
+          description: Perfil do sistema não é editável nem excluível (T-05)
+        permissoes:
+          type: array
+          items: { type: string }
+        usuariosVinculados: { type: integer }
+        avisos:
+          type: array
+          items: { $ref: '#/components/schemas/Aviso' }
+    PerfilEntrada:
+      type: object
+      required: [nome, permissoes]
+      properties:
+        nome: { type: string }
+        descricao: { type: string }
+        permissoes:
+          type: array
+          items: { type: string, example: 'triagem:criar' }
+
+    # ── Cadastros ──
+    Paciente:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nomeCompleto: { type: string }
+        iniciais:
+          type: string
+          example: M. A. S.
+          description: Forma abreviada usada em filas e painéis; calculada no servidor (P-03)
+        documento: { type: string }
+        contatoTelefone: { type: [string, 'null'] }
+        contatoEmail: { type: [string, 'null'] }
+        vinculo: { $ref: '#/components/schemas/VinculoPaciente' }
+        restricaoAtiva:
+          type: boolean
+          description: Reincidência de ausências (RN-13)
+        ativo: { type: boolean }
+    PacienteDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/Paciente'
+        - type: object
+          properties:
+            ausenciasUltimos90Dias: { type: integer }
+            avisos:
+              type: array
+              items: { $ref: '#/components/schemas/Aviso' }
+    PacienteEntrada:
+      type: object
+      required: [nomeCompleto, documento, vinculo]
+      properties:
+        nomeCompleto: { type: string }
+        documento: { type: string }
+        contatoTelefone: { type: string }
+        contatoEmail: { type: string, format: email }
+        vinculo: { $ref: '#/components/schemas/VinculoPaciente' }
+    Estudante:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        especialidadeId: { type: string, format: uuid }
+        especialidade: { type: string }
+        nivelFormacao: { type: string }
+        habilitacoes:
+          type: array
+          items: { $ref: '#/components/schemas/ItemReferencia' }
+        procedimentosAutorizados:
+          type: array
+          items: { $ref: '#/components/schemas/ItemReferencia' }
+        disponibilidade:
+          type: array
+          items: { $ref: '#/components/schemas/Disponibilidade' }
+        ocupado:
+          type: boolean
+          description: Possui atendimento ativo no momento (RN-05)
+        ativo: { type: boolean }
+    EstudanteEntrada:
+      type: object
+      required: [nome, especialidadeId, nivelFormacao]
+      properties:
+        nome: { type: string }
+        especialidadeId: { type: string, format: uuid }
+        nivelFormacao: { type: string }
+        habilitacoesIds:
+          type: array
+          items: { type: string, format: uuid }
+        procedimentosIds:
+          type: array
+          items: { type: string, format: uuid }
+        disponibilidade:
+          type: array
+          items: { $ref: '#/components/schemas/Disponibilidade' }
+    Supervisor:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        especialidades:
+          type: array
+          items: { $ref: '#/components/schemas/ItemReferencia' }
+        procedimentos:
+          type: array
+          items: { $ref: '#/components/schemas/ItemReferencia' }
+        disponibilidade:
+          type: array
+          items: { $ref: '#/components/schemas/Disponibilidade' }
+        limiteEstudantesSimultaneos:
+          type: integer
+          minimum: 1
+          description: RN-08
+        ocupacaoAtual:
+          type: integer
+          description: Exibido como "2 de 3" na coluna de disponibilidade (T-03)
+        ativo: { type: boolean }
+    SupervisorEntrada:
+      type: object
+      required: [nome, especialidadesIds, limiteEstudantesSimultaneos]
+      properties:
+        nome: { type: string }
+        especialidadesIds:
+          type: array
+          items: { type: string, format: uuid }
+        procedimentosIds:
+          type: array
+          items: { type: string, format: uuid }
+        disponibilidade:
+          type: array
+          items: { $ref: '#/components/schemas/Disponibilidade' }
+        limiteEstudantesSimultaneos: { type: integer, minimum: 1 }
+    Sala:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        identificacao: { type: string, example: Sala 03 }
+        caracteristicas: { type: string }
+        recursos:
+          type: array
+          items: { $ref: '#/components/schemas/ItemReferencia' }
+        situacao: { type: string }
+        ocupada: { type: boolean }
+        ativo: { type: boolean }
+    SalaEntrada:
+      type: object
+      required: [identificacao]
+      properties:
+        identificacao: { type: string }
+        caracteristicas: { type: string }
+        recursosIds:
+          type: array
+          items: { type: string, format: uuid }
+        situacao: { type: string }
+    Especialidade:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        descricao: { type: string }
+        exigeSupervisaoDocente: { type: boolean, description: RN-07 }
+        exigeValidacaoEncerramento: { type: boolean, description: RN-11 }
+        toleranciaMinutos: { type: integer, description: RN-12 }
+        recursosExigidos:
+          type: array
+          items: { $ref: '#/components/schemas/ItemReferencia' }
+          description: Recursos que a sala precisa ter (RN-09)
+        filasVinculadas: { type: integer }
+        ativa: { type: boolean }
+    EspecialidadeEntrada:
+      type: object
+      required: [nome, exigeSupervisaoDocente, exigeValidacaoEncerramento]
+      properties:
+        nome: { type: string }
+        descricao: { type: string }
+        exigeSupervisaoDocente: { type: boolean }
+        exigeValidacaoEncerramento: { type: boolean }
+        toleranciaMinutos: { type: integer, minimum: 1 }
+        recursosExigidosIds:
+          type: array
+          items: { type: string, format: uuid }
+    ItemReferencia:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+    Disponibilidade:
+      type: object
+      properties:
+        diaSemana: { type: integer, minimum: 0, maximum: 6 }
+        turno: { $ref: '#/components/schemas/Turno' }
+
+    # ── Triagem e senha ──
+    TriagemResumo:
+      type: object
+      description: Projeção sem conteúdo clínico (P-03)
+      properties:
+        id: { type: string, format: uuid }
+        pacienteIniciais: { type: string }
+        especialidade: { type: string }
+        tipoAtendimento: { $ref: '#/components/schemas/TipoAtendimento' }
+        prioridade: { $ref: '#/components/schemas/Prioridade' }
+        concluidaEm: { type: string, format: date-time }
+        senhaEmitida: { type: boolean }
+    TriagemDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/TriagemResumo'
+        - type: object
+          description: Endpoint sensível - gera CONSULTAR_SENSIVEL na auditoria
+          properties:
+            pacienteId: { type: string, format: uuid }
+            pacienteNome: { type: string }
+            motivo: { type: string, description: Dado sensível }
+            enquadramentoLegal:
+              type: array
+              items: { type: string }
+              description: RN-02
+            justificativaClinica:
+              type: [string, 'null']
+              description: Obrigatória em prioridade URGENTE (RN-03)
+            observacoes: { type: [string, 'null'] }
+            profissionalId: { type: string, format: uuid }
+    TriagemEntrada:
+      type: object
+      required: [pacienteId, especialidadeDestinoId, tipoAtendimento, prioridade, motivo]
+      properties:
+        pacienteId: { type: string, format: uuid }
+        especialidadeDestinoId:
+          type: string
+          format: uuid
+          description: Apenas especialidades ativas com fila configurada (T-06)
+        tipoAtendimento: { $ref: '#/components/schemas/TipoAtendimento' }
+        prioridade: { $ref: '#/components/schemas/Prioridade' }
+        motivo: { type: string, description: Dado sensível }
+        enquadramentoLegal:
+          type: array
+          items: { type: string, enum: [IDOSO, GESTANTE, LACTANTE, PCD, OUTRO] }
+          description: Preenchido sinaliza prioridade PREFERENCIAL automaticamente (RN-02)
+        justificativaClinica:
+          type: string
+          description: Obrigatória quando prioridade é URGENTE (RN-03)
+        observacoes: { type: string }
+    SenhaResumo:
+      type: object
+      description: Projeção de lista, painel e cartão - sem conteúdo clínico (ADR-003)
+      properties:
+        id: { type: string, format: uuid }
+        numero: { type: string, example: F014 }
+        filaId: { type: string, format: uuid }
+        especialidade: { type: string }
+        pacienteIniciais: { type: string, example: M. A. S. }
+        prioridade: { $ref: '#/components/schemas/Prioridade' }
+        tipoAtendimento: { $ref: '#/components/schemas/TipoAtendimento' }
+        status: { $ref: '#/components/schemas/StatusSenha' }
+        posicao: { type: [integer, 'null'] }
+        chegadaEm: { type: string, format: date-time }
+        chamadaEm: { type: [string, 'null'], format: date-time }
+        toleranciaAte: { type: [string, 'null'], format: date-time }
+        tempoEsperaMinutos: { type: integer }
+        slaExcedido: { type: boolean, description: Cartão recebe borda de alerta (T-09) }
+        temAgendamentoPrevio: { type: boolean }
+        versao: { type: integer }
+    SenhaDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/SenhaResumo'
+        - type: object
+          properties:
+            pacienteId: { type: string, format: uuid }
+            pacienteNome: { type: string }
+            triagem: { $ref: '#/components/schemas/TriagemDetalhe' }
+            alocacao: { $ref: '#/components/schemas/Alocacao' }
+            senhaOrigemId:
+              type: [string, 'null']
+              format: uuid
+              description: Preenchido quando a senha veio de encaminhamento interno (RF-08)
+    SenhaEmitida:
+      allOf:
+        - $ref: '#/components/schemas/SenhaResumo'
+        - type: object
+          properties:
+            posicaoEstimada: { type: integer }
+            avisos:
+              type: array
+              items: { $ref: '#/components/schemas/Aviso' }
+              description: Traz aviso de chamada suspensa quando a fila está bloqueada (RN-10)
+    Reclassificacao:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        dePrioridade: { $ref: '#/components/schemas/Prioridade' }
+        paraPrioridade: { $ref: '#/components/schemas/Prioridade' }
+        justificativa: { type: string }
+        usuarioNome: { type: string }
+        ocorridoEm: { type: string, format: date-time }
+
+    # ── Fila e chamada ──
+    Fila:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        especialidadeId: { type: string, format: uuid }
+        especialidade: { type: string }
+        ativa: { type: boolean }
+        slaMinutos: { type: integer }
+        toleranciaMinutos: { type: integer }
+        bloqueio:
+          type: object
+          description: Fonte única do banner de P-04 e do botão desabilitado (RN-10)
+          properties:
+            ativo: { type: boolean }
+            motivo: { type: [string, 'null'] }
+            desde: { type: [string, 'null'], format: date-time }
+    FilaEntrada:
+      type: object
+      required: [nome, especialidadeId]
+      properties:
+        nome: { type: string }
+        especialidadeId: { type: string, format: uuid }
+        ativa: { type: boolean, default: true }
+        slaMinutos: { type: integer, minimum: 1 }
+    Chamada:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        senhaId: { type: string, format: uuid }
+        numero: { type: string }
+        local: { type: string }
+        sequencia: { type: integer, description: '1 = primeira chamada; 2 ou mais = rechamadas' }
+        chamadoEm: { type: string, format: date-time }
+        chamadoPor: { type: string }
+    ChamadaPublica:
+      type: object
+      description: Projeção do telão - apenas três campos (P-03, RNF-02)
+      properties:
+        numero: { type: string, example: F014 }
+        especialidade: { type: string, example: Fisioterapia }
+        local: { type: string, example: Sala 03 }
+
+    # ── Alocação ──
+    SugestoesAlocacao:
+      type: object
+      properties:
+        senhaId: { type: string, format: uuid }
+        estudante: { $ref: '#/components/schemas/BlocoAlocacao' }
+        supervisor:
+          allOf:
+            - $ref: '#/components/schemas/BlocoAlocacao'
+            - type: object
+              properties:
+                aplicavel:
+                  type: boolean
+                  description: false quando a especialidade não exige supervisão (RN-07)
+        sala: { $ref: '#/components/schemas/BlocoAlocacao' }
+    BlocoAlocacao:
+      type: object
+      properties:
+        sugestao:
+          oneOf:
+            - $ref: '#/components/schemas/CandidatoAlocacao'
+            - type: 'null'
+        alternativas:
+          type: array
+          items: { $ref: '#/components/schemas/CandidatoAlocacao' }
+        regrasVerificadas:
+          type: array
+          items: { type: string, example: RN-06 }
+    CandidatoAlocacao:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        nome: { type: string }
+        descricao:
+          type: string
+          description: Linha de apoio - especialidade e nível, ocupação "2 de 3", equipamentos
+        apto: { type: boolean }
+        motivoInaptidao:
+          type: [string, 'null']
+          enum:
+            - ATENDIMENTO_ATIVO
+            - ESPECIALIDADE_INCOMPATIVEL
+            - FORA_DO_TURNO
+            - LIMITE_SUPERVISAO_ATINGIDO
+            - RECURSO_INDISPONIVEL_NA_SALA
+            - null
+        motivoTexto:
+          type: [string, 'null']
+          description: Texto exibido no próprio item, não em tooltip (T-10)
+    Alocacao:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        senhaId: { type: string, format: uuid }
+        estudante: { $ref: '#/components/schemas/ItemReferencia' }
+        supervisor:
+          oneOf:
+            - $ref: '#/components/schemas/ItemReferencia'
+            - type: 'null'
+        sala: { $ref: '#/components/schemas/ItemReferencia' }
+        confirmadaEm: { type: string, format: date-time }
+        confirmadaPor: { type: string }
+        liberadaEm: { type: [string, 'null'], format: date-time }
+
+    # ── Atendimento ──
+    AtendimentoResumo:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        senhaId: { type: string, format: uuid }
+        numero: { type: string }
+        pacienteIniciais: { type: string }
+        especialidade: { type: string }
+        estudante: { type: string }
+        supervisor: { type: [string, 'null'] }
+        sala: { type: string }
+        status: { $ref: '#/components/schemas/StatusSenha' }
+        iniciadoEm: { type: [string, 'null'], format: date-time }
+        duracaoMinutos: { type: integer, description: Já descontadas as pausas }
+        encerradoEm: { type: [string, 'null'], format: date-time }
+        desfecho:
+          oneOf:
+            - $ref: '#/components/schemas/Desfecho'
+            - type: 'null'
+        exigeValidacao: { type: boolean }
+        versao: { type: integer }
+    AtendimentoDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/AtendimentoResumo'
+        - type: object
+          description: Endpoint sensível - gera CONSULTAR_SENSIVEL (RNF-07)
+          properties:
+            pacienteNome: { type: string }
+            triagem: { $ref: '#/components/schemas/TriagemDetalhe' }
+            observacoes: { type: [string, 'null'] }
+            parecerSupervisor: { type: [string, 'null'] }
+            pausas:
+              type: array
+              items:
+                type: object
+                properties:
+                  motivo: { type: [string, 'null'] }
+                  pausadoEm: { type: string, format: date-time }
+                  retomadoEm: { type: [string, 'null'], format: date-time }
+
+    # ── Encaminhamento ──
+    EncaminhamentoInternoEntrada:
+      type: object
+      required: [tipo, especialidadeDestinoId]
+      properties:
+        tipo: { type: string, enum: [INTERNO] }
+        especialidadeDestinoId: { type: string, format: uuid }
+        motivo: { type: string }
+        prioridadeSugerida: { $ref: '#/components/schemas/Prioridade' }
+    EncaminhamentoExternoEntrada:
+      type: object
+      required: [tipo, instituicaoDestino, motivo]
+      properties:
+        tipo: { type: string, enum: [EXTERNO] }
+        instituicaoDestino: { type: string }
+        motivo: { type: string }
+        observacoes: { type: string }
+    Encaminhamento:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        atendimentoOrigemId: { type: string, format: uuid }
+        tipo: { type: string, enum: [INTERNO, EXTERNO] }
+        especialidadeDestino: { type: [string, 'null'] }
+        instituicaoDestino: { type: [string, 'null'] }
+        motivo: { type: string }
+        senhaGerada:
+          oneOf:
+            - $ref: '#/components/schemas/SenhaResumo'
+            - type: 'null'
+          description: Preenchido apenas em encaminhamento interno (RF-08)
+        avisos:
+          type: array
+          items: { $ref: '#/components/schemas/Aviso' }
+        criadoEm: { type: string, format: date-time }
+
+    # ── Ausência ──
+    RegistroAusencia:
+      type: object
+      properties:
+        senha: { $ref: '#/components/schemas/SenhaResumo' }
+        automatica: { type: boolean, description: true quando gerada por expiração (RN-12) }
+        recursosLiberados: { type: boolean }
+        restricaoAplicada:
+          type: [object, 'null']
+          description: Preenchido quando o paciente atinge a política de reincidência (RN-13)
+          properties:
+            tipo: { type: string, enum: [RESTRICAO_TEMPORARIA, CONFIRMACAO_PREVIA] }
+            ate: { type: [string, 'null'], format: date }
+            descricao: { type: string }
+
+    # ── Alertas ──
+    Alerta:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tipo: { $ref: '#/components/schemas/TipoAlerta' }
+        status: { $ref: '#/components/schemas/StatusAlerta' }
+        filaId: { type: string, format: uuid }
+        especialidade: { type: string }
+        tempoEsperaMinutos: { type: [integer, 'null'] }
+        limiteMinutos: { type: [integer, 'null'] }
+        senhasAfetadas: { type: integer }
+        disparadoEm: { type: string, format: date-time }
+        reconhecidoPor: { type: [string, 'null'] }
+        reconhecidoEm: { type: [string, 'null'], format: date-time }
+        normalizadoEm: { type: [string, 'null'], format: date-time }
+    Escalonamento:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        alertaId: { type: string, format: uuid }
+        acao: { type: string, enum: [REFORCO_ATENDENTE, VAGA_EXTRA] }
+        observacao: { type: [string, 'null'] }
+        acionadoPor: { type: string }
+        acionadoEm: { type: string, format: date-time }
+
+    # ── Indicadores ──
+    IndicadoresResumo:
+      type: object
+      properties:
+        periodo:
+          type: object
+          properties:
+            de: { type: string, format: date }
+            ate: { type: string, format: date }
+        tempoMedioEsperaMinutos: { type: [integer, 'null'] }
+        tempoMedioAtendimentoMinutos: { type: [integer, 'null'] }
+        pacientesAtendidos: { type: integer }
+        taxaAusencia: { type: number, format: float, description: Percentual de 0 a 100 }
+        desistencias: { type: integer }
+        atendimentosPorEspecialidade:
+          type: array
+          items:
+            type: object
+            properties:
+              especialidade: { type: string }
+              total: { type: integer }
+        semDados:
+          type: boolean
+          description: Exibe "Sem dados disponíveis" mantendo os filtros (T-16)
+        amostraPequena:
+          type: boolean
+          description: Volume baixo - a média pode não ser representativa (T-16)
+
+    # ── Auditoria ──
+    EventoAuditoria:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        usuarioNome: { type: string }
+        perfilNoMomento: { type: string }
+        operacao: { $ref: '#/components/schemas/OperacaoAuditoria' }
+        modulo: { type: string }
+        entidade: { type: string }
+        entidadeId: { type: [string, 'null'], format: uuid }
+        descricao:
+          type: string
+          example: Reclassificou prioridade - justificativa registrada
+        sensivel:
+          type: boolean
+          description: Consulta a dado de prontuário recebe marcação distinta (RNF-07)
+        ocorridoEm: { type: string, format: date-time }
+    EventoAuditoriaDetalhe:
+      allOf:
+        - $ref: '#/components/schemas/EventoAuditoria'
+        - type: object
+          properties:
+            justificativa:
+              type: [string, 'null']
+              description: Presente em reclassificação de prioridade (RN-01)
+            origemIp: { type: string }
+            userAgent: { type: string }
+            requestId: { type: string }
