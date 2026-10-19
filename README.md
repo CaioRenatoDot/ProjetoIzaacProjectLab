@@ -5,6 +5,24 @@ emissão e ordenação de senha, chamada, alocação de estudante/supervisor/sal
 atendimento, encaminhamento, registro de ausências e desistências, indicadores, alertas de SLA
 e trilha de auditoria.
 
+## Andamento
+
+| # | Etapa | Status |
+| --- | --- | --- |
+| 0 | Ambiente local com Docker | ✅ |
+| 1 | Bootstrap do monorepo | ⬜ |
+| 2 | Banco de dados e seed | ⬜ |
+| 3 | Acesso, permissões e auditoria | ⬜ |
+| 4 | Cadastros base | ⬜ |
+| 5 | Triagem e emissão de senha | ⬜ |
+| 6 | Fila, chamada e telão | ⬜ |
+| 7 | Alocação e atendimento | ⬜ |
+| 8 | Ausências e desistências | ⬜ |
+| 9 | Funcionalidades extras ⭐ | ⬜ |
+| 10 | Qualidade e entrega | ⬜ |
+
+Partes, responsáveis e critérios de pronto em **[docs/06-etapas.md](docs/06-etapas.md)**.
+
 ## Documentação do projeto
 
 | Documento | Conteúdo |
@@ -15,6 +33,7 @@ e trilha de auditoria.
 | [docs/04-contrato-api.md](docs/04-contrato-api.md) | Convenções REST, autenticação, erros, eventos de tempo real |
 | [docs/api/openapi.yaml](docs/api/openapi.yaml) | Contrato formal da API (OpenAPI 3.1) |
 | [docs/05-fluxo-github.md](docs/05-fluxo-github.md) | Branches, commits, PRs, labels, milestones, Definition of Done |
+| [docs/06-etapas.md](docs/06-etapas.md) | Etapas do MVP: o que está feito, o que falta e quem faz |
 | [docs/issues/](docs/issues/) | Backlog completo, uma issue por arquivo de milestone |
 | [docs/adr/](docs/adr/) | Registros de decisão de arquitetura |
 | [especificacao/](especificacao/) | Documentos originais entregues pelo cliente (requisitos, casos de uso, UI, wireframes) |
