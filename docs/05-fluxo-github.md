@@ -112,7 +112,8 @@ Uma issue só é fechada quando **todos** os itens valem:
 | `lgpd` | `#D4C5F9` | Toca dado sensível ou auditoria (RNF-02, RNF-07) |
 | `bloqueada` | `#000000` | Depende de outra issue ou de decisão externa |
 
-O arquivo `.github/labels.yml` tem a lista em formato importável.
+O arquivo `.github/labels.yml` tem a lista em formato importável. As labels e as milestones da
+seção 6 já estão criadas no repositório. O backlog fica nas issues do GitHub.
 
 ## 6. Milestones
 

@@ -86,7 +86,7 @@ sensível. A tabela é append-only: sem UPDATE, sem DELETE, garantido por permis
 banco da aplicação. A exportação da própria trilha também gera evento (T-18).
 
 Leituras auditadas: abertura de ficha de triagem, dados clínicos na tela de atendimento e
-exportações. Cada uma grava `tipo = CONSULTA_SENSIVEL` com o identificador do registro consultado.
+exportações. Cada uma grava `operacao = CONSULTAR_SENSIVEL` com o identificador do registro consultado.
 
 ### 4.3 Dado sensível fora de listas (P-03, RNF-02)
 

@@ -929,8 +929,11 @@ paths:
                   description: Deve ser diferente da atual
                 justificativa:
                   type: string
-                  minLength: 20
-                  description: Tamanho mínimo parametrizado por unidade
+                  minLength: 1
+                  description: |
+                    Tamanho mínimo validado no servidor pelo parâmetro da unidade
+                    justificativaMinCaracteres (valor provisório 20; Tabela 8, ID06). Abaixo do
+                    mínimo retorna 422 JUSTIFICATIVA_OBRIGATORIA.
                 versao: { type: integer }
       responses:
         '200':
@@ -1009,6 +1012,8 @@ paths:
       operationId: registrarDesistenciaVoluntaria
       description: |
         UC-17, RF-09. Distinta de ausência para efeito de indicadores (W-16).
+        Permitida apenas com a senha em AGUARDANDO ou EM_ATENDIMENTO (pré-condição do UC-17);
+        em outro status retorna 409 TRANSICAO_INVALIDA.
         Permitida em AGUARDANDO, CHAMADA, AGUARDANDO_RECURSO e EM_ATENDIMENTO.
         Motivo é opcional.
       requestBody:
@@ -2068,6 +2073,10 @@ components:
     OrigemDesistencia:
       type: string
       enum: [PACIENTE, EQUIPE]
+    EnquadramentoLegal:
+      type: string
+      enum: [IDOSO, GESTANTE, LACTANTE, PCD, OUTRO_PREVISTO_EM_NORMA]
+      description: Prioridade prevista em norma (Tabela 9, ID07; RN-02)
     StatusAlerta:
       type: string
       enum: [ATIVO, RECONHECIDO, NORMALIZADO]
@@ -2193,12 +2202,20 @@ components:
           example: M. A. S.
           description: Forma abreviada usada em filas e painéis; calculada no servidor (P-03)
         documento: { type: string }
+        dataNascimento:
+          type: string
+          format: date
+          description: Duplicidade e prioridade legal por idade (Tabela 1, ID03)
         contatoTelefone: { type: [string, 'null'] }
         contatoEmail: { type: [string, 'null'] }
         vinculo: { $ref: '#/components/schemas/VinculoPaciente' }
         restricaoAtiva:
           type: boolean
           description: Reincidência de ausências (RN-13)
+        restricaoAte:
+          type: [string, 'null']
+          format: date
+          description: Fim da restrição; preenchido só quando restricaoAtiva (Tabela 1, ID08)
         ativo: { type: boolean }
     PacienteDetalhe:
       allOf:
@@ -2211,10 +2228,11 @@ components:
               items: { $ref: '#/components/schemas/Aviso' }
     PacienteEntrada:
       type: object
-      required: [nomeCompleto, documento, vinculo]
+      required: [nomeCompleto, documento, dataNascimento, vinculo]
       properties:
         nomeCompleto: { type: string }
         documento: { type: string }
+        dataNascimento: { type: string, format: date }
         contatoTelefone: { type: string }
         contatoEmail: { type: string, format: email }
         vinculo: { $ref: '#/components/schemas/VinculoPaciente' }
@@ -2374,9 +2392,10 @@ components:
             pacienteNome: { type: string }
             motivo: { type: string, description: Dado sensível }
             enquadramentoLegal:
-              type: array
-              items: { type: string }
-              description: RN-02
+              oneOf:
+                - $ref: '#/components/schemas/EnquadramentoLegal'
+                - type: 'null'
+              description: RN-02 - valor único (Tabela 9, ID07)
             justificativaClinica:
               type: [string, 'null']
               description: Obrigatória em prioridade URGENTE (RN-03)
@@ -2395,9 +2414,8 @@ components:
         prioridade: { $ref: '#/components/schemas/Prioridade' }
         motivo: { type: string, description: Dado sensível }
         enquadramentoLegal:
-          type: array
-          items: { type: string, enum: [IDOSO, GESTANTE, LACTANTE, PCD, OUTRO] }
-          description: Preenchido sinaliza prioridade PREFERENCIAL automaticamente (RN-02)
+          $ref: '#/components/schemas/EnquadramentoLegal'
+          description: Valor único (Tabela 9, ID07). Preenchido sinaliza prioridade PREFERENCIAL automaticamente (RN-02)
         justificativaClinica:
           type: string
           description: Obrigatória quando prioridade é URGENTE (RN-03)

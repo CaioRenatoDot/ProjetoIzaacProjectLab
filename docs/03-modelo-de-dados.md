@@ -12,6 +12,7 @@ Prioridade       NORMAL | PREFERENCIAL | URGENTE
 TipoAtendimento  PRIMEIRA_CONSULTA | RETORNO | ENCAIXE
 Desfecho         ALTA | RETORNO_AGENDADO | ENCAMINHAMENTO_INTERNO | ENCAMINHAMENTO_EXTERNO
 VinculoPaciente  EXTERNO | ALUNO | SERVIDOR
+EnquadramentoLegal  IDOSO | GESTANTE | LACTANTE | PCD | OUTRO_PREVISTO_EM_NORMA
 Turno            MANHA | TARDE | NOITE
 TipoEncaminhamento  INTERNO | EXTERNO
 OrigemDesistencia   PACIENTE | EQUIPE
@@ -20,7 +21,8 @@ StatusAlerta     ATIVO | RECONHECIDO | NORMALIZADO
 OperacaoAuditoria  CRIAR | EDITAR | EXCLUIR | CONSULTAR_SENSIVEL | EXPORTAR | LOGIN | LOGOUT
 ```
 
-Os oito status de senha e seus rótulos vêm da premissa P-01. O rótulo textual está sempre
+Os nove status de senha seguem a Tabela 11 (ID07) do Documento de Requisitos. A premissa P-01
+fala em "oito situações", mas a própria tabela lista nove; prevalece a tabela. Os rótulos vêm da P-01. O rótulo textual está sempre
 presente na UI; cor é reforço, nunca o único portador de significado (RNF-06).
 
 ## 2. Diagrama de relacionamentos
@@ -92,7 +94,7 @@ composta. O catálogo de permissões é constante no código e exposto por `GET 
 
 ### 3.2 Cadastros base (RF-01)
 
-**paciente** — `id`, `nome_completo`, `documento`, `contato_telefone`, `contato_email`,
+**paciente** — `id`, `nome_completo`, `documento`, `data_nascimento`, `contato_telefone`, `contato_email`,
 `vinculo` (VinculoPaciente), `unidade_id`, `restricao_ativa` (boolean, RN-13),
 `restricao_ate?`, `ativo`. Duplicidade verificada por `documento` e por `nome_completo` +
 `data_nascimento`. Campo derivado `iniciais` calculado no servidor para listas (ADR-003).
@@ -126,7 +128,8 @@ impossível de fazer com confiança.
 Uma fila ativa por especialidade e unidade — restrição única parcial.
 
 **triagem** — `id`, `paciente_id`, `profissional_id`, `especialidade_destino_id`,
-`tipo_atendimento`, `prioridade`, **`motivo`** (sensível), `enquadramento_legal[]` (RN-02),
+`tipo_atendimento`, `prioridade`, **`motivo`** (sensível), `enquadramento_legal?`
+(EnquadramentoLegal, valor único conforme Tabela 9 ID07; preenchido torna a prioridade PREFERENCIAL — RN-02),
 **`justificativa_clinica?`** (obrigatória quando prioridade URGENTE, RN-03),
 **`observacoes?`** (sensível), `concluida_em`, `criado_em`.
 Os três campos em negrito só saem da API em `SenhaDetalhe` (ADR-003).
@@ -197,49 +200,51 @@ por restrição:
 | Uma senha por atendimento | `UNIQUE (senha_id)` em `atendimento` | RF-07 |
 | Estudante sem duas alocações ativas | índice único parcial `WHERE liberada_em IS NULL` | RN-05 |
 | Sala sem duas alocações ativas | índice único parcial `WHERE liberada_em IS NULL` | RN-09 |
-| Justificativa presente na reclassificação | `CHECK (length(justificativa) >= 20)` | RN-01 |
+| Justificativa presente na reclassificação | `CHECK (length(trim(justificativa)) > 0)`; o tamanho mínimo é validado no service pelo parâmetro `justificativa_min_caracteres`, editável (Tabela 8) | RN-01 |
 | Justificativa clínica presente em urgência | `CHECK (prioridade <> 'URGENTE' OR justificativa_clinica IS NOT NULL)` | RN-03 |
 | Limite de estudantes por supervisor | verificado no service, dentro da transação de alocação | RN-08 |
 | Auditoria imutável | `REVOKE UPDATE, DELETE ON audit_log` | RNF-05 |
 | Uma fila ativa por especialidade | índice único parcial `WHERE ativa` | RF-04 |
 
-O limite de supervisor (RN-08) é o único que não vira restrição declarativa, porque depende de uma
-contagem; fica dentro da mesma transação que cria a alocação, com bloqueio na linha do supervisor.
+O limite de supervisor (RN-08) e o tamanho mínimo da justificativa (RN-01) não viram restrição
+declarativa, porque dependem de contagem ou de parâmetro editável da unidade. O limite fica dentro da
+mesma transação que cria a alocação, com bloqueio na linha do supervisor.
 
 ## 5. Máquina de estados da senha (P-01)
 
 ```
-                    ┌──────────────┐
-                    │  AGUARDANDO  │◀────── retorno por tolerância (RN-12)
-                    └──────┬───────┘
-             chamar (RN-04)│
-                    ┌──────▼───────┐
-       ┌────────────│   CHAMADA    │────────────┐
-       │            └──────┬───────┘            │
-  sem recurso              │ alocar          expira tolerância
-       │                   │                    │
-┌──────▼──────────┐        │              ┌─────▼─────┐
-│AGUARDANDO_RECURSO│───────┤              │  AUSENTE  │
-└─────────────────┘        │              └───────────┘
-                    ┌──────▼─────────┐
-              ┌────▶│ EM_ATENDIMENTO │────┐
-              │     └──────┬─────────┘    │
-        retomar│           │ encerrar     │ pausar
-              │            │              │
-       ┌──────┴───┐        │        ┌─────▼────┐
-       │ PAUSADO  │◀───────┴────────│ PAUSADO  │
-       └──────────┘                 └──────────┘
-                            │
-              exige validação│  não exige
-              ┌──────────────┴───────────────┐
-      ┌───────▼────────────┐        ┌────────▼────────┐
-      │PENDENTE_VALIDACAO  │───────▶│    ENCERRADO    │
-      └────────────────────┘ valida └─────────────────┘
-              │ recusa
-              └──▶ permanece PENDENTE_VALIDACAO, com parecer registrado (RN-11)
-
-DESISTENCIA: alcançável a partir de AGUARDANDO, CHAMADA, AGUARDANDO_RECURSO e EM_ATENDIMENTO (UC-17)
+                         ┌──────────────┐
+      desistência ◀──────│  AGUARDANDO  │◀──── retorno à fila por tolerância (UC-09, RN-12)
+       (UC-17)           └──────┬───────┘
+                                │ chamar (UC-09, RN-04)
+                         ┌──────▼───────┐
+                         │   CHAMADA    │──── tolerância expira ou marcação manual ───▶ AUSENTE (UC-16)
+                         └──────┬───────┘
+                                │ alocar (UC-10)
+              sem sala compatível│
+        ┌───────────────────────┤
+┌───────▼────────────┐          │
+│ AGUARDANDO_RECURSO │──alocar──┤
+└────────────────────┘          │
+                                │ iniciar (UC-11)
+                         ┌──────▼─────────┐  pausar (UC-12)   ┌──────────┐
+      desistência ◀──────│ EM_ATENDIMENTO │──────────────────▶│ PAUSADO  │
+       (UC-17)           │                │◀──────────────────│          │
+                         └──────┬─────────┘  retomar (UC-12)  └──────────┘
+                                │ encerrar com desfecho (UC-13)
+                ┌───────────────┴────────────────┐
+                │ exige validação                │ não exige validação
+      ┌─────────▼──────────┐   supervisor   ┌────▼────────┐
+      │ PENDENTE_VALIDACAO │───── valida ──▶│  ENCERRADO  │
+      └─────────┬──────────┘    (RN-11)     └─────────────┘
+                │ recusa
+                └──▶ permanece PENDENTE_VALIDACAO, com parecer registrado (RN-11)
 ```
+
+**DESISTENCIA** é alcançável somente a partir de **AGUARDANDO** e **EM_ATENDIMENTO**, conforme a
+pré-condição do UC-17 no Documento de Requisitos. Em qualquer outro status, a desistência retorna
+`409 TRANSICAO_INVALIDA`. Um paciente já chamado que não comparece sai como AUSENTE, pelo prazo de
+tolerância (UC-16).
 
 Transições não previstas retornam `409 Conflito` com `codigo: TRANSICAO_INVALIDA`. A máquina fica
 em um único módulo do back-end e tem teste de unidade cobrindo cada aresta e cada transição

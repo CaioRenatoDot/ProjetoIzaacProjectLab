@@ -99,7 +99,7 @@ conflito constante no mesmo agregado.
 | Entrega | Rastreabilidade |
 | --- | --- |
 | Schema e migrações de fila, chamada, alocação, atendimento e encaminhamento | RF-04 a RF-08 |
-| Máquina de estados da senha, com os oito status de P-01 e transições válidas | P-01 |
+| Máquina de estados da senha, com os nove status da Tabela 11 do Documento de Requisitos e transições válidas | P-01 |
 | CRUD de filas e consulta do quadro por status, com ordenação da RN-04 | RF-04, RN-04 |
 | "Chamar próxima" com transação e bloqueio de linha, rechamada, cancelamento | RF-05, UC-09 |
 | Bloqueio de fila por ausência de supervisor e desbloqueio automático | RN-10, P-04 |
