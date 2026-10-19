@@ -34,3 +34,7 @@ pnpm-debug.log*
 
 # Prisma
 prisma/*.db
+
+# Planejamento local (Claude Code) — não versionado
+CLAUDE.md
+planejamento/
