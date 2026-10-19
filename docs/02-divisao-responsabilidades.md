@@ -132,7 +132,7 @@ Itens sem dono único, feitos em conjunto na Milestone M0:
 
 | Item | Quem |
 | --- | --- |
-| Bootstrap do monorepo, Docker Compose, CI | Caio Renato conduz; Rildo e Nathan revisam |
+| Bootstrap do monorepo, Docker Compose, CI | Caio Renato conduz a parte 1-A (base e API); Caio Gabriel conduz a parte 1-B (front, qualidade e CI) e fez o Docker Compose; Rildo e Nathan revisam (Ratificando Caio Gabriel e Caio Renato) |
 | Contrato OpenAPI inicial e geração de tipos | Rildo e Nathan escrevem; os três de front validam |
 | Seed de dados fictícios | Rildo |
 | Glossário e padrão de nomenclatura | Todos, em uma sessão |

@@ -13,7 +13,7 @@ no mesmo PR** (troque ⬜ por ✅).
 | # | Etapa | Status | Responsáveis |
 | --- | --- | --- | --- |
 | 0 | Ambiente local com Docker | ✅ | Caio Gabriel |
-| 1 | Bootstrap do monorepo | ⬜ | Caio Renato (Rildo e Nathan revisam) |
+| 1 | Bootstrap do monorepo | ⬜ | 1-A Caio Renato → 1-B Caio Gabriel (Rildo e Nathan revisam, Ratificando Caio Gabriel e Caio Renato) |
 | 2 | Banco de dados e seed | ⬜ | Rildo, Nathan |
 | 3 | Acesso, permissões e auditoria | ⬜ | Rildo (back), Caio Gabriel e Caio Renato (front) |
 | 4 | Cadastros base | ⬜ | Rildo (back), Caio Gabriel (front) |
@@ -80,13 +80,29 @@ ADR-003 e templates de issue e PR.
 Objetivo: estrutura de pastas e ferramentas que todos vão usar.
 **Pronto quando:** `pnpm dev` sobe as três aplicações e o CI fica verde na branch principal.
 
+A etapa é dividida em duas partes sequenciais. A **1-B começa depois que a 1-A estiver mergeada**,
+porque depende da raiz do monorepo e dos pacotes compartilhados.
+Revisão: Rildo e Nathan (Ratificando Caio Gabriel e Caio Renato). Nesta etapa, a revisão é cruzada
+entre os dois Caios.
+
+#### Parte 1-A · Base do monorepo e API · Caio Renato
+
 | Parte | Descrição | Responsável |
 | --- | --- | --- |
 | 1.1 | pnpm workspaces + Turborepo + `packages/tsconfig` + `packages/eslint-config` | Caio Renato |
 | 1.2 | `apps/api` em NestJS 11, com `GET /health` e `GET /health/ready` | Caio Renato |
-| 1.3 | `apps/web` (porta 3000) e `apps/publico` (porta 3001) em Next.js 15 | Caio Renato |
-| 1.4 | `packages/contracts` (schemas Zod) e `packages/ui` (design system) | Caio Renato |
-| 1.5 | Prettier, Husky, lint-staged, Commitlint e GitHub Actions (lint, teste, build) | Caio Renato |
+| 1.3 | `packages/contracts` (schemas Zod) e `packages/ui` (design system, esqueleto) | Caio Renato |
+
+**Pronto quando:** `pnpm install` e `pnpm --filter api dev` funcionam, e `GET /api/v1/health` responde 200.
+
+#### Parte 1-B · Aplicações front, qualidade e CI · Caio Gabriel
+
+| Parte | Descrição | Responsável |
+| --- | --- | --- |
+| 1.4 | `apps/web` (porta 3000) e `apps/publico` (porta 3001) em Next.js 15, consumindo `packages/ui` | Caio Gabriel |
+| 1.5 | Prettier, Husky, lint-staged, Commitlint e GitHub Actions (lint, teste, build) | Caio Gabriel |
+
+**Pronto quando:** `pnpm dev` sobe as três aplicações, um commit fora do padrão é recusado e o CI fica verde no PR.
 
 ### Etapa 2 · Banco de dados e seed
 
@@ -204,8 +220,8 @@ Objetivo: garantir que o sistema funciona e está pronto para a demonstração.
 
 | Integrante | Partes |
 | --- | --- |
-| Caio Renato | 1.1–1.5, 3.4, 6.4, 7.3, 7.4 · ⭐ 7.5, 9.1 |
-| Caio Gabriel | 0.1–0.3, 3.3, 3.5, 4.2, 4.3, 5.3, 5.4 · ⭐ 3.6 |
+| Caio Renato | 1.1–1.3 (1-A), 3.4, 6.4, 7.3, 7.4 · ⭐ 7.5, 9.1 |
+| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4 · ⭐ 3.6 |
 | Thalita | 6.5, 8.3, 10.2 · ⭐ 9.2–9.5 |
 | Rildo | 2.1, 2.3, 2.4, 3.1, 3.2, 4.1, 5.1, 5.2, 8.1, 8.2 · ⭐ 3.6, 9.2, 9.4 |
 | Nathan | 2.2, 2.3, 6.1–6.3, 7.1, 7.2, 8.1 · ⭐ 7.5, 9.1, 9.3 |
