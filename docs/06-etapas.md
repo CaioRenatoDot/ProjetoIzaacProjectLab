@@ -8,6 +8,31 @@ no mesmo PR** (troque ⬜ por ✅).
 
 ---
 
+## Leitura antes de começar
+
+**A fonte principal do projeto é o
+[Documento de Requisitos de Sistema](../especificacao/Documento%20de%20Requisitos%20de%20Sistema.pdf)**
+(`especificacao/`). Se algum arquivo de `docs/` divergir dele, prevalece o PDF.
+
+Antes de pegar **qualquer** issue, leia:
+
+| Ordem | Arquivo | Para quê |
+| --- | --- | --- |
+| 1 | `especificacao/Documento de Requisitos de Sistema.pdf` | Regras, casos de uso, dados e telas: a fonte de verdade |
+| 2 | `README.md` | Visão geral, stack, portas e comandos |
+| 3 | `docs/06-etapas.md` (este arquivo) | Onde a sua parte se encaixa e o que vem depois |
+| 4 | `docs/05-fluxo-github.md` §2 a §4 | Branch, padrão de commit e PR |
+
+E, conforme a sua frente:
+
+| Frente | Leitura complementar |
+| --- | --- |
+| Infra / bootstrap (Etapa 1) | `docs/01-arquitetura.md` §1 a §3 · `docs/adr/ADR-001-stack.md` · PDF §7.5 (Tabela B) |
+| Back-end | `docs/01-arquitetura.md` §3 e §4 · `docs/03-modelo-de-dados.md` · `docs/04-contrato-api.md` · `docs/api/openapi.yaml` · `docs/adr/ADR-003` · PDF seções 5 e 6 |
+| Front-end | `docs/adr/ADR-002` · `docs/adr/ADR-003` · `docs/04-contrato-api.md` · PDF seção 6 e Apêndice A · `especificacao/wireframes_ui_v2.pdf` · `especificacao/especificacao_ui.pdf` |
+
+---
+
 ## Visão geral
 
 | # | Etapa | Status | Responsáveis |
