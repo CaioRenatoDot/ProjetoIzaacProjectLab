@@ -1958,6 +1958,7 @@ paths:
       tags: [Público]
       summary: Liveness
       operationId: liveness
+      description: Responde sem tocar no banco (RNF-04). Toda resposta da API traz `X-Request-Id`.
       security: []
       responses:
         '200':
@@ -1968,6 +1969,36 @@ paths:
                 type: object
                 properties:
                   status: { type: string, example: ok }
+
+  /health/ready:
+    get:
+      tags: [Público]
+      summary: Readiness
+      operationId: readiness
+      description: |
+        Verifica se o banco responde (`SELECT 1`), com tempo limite de 3 s (RNF-04).
+        A verificação de migrações aplicadas entra junto com o schema, na Etapa 2.
+      security: []
+      responses:
+        '200':
+          description: Aplicação pronta para receber tráfego
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: ok }
+        '503':
+          description: Banco indisponível
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Problema' }
+              example:
+                type: about:blank
+                title: Serviço indisponível
+                status: 503
+                detail: O banco de dados não respondeu. Tente novamente em instantes.
+                codigo: BANCO_INDISPONIVEL
 
 components:
   securitySchemes:

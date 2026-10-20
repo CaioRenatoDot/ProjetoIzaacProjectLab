@@ -1,0 +1,10 @@
+// Schema mínimo da Etapa 1. Os modelos entram na Etapa 2 (docs/03-modelo-de-dados.md).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}

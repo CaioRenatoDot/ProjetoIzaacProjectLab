@@ -38,7 +38,7 @@ E, conforme a sua frente:
 | # | Etapa | Status | Responsáveis |
 | --- | --- | --- | --- |
 | 0 | Ambiente local com Docker | ✅ | Caio Gabriel |
-| 1 | Bootstrap do monorepo | ⬜ | 1-A Caio Renato → 1-B Caio Gabriel (Rildo e Nathan revisam, Ratificando Caio Gabriel e Caio Renato) |
+| 1 | Bootstrap do monorepo | 🔄 | 1-A Caio Renato → 1-B Caio Gabriel (Rildo e Nathan revisam, Ratificando Caio Gabriel e Caio Renato) |
 | 2 | Banco de dados e seed | ⬜ | Rildo, Nathan |
 | 3 | Acesso, permissões e auditoria | ⬜ | Rildo (back), Caio Gabriel e Caio Renato (front) |
 | 4 | Cadastros base | ⬜ | Rildo (back), Caio Gabriel (front) |
@@ -114,9 +114,9 @@ entre os dois Caios.
 
 | Parte | Descrição | Responsável |
 | --- | --- | --- |
-| 1.1 | pnpm workspaces + Turborepo + `packages/tsconfig` + `packages/eslint-config` | Caio Renato |
-| 1.2 | `apps/api` em NestJS 11, com `GET /health` e `GET /health/ready` | Caio Renato |
-| 1.3 | `packages/contracts` (schemas Zod) e `packages/ui` (design system, esqueleto) | Caio Renato |
+| 1.1 | pnpm workspaces + Turborepo + `packages/tsconfig` + `packages/eslint-config` | Caio Renato ✅ |
+| 1.2 | `apps/api` em NestJS 11, com `GET /health` e `GET /health/ready` | Caio Renato ✅ |
+| 1.3 | `packages/contracts` (schemas Zod) e `packages/ui` (design system, esqueleto) | Caio Renato ✅ |
 
 **Pronto quando:** `pnpm install` e `pnpm --filter api dev` funcionam, e `GET /api/v1/health` responde 200.
 
