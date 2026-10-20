@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+
+/*
+ * Escala tipográfica própria da aplicação pública (docs/01-arquitetura.md §1; P-02, RNF-06):
+ * telão em 1920 × 1080 com número da senha de no mínimo 96 px, e consulta no celular com corpo
+ * mínimo de 18 px. Contraste alvo de 7:1.
+ */
+@theme {
+  --text-senha-telao: 6rem;
+  --text-telao: 2.5rem;
+  --text-consulta: 1.125rem;
+}
+
+@layer base {
+  html {
+    font-size: 16px;
+  }
+}
