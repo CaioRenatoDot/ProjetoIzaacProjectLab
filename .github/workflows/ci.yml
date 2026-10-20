@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Lint, typecheck, testes, build e contrato
+    runs-on: ubuntu-latest
+    env:
+      # Variáveis mínimas para o build da API; os testes de integração usam banco próprio quando existirem.
+      DATABASE_URL: postgresql://filas:filas@localhost:5432/filas_dev?schema=public
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      - run: pnpm build
+
+      - name: Validar contrato da API (docs/api/openapi.yaml)
+        run: pnpm contract:lint

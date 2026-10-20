@@ -1,0 +1,8 @@
+@import 'tailwindcss';
+
+/* Base operacional: corpo nunca abaixo de 16 px (especificação de UI §2.2, RNF-06). */
+@layer base {
+  html {
+    font-size: 16px;
+  }
+}
