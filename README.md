@@ -7,35 +7,35 @@ e trilha de auditoria.
 
 ## Andamento
 
-| # | Etapa | Status |
-| --- | --- | --- |
-| 0 | Ambiente local com Docker | ✅ |
-| 1 | Bootstrap do monorepo | ⬜ |
-| 2 | Banco de dados e seed | ⬜ |
-| 3 | Acesso, permissões e auditoria | ⬜ |
-| 4 | Cadastros base | ⬜ |
-| 5 | Triagem e emissão de senha | ⬜ |
-| 6 | Fila, chamada e telão | ⬜ |
-| 7 | Alocação e atendimento | ⬜ |
-| 8 | Ausências e desistências | ⬜ |
-| 9 | Funcionalidades extras ⭐ | ⬜ |
-| 10 | Qualidade e entrega | ⬜ |
+| #   | Etapa                          | Status |
+| --- | ------------------------------ | ------ |
+| 0   | Ambiente local com Docker      | ✅     |
+| 1   | Bootstrap do monorepo          | ⬜     |
+| 2   | Banco de dados e seed          | ⬜     |
+| 3   | Acesso, permissões e auditoria | ⬜     |
+| 4   | Cadastros base                 | ⬜     |
+| 5   | Triagem e emissão de senha     | ⬜     |
+| 6   | Fila, chamada e telão          | ⬜     |
+| 7   | Alocação e atendimento         | ⬜     |
+| 8   | Ausências e desistências       | ⬜     |
+| 9   | Funcionalidades extras ⭐      | ⬜     |
+| 10  | Qualidade e entrega            | ⬜     |
 
 Partes, responsáveis e critérios de pronto em **[docs/06-etapas.md](docs/06-etapas.md)**.
 
 ## Documentação do projeto
 
-| Documento | Conteúdo |
-| --- | --- |
-| [docs/01-arquitetura.md](docs/01-arquitetura.md) | Stack escolhida, estrutura do monorepo, decisões transversais |
-| [docs/02-divisao-responsabilidades.md](docs/02-divisao-responsabilidades.md) | Quem faz o quê, por módulo e por tela |
-| [docs/03-modelo-de-dados.md](docs/03-modelo-de-dados.md) | Entidades, relacionamentos, enums e invariantes |
-| [docs/04-contrato-api.md](docs/04-contrato-api.md) | Convenções REST, autenticação, erros, eventos de tempo real |
-| [docs/api/openapi.yaml](docs/api/openapi.yaml) | Contrato formal da API (OpenAPI 3.1) |
-| [docs/05-fluxo-github.md](docs/05-fluxo-github.md) | Branches, commits, PRs, labels, milestones, Definition of Done |
-| [docs/06-etapas.md](docs/06-etapas.md) | Etapas do MVP: o que está feito, o que falta e quem faz |
-| [docs/adr/](docs/adr/) | Registros de decisão de arquitetura |
-| [especificacao/](especificacao/) | Documentos originais entregues pelo cliente (requisitos, casos de uso, UI, wireframes) |
+| Documento                                                                    | Conteúdo                                                                               |
+| ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| [docs/01-arquitetura.md](docs/01-arquitetura.md)                             | Stack escolhida, estrutura do monorepo, decisões transversais                          |
+| [docs/02-divisao-responsabilidades.md](docs/02-divisao-responsabilidades.md) | Quem faz o quê, por módulo e por tela                                                  |
+| [docs/03-modelo-de-dados.md](docs/03-modelo-de-dados.md)                     | Entidades, relacionamentos, enums e invariantes                                        |
+| [docs/04-contrato-api.md](docs/04-contrato-api.md)                           | Convenções REST, autenticação, erros, eventos de tempo real                            |
+| [docs/api/openapi.yaml](docs/api/openapi.yaml)                               | Contrato formal da API (OpenAPI 3.1)                                                   |
+| [docs/05-fluxo-github.md](docs/05-fluxo-github.md)                           | Branches, commits, PRs, labels, milestones, Definition of Done                         |
+| [docs/06-etapas.md](docs/06-etapas.md)                                       | Etapas do MVP: o que está feito, o que falta e quem faz                                |
+| [docs/adr/](docs/adr/)                                                       | Registros de decisão de arquitetura                                                    |
+| [especificacao/](especificacao/)                                             | Documentos originais entregues pelo cliente (requisitos, casos de uso, UI, wireframes) |
 
 ## Rastreabilidade
 
@@ -52,42 +52,60 @@ Nenhuma issue entra no backlog sem pelo menos um identificador de rastreabilidad
 
 ## Stack
 
-| Camada | Tecnologia |
-| --- | --- |
-| Front-end operacional | Next.js 15 (App Router) + React 19 + TypeScript |
-| Front-end público | Next.js 15 (aplicação separada, sem autenticação) |
-| Back-end | NestJS 11 + TypeScript |
-| Banco de dados | PostgreSQL 16 |
-| ORM | Prisma |
-| Tempo real | Socket.IO |
-| Monorepo | pnpm workspaces + Turborepo |
-| Testes | Vitest (unidade), Supertest (integração), Playwright (E2E) |
+| Camada                | Tecnologia                                                 |
+| --------------------- | ---------------------------------------------------------- |
+| Front-end operacional | Next.js 15 (App Router) + React 19 + TypeScript            |
+| Front-end público     | Next.js 15 (aplicação separada, sem autenticação)          |
+| Back-end              | NestJS 11 + TypeScript                                     |
+| Banco de dados        | PostgreSQL 16                                              |
+| ORM                   | Prisma                                                     |
+| Tempo real            | Socket.IO                                                  |
+| Monorepo              | pnpm workspaces + Turborepo                                |
+| Testes                | Vitest (unidade), Supertest (integração), Playwright (E2E) |
 
 Detalhes e justificativas em [docs/01-arquitetura.md](docs/01-arquitetura.md).
 
 ## Time
 
-| Integrante | Frente |
-| --- | --- |
-| Caio Renato dos Santos Claudino | Front-end — núcleo operacional + tech lead |
-| Caio Gabriel Pereira de Menezes Correia | Front-end — acesso, cadastros e triagem |
-| Thalita Pereira de Andrade | Front-end — públicos e gestão + QA |
-| Rildo Silva de Lima Junior | Back-end — acesso, cadastros, triagem e registros |
-| Nathan Rodrigues da Costa Silva | Back-end — fila, atendimento e tempo real |
+| Integrante                              | Frente                                            |
+| --------------------------------------- | ------------------------------------------------- |
+| Caio Renato dos Santos Claudino         | Front-end — núcleo operacional + tech lead        |
+| Caio Gabriel Pereira de Menezes Correia | Front-end — acesso, cadastros e triagem           |
+| Thalita Pereira de Andrade              | Front-end — públicos e gestão + QA                |
+| Rildo Silva de Lima Junior              | Back-end — acesso, cadastros, triagem e registros |
+| Nathan Rodrigues da Costa Silva         | Back-end — fila, atendimento e tempo real         |
 
 Detalhamento em [docs/02-divisao-responsabilidades.md](docs/02-divisao-responsabilidades.md).
 
 ## Como rodar (após a issue de bootstrap)
 
+Pré-requisitos: Docker Desktop (no Windows, com WSL2), Node 22 ou superior e pnpm 10.
+
 ```bash
-pnpm install
-docker compose up -d          # PostgreSQL
+cp .env.example .env          # no PowerShell: Copy-Item .env.example .env
+docker compose up -d          # PostgreSQL e Adminer
+pnpm install                  # instala dependências e os hooks do Husky
 pnpm --filter api prisma migrate dev
 pnpm dev                      # sobe api, web e publico
 ```
 
-| Aplicação | Porta |
-| --- | --- |
-| API | 3333 |
-| Web (operacional) | 3000 |
-| Público (telão + consulta de senha) | 3001 |
+Qualidade (o CI roda os mesmos comandos em todo PR):
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+pnpm contract:lint            # valida docs/api/openapi.yaml
+pnpm format                   # formata com Prettier
+```
+
+Os commits passam pelo Commitlint (Conventional Commits, escopos de `docs/05-fluxo-github.md` §3) e
+pelo lint-staged, que aplica ESLint e Prettier só nos arquivos alterados.
+
+| Aplicação                           | Porta                         |
+| ----------------------------------- | ----------------------------- |
+| API                                 | 3333                          |
+| Web (operacional)                   | 3000                          |
+| Público (telão + consulta de senha) | 3001 (`/telao` e `/consulta`) |
+| Adminer                             | 8080                          |
