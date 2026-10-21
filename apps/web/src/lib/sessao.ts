@@ -1,3 +1,4 @@
+import { BLOCOS, INDICADORES } from './home';
 import { MODULOS } from './modulos';
 
 /** Dados da sessão exibidos no shell, a partir do access token (docs/04-contrato-api.md §2). */
@@ -17,6 +18,12 @@ export function obterSessaoProvisoria(): Sessao {
     nome: 'Usuário de desenvolvimento',
     perfilNome: 'Administração',
     unidadeNome: 'Clínica-Escola',
-    permissoes: MODULOS.map((m) => m.permissao),
+    permissoes: [
+      ...new Set([
+        ...MODULOS.map((m) => m.permissao),
+        ...BLOCOS.flatMap((b) => [b.permissao, ...(b.acao ? [b.acao.permissao] : [])]),
+        ...INDICADORES.map((i) => i.permissao),
+      ]),
+    ],
   };
 }
