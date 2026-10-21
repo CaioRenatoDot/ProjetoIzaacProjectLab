@@ -7,6 +7,12 @@ export {
   useConexao,
 } from './conexao.js';
 export {
+  APRESENTACAO_STATUS,
+  type ApresentacaoStatus,
+  EtiquetaStatus,
+  type EtiquetaStatusProps,
+} from './etiqueta-status.js';
+export {
   EstadoCarregando,
   type EstadoCarregandoProps,
   EstadoErro,

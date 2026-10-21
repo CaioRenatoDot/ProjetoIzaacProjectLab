@@ -41,6 +41,7 @@
     "vitest": "4.1.12"
   },
   "dependencies": {
+    "@filas/contracts": "workspace:*",
     "@radix-ui/react-dialog": "1.3.1",
     "@radix-ui/react-toast": "1.3.1"
   }
