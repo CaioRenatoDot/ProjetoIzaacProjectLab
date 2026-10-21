@@ -46,6 +46,7 @@ export function obterSessaoProvisoria(): Sessao {
         'perfis:criar',
         'perfis:editar',
         'perfis:excluir',
+        'senha:reclassificar',
       ]),
     ],
   };

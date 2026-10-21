@@ -173,12 +173,12 @@ Objetivo: cadastrar paciente, estudante, supervisor, sala e especialidade.
 Objetivo: paciente triado recebe senha posicionada na fila.
 **Pronto quando:** a triagem gera senha com a prioridade correta e a reclassificação fica auditada.
 
-| Parte | Descrição                                                                                          | Responsável  |
-| ----- | -------------------------------------------------------------------------------------------------- | ------------ |
-| 5.1   | API de triagem: prioridade legal automática (RN-02), justificativa obrigatória em urgência (RN-03) | Rildo        |
-| 5.2   | Emissão de senha (ex.: F014) e reclassificação com justificativa (RN-01, RN-04)                    | Rildo        |
-| 5.3   | Tela W-06 · Busca de paciente e ficha de triagem                                                   | Caio Gabriel |
-| 5.4   | Tela W-07 · Senha emitida e modal de reclassificação                                               | Caio Gabriel |
+| Parte | Descrição                                                                                          | Responsável    |
+| ----- | -------------------------------------------------------------------------------------------------- | -------------- |
+| 5.1   | API de triagem: prioridade legal automática (RN-02), justificativa obrigatória em urgência (RN-03) | Rildo          |
+| 5.2   | Emissão de senha (ex.: F014) e reclassificação com justificativa (RN-01, RN-04)                    | Rildo          |
+| 5.3   | Tela W-06 · Busca de paciente e ficha de triagem                                                   | Caio Renato ✅ |
+| 5.4   | Tela W-07 · Senha emitida e modal de reclassificação                                               | Caio Renato ✅ |
 
 ### Etapa 6 · Fila, chamada e telão
 

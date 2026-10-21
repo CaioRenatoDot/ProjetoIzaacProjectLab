@@ -16,6 +16,8 @@ export {
   type EstadoVazioProps,
 } from './estados.js';
 export {
+  Modal,
+  type ModalProps,
   ModalConfirmacao,
   type ModalConfirmacaoProps,
   ModalJustificativa,
