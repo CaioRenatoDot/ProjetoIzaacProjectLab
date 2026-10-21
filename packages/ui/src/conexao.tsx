@@ -28,7 +28,7 @@ export function BannerConexao() {
   const { conectado } = useConexao();
   if (conectado) return null;
   return (
-    <div role="alert" className="bg-amber-100 px-4 py-2 text-center text-amber-950">
+    <div role="alert" className="bg-alerta-fundo px-4 py-2 text-center text-alerta-texto">
       Conexão perdida. Os dados podem estar desatualizados e as ações de alteração estão pausadas
       até a conexão voltar.
     </div>

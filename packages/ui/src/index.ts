@@ -1,4 +1,5 @@
-export { Button, type ButtonProps, type ButtonVariante } from './button.js';
+export { Button, type ButtonProps, type ButtonVariante, classesBotao } from './button.js';
+export { classeCampo, ErroCampo, type ErroCampoProps } from './campo.js';
 export {
   BannerConexao,
   ConexaoProvider,

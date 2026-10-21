@@ -1,0 +1,33 @@
+/*
+ * Tokens do design system (especificação de UI §2.1 a §2.3, RNF-06).
+ * Contraste sobre branco: texto >= 4.5:1; borda de controle >= 3:1 (WCAG 1.4.11).
+ */
+@theme {
+  /* Cores funcionais */
+  --color-primaria: #0f172a; /* 17.8:1 */
+  --color-primaria-hover: #334155;
+  --color-superficie: #ffffff;
+  --color-superficie-elevada: #f1f5f9;
+  --color-superficie-hover: #e2e8f0;
+  --color-borda: #64748b; /* 4.8:1 */
+  --color-borda-suave: #cbd5e1; /* divisória decorativa, não delimita controle */
+  --color-texto: #0f172a; /* 17.8:1 */
+  --color-texto-secundario: #334155; /* 10.4:1 */
+  --color-texto-invertido: #ffffff;
+  --color-sucesso: #15803d; /* 5.0:1 */
+  --color-erro: #b91c1c; /* 6.5:1 */
+  --color-erro-hover: #991b1b;
+  --color-alerta-fundo: #fef3c7;
+  --color-alerta-texto: #451a03; /* 15.9:1 sobre o fundo de alerta */
+  --color-informacao: #1d4ed8; /* 6.7:1 */
+
+  /* Escala tipográfica: corpo nunca abaixo de 16 px em telas operacionais */
+  --text-rotulo: 0.8125rem; /* 13 px */
+  --text-secundario: 0.875rem; /* 14 px */
+  --text-corpo: 1rem; /* 16 px */
+  --text-secao: 1.25rem; /* 20 px */
+  --text-pagina: 1.75rem; /* 28 px */
+
+  /* Área de toque mínima de 44 x 44 px */
+  --spacing-toque: 2.75rem;
+}

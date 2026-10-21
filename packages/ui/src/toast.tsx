@@ -22,9 +22,9 @@ export const DURACAO_TOAST_MS = 5000;
 const ToastContext = createContext<((opcoes: ToastOpcoes) => void) | null>(null);
 
 const classePorTipo: Record<ToastTipo, string> = {
-  sucesso: 'border-green-700',
-  info: 'border-slate-400',
-  erro: 'border-red-700',
+  sucesso: 'border-sucesso',
+  info: 'border-borda',
+  erro: 'border-erro',
 };
 
 let proximoId = 0;
@@ -52,20 +52,23 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             type={t.tipo === 'erro' ? 'foreground' : 'background'}
             duration={t.irreversivel ? Infinity : DURACAO_TOAST_MS}
             onOpenChange={(aberto) => !aberto && remover(t.id)}
-            className={`flex items-start gap-3 rounded-md border-l-4 bg-white p-4 shadow-lg ${classePorTipo[t.tipo]}`}
+            className={`flex items-start gap-3 rounded-md border-l-4 bg-superficie p-4 shadow-lg ${classePorTipo[t.tipo]}`}
           >
-            <RadixToast.Description className="flex-1 text-slate-900">
+            <RadixToast.Description className="flex-1 text-texto">
               {t.mensagem}
             </RadixToast.Description>
             <RadixToast.Close
               aria-label="Fechar notificação"
-              className="rounded px-2 text-slate-700 hover:bg-slate-100"
+              className="inline-flex min-h-toque min-w-toque items-center justify-center rounded text-texto-secundario hover:bg-superficie-elevada"
             >
               ×
             </RadixToast.Close>
           </RadixToast.Root>
         ))}
-        <RadixToast.Viewport className="fixed right-4 bottom-4 z-50 flex w-96 max-w-[calc(100%-2rem)] flex-col gap-2" />
+        <RadixToast.Viewport
+          label="Notificações ({hotkey})"
+          className="fixed right-4 bottom-4 z-50 flex w-96 max-w-[calc(100%-2rem)] flex-col gap-2"
+        />
       </RadixToast.Provider>
     </ToastContext.Provider>
   );

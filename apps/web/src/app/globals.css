@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@filas/ui/tema.css';
 
 /* Classes usadas pelos componentes do design system. */
 @source '../../../../packages/ui/src';

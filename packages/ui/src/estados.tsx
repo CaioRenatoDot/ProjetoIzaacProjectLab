@@ -15,7 +15,7 @@ export function EstadoCarregando({ linhas = 3, rotulo = 'Carregando' }: EstadoCa
     <div role="status" aria-busy="true" className="flex flex-col gap-3 py-4">
       <span className="sr-only">{rotulo}</span>
       {Array.from({ length: linhas }, (_, i) => (
-        <div key={i} aria-hidden="true" className="h-4 animate-pulse rounded bg-slate-200" />
+        <div key={i} aria-hidden="true" className="h-4 animate-pulse rounded bg-superficie-hover" />
       ))}
     </div>
   );
@@ -30,8 +30,8 @@ export interface EstadoVazioProps {
 export function EstadoVazio({ titulo, descricao, acao }: EstadoVazioProps) {
   return (
     <div className="flex flex-col items-center gap-2 py-10 text-center">
-      <p className="text-lg font-semibold text-slate-900">{titulo}</p>
-      {descricao && <p className="text-slate-700">{descricao}</p>}
+      <p className="text-secao font-semibold text-texto">{titulo}</p>
+      {descricao && <p className="text-texto-secundario">{descricao}</p>}
       {acao}
     </div>
   );
@@ -46,11 +46,8 @@ export interface EstadoErroProps {
 export function EstadoErro({ mensagem, onTentarNovamente }: EstadoErroProps) {
   return (
     <div role="alert" className="flex flex-col items-center gap-3 py-10 text-center">
-      <p className="text-slate-900">{mensagem}</p>
-      <Button
-        onClick={onTentarNovamente}
-        className="rounded-md border border-slate-400 px-4 py-2 text-slate-900 hover:bg-slate-100"
-      >
+      <p className="text-texto">{mensagem}</p>
+      <Button variante="secundario" onClick={onTentarNovamente}>
         Tentar novamente
       </Button>
     </div>
@@ -64,8 +61,8 @@ export function EstadoErro({ mensagem, onTentarNovamente }: EstadoErroProps) {
 export function EstadoSemPermissao() {
   return (
     <div className="flex flex-col items-center gap-2 py-10 text-center">
-      <p className="text-lg font-semibold text-slate-900">Acesso não permitido</p>
-      <p className="text-slate-700">
+      <p className="text-secao font-semibold text-texto">Acesso não permitido</p>
+      <p className="text-texto-secundario">
         Seu perfil não tem acesso a este conteúdo. Se precisar dele, procure a administração da
         unidade.
       </p>
