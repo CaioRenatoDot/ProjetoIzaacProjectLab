@@ -153,7 +153,7 @@ Objetivo: usuário entra no sistema e só vê o que o perfil permite; ações se
 | 3.1    | Login com JWT + refresh em cookie, bloqueio após 5 tentativas              | Rildo               |
 | 3.2    | Guard de permissão (`modulo:operacao`) e interceptador global de auditoria | Rildo               |
 | 3.3    | Tela W-01 · Login (erro genérico, sessão expirada)                         | Caio Gabriel        |
-| 3.4    | Shell da aplicação: barra superior e menu lateral filtrado por permissão   | Caio Renato         |
+| 3.4    | Shell da aplicação: barra superior e menu lateral filtrado por permissão   | Caio Renato ✅      |
 | 3.5    | Tela W-02 · Home por perfil                                                | Caio Gabriel        |
 | ⭐ 3.6 | Tela W-05 · Perfis e matriz de permissões editável                         | Caio Gabriel, Rildo |
 

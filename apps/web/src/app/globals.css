@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* Classes usadas pelos componentes do design system. */
+@source '../../../../packages/ui/src';
+
 /* Base operacional: corpo nunca abaixo de 16 px (especificação de UI §2.2, RNF-06). */
 @layer base {
   html {
