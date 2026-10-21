@@ -23,6 +23,9 @@ export function obterSessaoProvisoria(): Sessao {
         ...MODULOS.map((m) => m.permissao),
         ...BLOCOS.flatMap((b) => [b.permissao, ...(b.acao ? [b.acao.permissao] : [])]),
         ...INDICADORES.map((i) => i.permissao),
+        'perfis:criar',
+        'perfis:editar',
+        'perfis:excluir',
       ]),
     ],
   };
