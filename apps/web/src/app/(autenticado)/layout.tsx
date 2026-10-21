@@ -1,8 +1,7 @@
 import { type ReactNode } from 'react';
 
-import { Shell } from '@/components/shell';
-import { obterSessao } from '@/lib/sessao';
+import { AreaAutenticada } from '@/components/area-autenticada';
 
-export default async function LayoutAutenticado({ children }: { children: ReactNode }) {
-  return <Shell sessao={await obterSessao()}>{children}</Shell>;
+export default function LayoutAutenticado({ children }: { children: ReactNode }) {
+  return <AreaAutenticada>{children}</AreaAutenticada>;
 }

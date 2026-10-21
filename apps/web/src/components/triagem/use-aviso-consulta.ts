@@ -4,7 +4,7 @@ const CHAVE = 'filas-aviso-consulta-registrada';
 
 /**
  * Aviso de que consultas a dado clínico são registradas, exibido uma vez por sessão (§3.4, RNF-07).
- * Provisório: "sessão" é a aba do navegador até a sessão real (#33) existir.
+ * A sessão chama `reiniciarAvisoConsulta` ao entrar e ao sair, então o aviso reaparece a cada login.
  */
 export function useAvisoConsultaRegistrada() {
   const [exibir, setExibir] = useState(false);
@@ -22,4 +22,12 @@ export function useAvisoConsultaRegistrada() {
   }, []);
 
   return exibir;
+}
+
+export function reiniciarAvisoConsulta() {
+  try {
+    window.sessionStorage.removeItem(CHAVE);
+  } catch {
+    // Sem storage disponível, não há o que reiniciar.
+  }
 }

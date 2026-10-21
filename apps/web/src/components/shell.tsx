@@ -8,14 +8,15 @@ import {
   ToastProvider,
 } from '@filas/ui';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
 
 import { modulosVisiveis } from '@/lib/modulos';
-import { type Sessao } from '@/lib/sessao';
+import { useSessao } from '@/lib/sessao/sessao';
+import { type UsuarioSessao } from '@/lib/sessao/tipos';
 
 export interface ShellProps {
-  sessao: Sessao;
+  sessao: UsuarioSessao;
   children: ReactNode;
 }
 
@@ -25,7 +26,7 @@ export interface ShellProps {
  */
 export function Shell({ sessao, children }: ShellProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const { sair } = useSessao();
   const desktop = useDesktop();
   const [menuAberto, setMenuAberto] = useState(false);
   const [menuFixoRecolhido, setMenuFixoRecolhido] = useState(false);
@@ -34,11 +35,6 @@ export function Shell({ sessao, children }: ShellProps) {
   function alternarMenu() {
     if (desktop) setMenuFixoRecolhido((r) => !r);
     else setMenuAberto((a) => !a);
-  }
-
-  function sair() {
-    // Encerrar a sessão no servidor entra com a parte 3.3 (#33).
-    router.push('/login');
   }
 
   const visivelNoDesktop = menuFixoRecolhido ? 'xl:hidden' : 'xl:flex';
@@ -73,7 +69,7 @@ export function Shell({ sessao, children }: ShellProps) {
                     Perfil: {sessao.perfilNome}
                   </span>
                 </span>
-                <Button onClick={sair} variante="secundario">
+                <Button onClick={() => void sair()} variante="secundario">
                   Sair
                 </Button>
               </div>

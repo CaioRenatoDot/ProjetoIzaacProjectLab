@@ -1,12 +1,30 @@
 import AxeBuilder from '@axe-core/playwright';
-import { type BrowserContext, expect, type Page } from '@playwright/test';
+import { test as base, type BrowserContext, expect, type Page } from '@playwright/test';
 
-import { COOKIE_PERMISSOES_DEV } from '../src/lib/sessao';
+import { COOKIE_PERMISSOES_DEV, COOKIE_REFRESH_MOCK } from '../src/mocks/cookies';
 
-/** Simula um perfil pelas permissões até a sessão real existir (#33). */
+const URL_WEB = 'http://localhost:3000';
+
+/**
+ * `test` com sessão: o cookie de refresh da simulação (`src/mocks`) restaura a sessão do
+ * administrador ao abrir qualquer página. Testes do próprio login usam o `test` do Playwright.
+ */
+export const test = base.extend<{ sessaoSimulada: void }>({
+  sessaoSimulada: [
+    async ({ context }, use) => {
+      await context.addCookies([
+        { name: COOKIE_REFRESH_MOCK, value: 'usuario-admin', url: URL_WEB },
+      ]);
+      await use();
+    },
+    { auto: true },
+  ],
+});
+
+/** Simula um perfil pelas permissões. Até a API real (#10), troca as permissões na simulação. */
 export async function entrarComPermissoes(context: BrowserContext, permissoes: string[]) {
   await context.addCookies([
-    { name: COOKIE_PERMISSOES_DEV, value: permissoes.join(','), url: 'http://localhost:3000' },
+    { name: COOKIE_PERMISSOES_DEV, value: permissoes.join(','), url: URL_WEB },
   ]);
 }
 
