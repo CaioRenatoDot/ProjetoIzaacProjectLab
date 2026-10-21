@@ -6,6 +6,7 @@ const PORTA = 3000;
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.e2e.ts',
+  globalSetup: './e2e/aquecer-rotas.ts',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

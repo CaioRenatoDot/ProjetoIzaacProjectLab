@@ -6,7 +6,7 @@ import { type ReactNode, useId, useRef, useState } from 'react';
 import { Button } from './button.js';
 import { classeCampo, ErroCampo } from './campo.js';
 
-interface ModalBaseProps {
+export interface ModalProps {
   aberto: boolean;
   onAbertoChange: (aberto: boolean) => void;
   titulo: string;
@@ -18,7 +18,7 @@ interface ModalBaseProps {
  * Radix Dialog prende o foco no modal. Como os modais são controlados (sem Dialog.Trigger),
  * o elemento de origem é guardado na abertura e recebe o foco de volta ao fechar (RNF-06).
  */
-function ModalBase({ aberto, onAbertoChange, titulo, descricao, children }: ModalBaseProps) {
+export function Modal({ aberto, onAbertoChange, titulo, descricao, children }: ModalProps) {
   const origem = useRef<HTMLElement | null>(null);
 
   return (
@@ -49,7 +49,7 @@ function ModalBase({ aberto, onAbertoChange, titulo, descricao, children }: Moda
   );
 }
 
-export interface ModalConfirmacaoProps extends Omit<ModalBaseProps, 'children'> {
+export interface ModalConfirmacaoProps extends Omit<ModalProps, 'children'> {
   rotuloConfirmar?: string;
   destrutiva?: boolean;
   onConfirmar: () => void;
@@ -62,7 +62,7 @@ export function ModalConfirmacao({
   ...props
 }: ModalConfirmacaoProps) {
   return (
-    <ModalBase {...props}>
+    <Modal {...props}>
       <div className="flex justify-end gap-3">
         <Dialog.Close asChild>
           <Button variante="secundario">Cancelar</Button>
@@ -71,11 +71,11 @@ export function ModalConfirmacao({
           {rotuloConfirmar}
         </Button>
       </div>
-    </ModalBase>
+    </Modal>
   );
 }
 
-export interface ModalJustificativaProps extends Omit<ModalBaseProps, 'children'> {
+export interface ModalJustificativaProps extends Omit<ModalProps, 'children'> {
   rotuloConfirmar?: string;
   rotuloCampo?: string;
   destrutiva?: boolean;
@@ -116,7 +116,7 @@ export function ModalJustificativa({
   }
 
   return (
-    <ModalBase {...props} onAbertoChange={alterarAberto}>
+    <Modal {...props} onAbertoChange={alterarAberto}>
       <div className="flex flex-col gap-1">
         <label htmlFor={id} className="font-medium text-texto">
           {rotuloCampo}
@@ -141,6 +141,6 @@ export function ModalJustificativa({
           {rotuloConfirmar}
         </Button>
       </div>
-    </ModalBase>
+    </Modal>
   );
 }
