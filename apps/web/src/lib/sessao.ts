@@ -1,3 +1,5 @@
+import { cookies } from 'next/headers';
+
 import { BLOCOS, INDICADORES } from './home';
 import { MODULOS } from './modulos';
 
@@ -10,9 +12,27 @@ export interface Sessao {
 }
 
 /**
- * Sessão provisória até a parte 3.3 (#33) entregar login e sessão no front.
- * Ao integrar, substituir as chamadas a esta função pela sessão real.
+ * Cookie que, fora de produção, troca as permissões da sessão provisória (lista separada por
+ * vírgula). Existe para os testes de ponta a ponta simularem perfis diferentes antes da #33.
  */
+export const COOKIE_PERMISSOES_DEV = 'filas-dev-permissoes';
+
+/**
+ * Sessão provisória até a parte 3.3 (#33) entregar login e sessão no front.
+ * Ao integrar, trocar esta função pela leitura da sessão real e apagar o cookie de testes.
+ */
+export async function obterSessao(): Promise<Sessao> {
+  const sessao = obterSessaoProvisoria();
+  if (process.env.NODE_ENV === 'production') return sessao;
+  const permissoesDev = (await cookies()).get(COOKIE_PERMISSOES_DEV)?.value;
+  if (permissoesDev === undefined) return sessao;
+  return {
+    ...sessao,
+    perfilNome: 'Perfil de teste',
+    permissoes: permissoesDev.split(',').filter(Boolean),
+  };
+}
+
 export function obterSessaoProvisoria(): Sessao {
   return {
     nome: 'Usuário de desenvolvimento',

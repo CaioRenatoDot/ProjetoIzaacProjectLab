@@ -2,6 +2,8 @@
 
 import {
   Button,
+  classeCampo,
+  ErroCampo,
   EstadoCarregando,
   EstadoErro,
   EstadoSemPermissao,
@@ -12,7 +14,7 @@ import {
   usePermissoes,
   useToast,
 } from '@filas/ui';
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 
 import { MatrizPermissoes } from './matriz-permissoes';
 import {
@@ -46,19 +48,13 @@ const rascunhoDe = (perfil: Perfil): Rascunho => ({
   permissoes: new Set(perfil.permissoes),
 });
 
-const classeSecundario =
-  'rounded-md border border-slate-400 px-4 py-2 text-slate-900 hover:bg-slate-100 disabled:opacity-50';
-const classePrimario =
-  'rounded-md bg-slate-900 px-4 py-2 text-white hover:bg-slate-700 disabled:opacity-50';
-const classeDestrutivo =
-  'rounded-md bg-red-700 px-4 py-2 text-white hover:bg-red-800 disabled:opacity-50';
-
 /** W-05 / T-05: lista de perfis à esquerda, editor e matriz de permissões à direita. */
 export function TelaPerfis({ api }: { api: PerfisApi }) {
   const { tem } = usePermissoes();
   const { podeEscrever } = useConexao();
   const mostrarToast = useToast();
   const idNome = useId();
+  const campoNome = useRef<HTMLInputElement>(null);
 
   const [carga, setCarga] = useState<Carga>({ estado: 'carregando' });
   const [rascunho, setRascunho] = useState<Rascunho | null>(null);
@@ -142,7 +138,10 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
     if (!rascunho) return;
     const erro = validarNome(rascunho.nome, perfis, rascunho.id);
     setErroNome(erro);
-    if (erro) return;
+    if (erro) {
+      campoNome.current?.focus();
+      return;
+    }
 
     const mensagens = [
       perfilSalvo && avisoUsuariosAfetados(perfilSalvo.usuariosVinculados),
@@ -168,8 +167,10 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
       mostrarToast({ tipo: 'sucesso', mensagem: `Perfil "${salvo.nome}" salvo.` });
       await carregar();
     } catch (e) {
-      if (e instanceof ErroPerfil && e.codigo === 'DUPLICIDADE') setErroNome(e.message);
-      else mostrarToast({ tipo: 'erro', mensagem: mensagemDeErro(e, 'salvar') });
+      if (e instanceof ErroPerfil && e.codigo === 'DUPLICIDADE') {
+        setErroNome(e.message);
+        campoNome.current?.focus();
+      } else mostrarToast({ tipo: 'erro', mensagem: mensagemDeErro(e, 'salvar') });
     } finally {
       setEnviando(false);
     }
@@ -198,11 +199,11 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
       </p>
       <div className="hidden gap-6 md:flex">
         <section aria-labelledby="titulo-perfis" className="flex w-64 shrink-0 flex-col gap-3">
-          <h1 id="titulo-perfis" className="text-2xl font-semibold">
+          <h1 id="titulo-perfis" className="text-pagina font-semibold">
             Perfis
           </h1>
           <Permitido permissao="perfis:criar">
-            <Button className={classePrimario} onClick={novo} disabled={!podeEscrever}>
+            <Button variante="primario" onClick={novo} disabled={!podeEscrever}>
               Novo perfil
             </Button>
           </Permitido>
@@ -218,11 +219,11 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
                       type="button"
                       onClick={() => selecionar(p)}
                       aria-current={ativo ? 'true' : undefined}
-                      className={`w-full rounded-md px-3 py-2 text-left ${ativo ? 'bg-slate-900 text-white' : 'hover:bg-slate-200'}`}
+                      className={`min-h-toque w-full rounded-md px-3 py-2 text-left ${ativo ? 'bg-primaria text-texto-invertido' : 'hover:bg-superficie-hover'}`}
                     >
                       <span className="block">{p.nome}</span>
                       <span
-                        className={`block text-sm ${ativo ? 'text-slate-200' : 'text-slate-700'}`}
+                        className={`block text-secundario ${ativo ? 'text-texto-invertido' : 'text-texto-secundario'}`}
                       >
                         {p.sistema ? 'Perfil do sistema · ' : ''}
                         {p.usuariosVinculados} usuário(s)
@@ -238,7 +239,7 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
         {rascunho ? (
           <section aria-label="Editor do perfil" className="flex min-w-0 flex-1 flex-col gap-4">
             {bloqueado && (
-              <p role="note" className="rounded-md bg-slate-100 p-3 text-slate-900">
+              <p role="note" className="rounded-md bg-superficie-elevada p-3 text-texto">
                 Perfil do sistema: as permissões aparecem só para leitura e não podem ser alteradas.
               </p>
             )}
@@ -248,19 +249,16 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
               </label>
               <input
                 id={idNome}
+                ref={campoNome}
                 value={rascunho.nome}
                 readOnly={leitura}
                 required
                 aria-invalid={erroNome ? true : undefined}
                 aria-describedby={erroNome ? `${idNome}-erro` : undefined}
                 onChange={(e) => setRascunho({ ...rascunho, nome: e.target.value })}
-                className="rounded-md border border-slate-400 p-2"
+                className={classeCampo}
               />
-              {erroNome && (
-                <p id={`${idNome}-erro`} className="text-red-700">
-                  {erroNome}
-                </p>
-              )}
+              {erroNome && <ErroCampo id={`${idNome}-erro`}>{erroNome}</ErroCampo>}
             </div>
             <div className="flex flex-col gap-1">
               <label htmlFor={`${idNome}-descricao`} className="font-medium">
@@ -272,7 +270,7 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
                 value={rascunho.descricao}
                 readOnly={leitura}
                 onChange={(e) => setRascunho({ ...rascunho, descricao: e.target.value })}
-                className="rounded-md border border-slate-400 p-2"
+                className={classeCampo}
               />
             </div>
 
@@ -287,7 +285,7 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
               {perfilSalvo && (
                 <Permitido permissao="perfis:criar">
                   <Button
-                    className={classeSecundario}
+                    variante="secundario"
                     onClick={() => duplicar(perfilSalvo)}
                     disabled={!podeEscrever}
                   >
@@ -297,10 +295,10 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
               )}
               {!leitura && (
                 <>
-                  <Button className={classeSecundario} onClick={cancelar} disabled={enviando}>
+                  <Button variante="secundario" onClick={cancelar} disabled={enviando}>
                     Cancelar
                   </Button>
-                  <Button className={classePrimario} onClick={pedirSalvar} disabled={enviando}>
+                  <Button variante="primario" onClick={pedirSalvar} disabled={enviando}>
                     Salvar
                   </Button>
                 </>
@@ -308,7 +306,7 @@ export function TelaPerfis({ api }: { api: PerfisApi }) {
               {perfilSalvo && !bloqueado && (
                 <Permitido permissao="perfis:excluir">
                   <Button
-                    className={classeDestrutivo}
+                    variante="destrutivo"
                     onClick={() => setConfirmacao({ tipo: 'excluir' })}
                     disabled={enviando || !podeEscrever}
                   >

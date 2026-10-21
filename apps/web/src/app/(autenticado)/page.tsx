@@ -1,28 +1,27 @@
-import { EstadoSemPermissao, EstadoVazio } from '@filas/ui';
+import { classesBotao, EstadoSemPermissao, EstadoVazio } from '@filas/ui';
 import Link from 'next/link';
 
 import { montarHome, rotuloIndicador } from '@/lib/home';
-import { obterSessaoProvisoria } from '@/lib/sessao';
+import { obterSessao } from '@/lib/sessao';
 
-const classeAcaoPrimaria =
-  'inline-block rounded-md bg-slate-900 px-4 py-2 font-medium text-white hover:bg-slate-700';
+const classeAcaoPrimaria = classesBotao.primario;
 
 /**
  * Home por perfil (W-02 / T-02). Os blocos vêm das permissões da sessão (`lib/home.ts`).
  * Enquanto as APIs dos blocos não existem, cada bloco mostra o estado vazio.
  */
-export default function Home() {
-  const sessao = obterSessaoProvisoria();
+export default async function Home() {
+  const sessao = await obterSessao();
   const { blocos, indicadores } = montarHome(sessao.permissoes);
   const [principal, ...laterais] = blocos;
 
   return (
     <div className="flex flex-col gap-6">
-      <section aria-labelledby="saudacao" className="rounded-lg bg-slate-100 p-6">
-        <h1 id="saudacao" className="text-2xl font-semibold">
+      <section aria-labelledby="saudacao" className="rounded-lg bg-superficie-elevada p-6">
+        <h1 id="saudacao" className="text-pagina font-semibold">
           Olá, {sessao.nome}
         </h1>
-        <p className="text-slate-700">Perfil ativo: {sessao.perfilNome}</p>
+        <p className="text-texto-secundario">Perfil ativo: {sessao.perfilNome}</p>
       </section>
 
       {indicadores.length > 0 && (
@@ -35,11 +34,11 @@ export default function Home() {
               <Link
                 href={indicador.rota}
                 aria-label={rotuloIndicador(indicador, null)}
-                className="flex h-full flex-col gap-1 rounded-lg border border-slate-300 p-4 hover:bg-slate-50 focus-visible:outline-2 focus-visible:outline-slate-900"
+                className="flex h-full flex-col gap-1 rounded-lg border border-borda-suave p-4 hover:bg-superficie-elevada focus-visible:outline-2 focus-visible:outline-primaria"
               >
-                <span className="text-slate-700">{indicador.rotulo}</span>
-                <span className="text-3xl font-semibold">—</span>
-                <span className="text-sm text-slate-700">sem dados no momento</span>
+                <span className="text-texto-secundario">{indicador.rotulo}</span>
+                <span className="text-pagina font-semibold">—</span>
+                <span className="text-secundario text-texto-secundario">sem dados no momento</span>
               </Link>
             </li>
           ))}
@@ -52,9 +51,9 @@ export default function Home() {
         <div className="flex flex-col gap-6 md:flex-row">
           <section
             aria-labelledby={`bloco-${principal.id}`}
-            className="flex flex-col gap-4 rounded-lg border border-slate-300 p-6 md:flex-[2]"
+            className="flex flex-col gap-4 rounded-lg border border-borda-suave p-6 md:flex-[2]"
           >
-            <h2 id={`bloco-${principal.id}`} className="text-xl font-semibold">
+            <h2 id={`bloco-${principal.id}`} className="text-secao font-semibold">
               {principal.titulo}
             </h2>
             <EstadoVazio
@@ -74,12 +73,12 @@ export default function Home() {
                 <section
                   key={bloco.id}
                   aria-labelledby={`bloco-${bloco.id}`}
-                  className="flex flex-col gap-2 rounded-lg border border-slate-300 p-4"
+                  className="flex flex-col gap-2 rounded-lg border border-borda-suave p-4"
                 >
-                  <h2 id={`bloco-${bloco.id}`} className="text-lg font-semibold">
+                  <h2 id={`bloco-${bloco.id}`} className="text-secao font-semibold">
                     {bloco.titulo}
                   </h2>
-                  <p className="text-slate-700">{bloco.vazio}</p>
+                  <p className="text-texto-secundario">{bloco.vazio}</p>
                   {bloco.acao && (
                     <Link href={bloco.acao.rota} className={`${classeAcaoPrimaria} self-start`}>
                       {bloco.acao.rotulo}

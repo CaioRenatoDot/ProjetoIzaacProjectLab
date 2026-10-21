@@ -9,10 +9,12 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
-    }
+    },
+    "./tema.css": "./tema.css"
   },
   "files": [
-    "dist"
+    "dist",
+    "tema.css"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
