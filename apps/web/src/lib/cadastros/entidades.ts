@@ -120,7 +120,7 @@ export function ocupacaoSupervisor(s: Supervisor) {
 export function situacaoSala(s: Sala) {
   if (!s.ativo) return 'Inativa';
   if (s.ocupada) return 'Ocupada';
-  return s.situacao || 'Livre';
+  return s.situacao || 'Disponível';
 }
 
 const pacientes: EntidadeCadastro<Paciente> = {
