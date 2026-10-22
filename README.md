@@ -89,6 +89,10 @@ pnpm --filter api prisma migrate dev
 pnpm dev                      # sobe api, web e publico
 ```
 
+Em desenvolvimento, o `apps/web` usa uma simulação da API (MSW, `apps/web/src/mocks/`) até o login
+real (#10). Entre com `admin@clinica.edu.br` e a senha `senha-dev`. Para usar a API real, defina
+`NEXT_PUBLIC_API_MOCK=false` em `apps/web/.env.local`.
+
 Qualidade (o CI roda os mesmos comandos em todo PR):
 
 ```bash
