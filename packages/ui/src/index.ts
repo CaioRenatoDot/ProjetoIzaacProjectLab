@@ -29,6 +29,7 @@ export {
   ModalJustificativa,
   type ModalJustificativaProps,
 } from './modal.js';
+export { PainelLateral, type PainelLateralProps } from './painel-lateral.js';
 export {
   type Permissao,
   PermissoesProvider,

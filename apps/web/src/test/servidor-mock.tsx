@@ -6,11 +6,19 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 
 import { API_URL } from '@/lib/api/config';
 import { SessaoProvider } from '@/lib/sessao/sessao';
+import { handlersAlertas, reiniciarMockAlertas } from '@/mocks/alertas';
+import { handlersAuditoria, reiniciarMockAuditoria } from '@/mocks/auditoria';
 import { COOKIE_REFRESH_MOCK } from '@/mocks/cookies';
 import { handlersCadastros, handlersCatalogos, reiniciarMockCadastros } from '@/mocks/cadastros';
 import { handlers, reiniciarMockAuth } from '@/mocks/handlers';
 
-export const servidor = setupServer(...handlers, ...handlersCadastros, ...handlersCatalogos);
+export const servidor = setupServer(
+  ...handlers,
+  ...handlersCadastros,
+  ...handlersCatalogos,
+  ...handlersAuditoria,
+  ...handlersAlertas,
+);
 
 /** Liga a simulação da API (a mesma do navegador) durante os testes do arquivo. */
 export function usarServidorMock() {
@@ -19,6 +27,8 @@ export function usarServidorMock() {
     servidor.resetHandlers();
     reiniciarMockAuth();
     reiniciarMockCadastros();
+    reiniciarMockAuditoria();
+    reiniciarMockAlertas();
     window.sessionStorage.clear();
     document.cookie = `${COOKIE_REFRESH_MOCK}=; Max-Age=0; Path=/`;
   });

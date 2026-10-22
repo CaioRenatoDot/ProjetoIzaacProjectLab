@@ -48,6 +48,19 @@ describe('criarClienteHttp', () => {
     await expect(cliente.requisitar('/eco')).resolves.toEqual({ autorizacao: 'Bearer velho' });
   });
 
+  it('resposta "blob" devolve o arquivo sem tentar ler JSON', async () => {
+    servidor.use(
+      http.get(
+        `${BASE}/exportacao`,
+        () => new HttpResponse('a;b\n1;2\n', { headers: { 'Content-Type': 'text/csv' } }),
+      ),
+    );
+    const { cliente } = criar();
+    const arquivo = await cliente.requisitar<Blob>('/exportacao', { resposta: 'blob' });
+    expect(arquivo.type).toBe('text/csv');
+    await expect(arquivo.text()).resolves.toBe('a;b\n1;2\n');
+  });
+
   it('converte o erro da API em { status, codigo, detail, campos }', async () => {
     servidor.use(
       http.post(`${BASE}/triagens`, () =>
