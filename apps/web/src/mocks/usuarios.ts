@@ -1,21 +1,27 @@
-import { BLOCOS, INDICADORES } from '@/lib/home';
-import { MODULOS } from '@/lib/modulos';
 import { type UsuarioSessao } from '@/lib/sessao/tipos';
 
 /** Senha de todos os usuários simulados. Nenhum dado real (RNF-07). */
 export const SENHA_MOCK = 'senha-dev';
 
-const TODAS_AS_PERMISSOES = [
-  ...new Set([
-    ...MODULOS.map((m) => m.permissao),
-    ...BLOCOS.flatMap((b) => [b.permissao, ...(b.acao ? [b.acao.permissao] : [])]),
-    ...INDICADORES.map((i) => i.permissao),
-    'perfis:criar',
-    'perfis:editar',
-    'perfis:excluir',
-    'senha:reclassificar',
-  ]),
-];
+/** Catálogo de permissões de `docs/04-contrato-api.md` §3: o administrador tem todas. */
+const CATALOGO: Record<string, readonly string[]> = {
+  cadastros: ['consultar', 'criar', 'editar', 'excluir'],
+  perfis: ['consultar', 'criar', 'editar', 'excluir'],
+  triagem: ['consultar', 'criar', 'editar', 'consultar_sensivel'],
+  senha: ['consultar', 'criar', 'reclassificar'],
+  fila: ['consultar', 'criar', 'editar', 'excluir', 'chamar'],
+  alocacao: ['consultar', 'criar', 'editar'],
+  atendimento: ['consultar', 'criar', 'editar', 'validar', 'consultar_sensivel'],
+  encaminhamento: ['consultar', 'criar'],
+  ausencia: ['consultar', 'criar'],
+  indicadores: ['consultar', 'exportar'],
+  alertas: ['consultar', 'reconhecer', 'escalonar'],
+  auditoria: ['consultar', 'exportar'],
+};
+
+const TODAS_AS_PERMISSOES = Object.entries(CATALOGO).flatMap(([modulo, operacoes]) =>
+  operacoes.map((operacao) => `${modulo}:${operacao}`),
+);
 
 const UNIDADE = { unidadeId: 'unidade-mock', unidadeNome: 'Clínica-Escola' };
 
