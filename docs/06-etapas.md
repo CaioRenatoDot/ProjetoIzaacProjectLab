@@ -221,13 +221,13 @@ Objetivo: tratar o paciente que não comparece e o que desiste.
 
 Entram se o MVP estiver pronto antes do prazo.
 
-| Parte  | Descrição                                                 | Responsável           |
-| ------ | --------------------------------------------------------- | --------------------- |
-| ⭐ 9.1 | Encaminhamento interno (gera nova senha) e externo · W-14 | Nathan, Caio Renato   |
-| ⭐ 9.2 | Indicadores com filtros, gráfico e exportação · W-17      | Rildo, Thalita        |
-| ⭐ 9.3 | Alertas de tempo de espera (SLA) e escalonamento          | Nathan, Thalita       |
-| ⭐ 9.4 | Tela da trilha de auditoria · W-18                        | Rildo, Caio Renato ✅ |
-| ⭐ 9.5 | Sinal sonoro no telão                                     | Thalita               |
+| Parte  | Descrição                                                 | Responsável            |
+| ------ | --------------------------------------------------------- | ---------------------- |
+| ⭐ 9.1 | Encaminhamento interno (gera nova senha) e externo · W-14 | Nathan, Caio Renato    |
+| ⭐ 9.2 | Indicadores com filtros, gráfico e exportação · W-17      | Rildo, Thalita         |
+| ⭐ 9.3 | Alertas de tempo de espera (SLA) e escalonamento          | Nathan, Caio Renato ✅ |
+| ⭐ 9.4 | Tela da trilha de auditoria · W-18                        | Rildo, Caio Renato ✅  |
+| ⭐ 9.5 | Sinal sonoro no telão                                     | Thalita                |
 
 ### Etapa 10 · Qualidade e entrega
 
@@ -245,8 +245,8 @@ Objetivo: garantir que o sistema funciona e está pronto para a demonstração.
 
 | Integrante   | Partes                                                              |
 | ------------ | ------------------------------------------------------------------- |
-| Caio Renato  | 1.1–1.3 (1-A), 3.4, 6.4, 7.3, 7.4 · ⭐ 7.5, 9.1, 9.4                |
+| Caio Renato  | 1.1–1.3 (1-A), 3.4, 6.4, 7.3, 7.4 · ⭐ 7.5, 9.1, 9.3, 9.4           |
 | Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4 · ⭐ 3.6       |
-| Thalita      | 6.5, 8.3, 10.2 · ⭐ 9.2, 9.3, 9.5                                   |
+| Thalita      | 6.5, 8.3, 10.2 · ⭐ 9.2, 9.5                                        |
 | Rildo        | 2.1, 2.3, 2.4, 3.1, 3.2, 4.1, 5.1, 5.2, 8.1, 8.2 · ⭐ 3.6, 9.2, 9.4 |
 | Nathan       | 2.2, 2.3, 6.1–6.3, 7.1, 7.2, 8.1 · ⭐ 7.5, 9.1, 9.3                 |
