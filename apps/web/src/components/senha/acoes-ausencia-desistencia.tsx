@@ -17,6 +17,7 @@ export interface AcoesAusenciaDesistenciaProps {
   senha: SenhaOcorrencia;
   onRegistrada: (senha: SenhaOcorrencia) => void;
   onAtualizar: () => void;
+  onAusenciaRegistrada?: (registro: RegistroAusencia) => void;
 }
 
 /** Ações para o painel lateral de W-08 (#41). O servidor continua validando as transições. */
@@ -25,6 +26,7 @@ export function AcoesAusenciaDesistencia({
   senha,
   onRegistrada,
   onAtualizar,
+  onAusenciaRegistrada,
 }: AcoesAusenciaDesistenciaProps) {
   const { tem } = usePermissoes();
   const { podeEscrever } = useConexao();
@@ -52,29 +54,33 @@ export function AcoesAusenciaDesistencia({
         </Button>
       )}
       <NotificacaoAusencia registro={registro} />
-      {modal && (
-        <ModalOcorrencia
-          key={`${senha.id}-${senha.versao}-${modal}`}
-          api={api}
-          senha={senha}
-          variante={modal}
-          aberto
-          onAbertoChange={(aberto) => {
-            if (!aberto) setModal(null);
-          }}
-          onAtualizar={onAtualizar}
-          onRegistrada={(resultado) => {
-            setModal(null);
-            if ('automatica' in resultado) setRegistro(resultado);
-            else
-              toast({
-                tipo: 'sucesso',
-                mensagem: `Desistência da senha ${senha.numero} registrada. A senha saiu da fila ativa.${resultado.recursosLiberados ? ' Os recursos alocados foram liberados.' : ''}`,
-              });
-            onRegistrada(resultado.senha);
-          }}
-        />
-      )}
+      {modal &&
+        ((modal === 'ausencia' && podeAusencia) ||
+          (modal === 'desistencia' && podeDesistencia)) && (
+          <ModalOcorrencia
+            key={`${senha.id}-${senha.versao}-${modal}`}
+            api={api}
+            senha={senha}
+            variante={modal}
+            aberto
+            onAbertoChange={(aberto) => {
+              if (!aberto) setModal(null);
+            }}
+            onAtualizar={onAtualizar}
+            onRegistrada={(resultado) => {
+              setModal(null);
+              if ('automatica' in resultado) {
+                if (onAusenciaRegistrada) onAusenciaRegistrada(resultado);
+                else setRegistro(resultado);
+              } else
+                toast({
+                  tipo: 'sucesso',
+                  mensagem: `Desistência da senha ${senha.numero} registrada. A senha saiu da fila ativa.${resultado.recursosLiberados ? ' Os recursos alocados foram liberados.' : ''}`,
+                });
+              onRegistrada(resultado.senha);
+            }}
+          />
+        )}
     </div>
   );
 }

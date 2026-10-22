@@ -217,6 +217,10 @@ Objetivo: tratar o paciente que não comparece e o que desiste.
 | 8.2    | Registro de desistência, separado de ausência                                                  | Rildo         |
 | 🔄 8.3 | Telas W-15 · Ausências e W-16 · Desistência                                                    | Thalita       |
 
+**8.3 (#47):** front validado com API simulada, painel lateral e evidências em
+[entregas/GH-47-validacao.md](entregas/GH-47-validacao.md). Integração real com
+#24/#25/#41, CI e revisão pendentes.
+
 ### Etapa 9 · Funcionalidades extras ⭐
 
 Entram se o MVP estiver pronto antes do prazo.

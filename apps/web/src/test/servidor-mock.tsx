@@ -9,8 +9,14 @@ import { SessaoProvider } from '@/lib/sessao/sessao';
 import { COOKIE_REFRESH_MOCK } from '@/mocks/cookies';
 import { handlersCadastros, handlersCatalogos, reiniciarMockCadastros } from '@/mocks/cadastros';
 import { handlers, reiniciarMockAuth } from '@/mocks/handlers';
+import { handlersAusencias, reiniciarMockAusencias } from '@/mocks/ausencias';
 
-export const servidor = setupServer(...handlers, ...handlersCadastros, ...handlersCatalogos);
+export const servidor = setupServer(
+  ...handlers,
+  ...handlersCadastros,
+  ...handlersCatalogos,
+  ...handlersAusencias,
+);
 
 /** Liga a simulação da API (a mesma do navegador) durante os testes do arquivo. */
 export function usarServidorMock() {
@@ -18,6 +24,7 @@ export function usarServidorMock() {
   afterEach(() => {
     servidor.resetHandlers();
     reiniciarMockAuth();
+    reiniciarMockAusencias();
     reiniciarMockCadastros();
     window.sessionStorage.clear();
     document.cookie = `${COOKIE_REFRESH_MOCK}=; Max-Age=0; Path=/`;
