@@ -152,3 +152,14 @@ decisão do tech lead e do back-end dono do módulo.
 | ⏳     | Posição estimada na fila é fixa no mock                             | `apps/web/src/lib/triagem/api-em-memoria.ts`              | Usar `posicaoEstimada` real da API                                                                                                                                 |
 | ⏳     | Modal de reclassificação ainda não é aberto pelo painel de fila     | `apps/web/src/components/senha/modal-reclassificacao.tsx` | Parte 6.4 (#41): abrir a partir de "Detalhes" da senha, só se `podeReclassificar(status)` (`lib/triagem/reclassificacao.ts`)                                       |
 | ⏳     | Testes Playwright rodam contra os dados em memória                  | `apps/web/e2e/triagem.e2e.ts`                             | Com API real, rodar contra o banco de teste com seed (paciente com restrição, especialidade sem fila, especialidade bloqueada)                                     |
+
+## Ausência e desistência (W-15 e W-16, #47)
+
+A parte 8.3 está em andamento: componentes e testes implementados, integração pendente.
+
+- **#41:** montar `AcoesAusenciaDesistencia` no painel lateral com `senha` (id, numero, status, versao, toleranciaAte), `api={criarAusenciasApi(cliente)}` do cliente da sessão, `onRegistrada` para atualizar a fila e `onAtualizar` para recarregar a senha após conflito. Manter o aviso de resultado visível após atualizar a fila.
+- **#24/#25:** o cliente em `apps/web/src/lib/ausencias/api.ts` usa os dois endpoints do OpenAPI; os testes usam respostas controladas. Não há simulação de sucesso em produção. A permissão existente `ausencia:criar` controla os dois registros; confirmar esse mapeamento na integração, pois não existe permissão de desistência no catálogo.
+- **RN-12:** manter `NotificacaoAusencia` montado no painel com `registro={null}` e passar o `RegistroAusencia` automático recebido do servidor por evento/consulta. O transporte ainda depende de #41/#24. O contador local nunca registra ausência: a política da unidade também pode devolver a senha à fila.
+- **RN-13:** apresentar `restricaoAplicada.tipo`, `descricao` e `ate` da resposta, sem limites ou prazos fixos. O registro automático precisa incluir esses mesmos dados. `aria-live` permanece montado para anunciar atualizações.
+- **Divergência de contrato:** a descrição da desistência também contém uma frase permitindo CHAMADA e AGUARDANDO_RECURSO. A interface segue UC-17, docs/03 §5 e #47: somente AGUARDANDO e EM_ATENDIMENTO. O contrato foi preservado.
+- **Antes de concluir:** integrar o painel e as APIs, validar em navegador em desktop e abaixo de 768 px, registrar captura, CI e revisão. Só então marcar 8.3 como ✅.
