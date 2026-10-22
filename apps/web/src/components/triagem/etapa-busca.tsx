@@ -81,7 +81,10 @@ export function EtapaBusca({ api, onSelecionar }: EtapaBuscaProps) {
         {resultado.estado === 'pronto' && resultado.pacientes.length === 0 && (
           <div className="flex flex-col items-start gap-3 py-4">
             <p>Nenhum paciente encontrado para essa busca.</p>
-            <Link href="/cadastros/pacientes/novo" className={classesBotao.secundario}>
+            <Link
+              href="/cadastros/pacientes/novo?voltar=/triagem"
+              className={classesBotao.secundario}
+            >
               Cadastrar novo paciente
             </Link>
           </div>

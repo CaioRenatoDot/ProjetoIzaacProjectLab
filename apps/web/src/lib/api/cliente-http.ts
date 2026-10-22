@@ -11,6 +11,8 @@ export class ErroApi extends Error {
     readonly codigo: string,
     readonly detail: string,
     readonly campos: readonly ErroDeCampo[] = [],
+    /** Demais campos do corpo, como `recursoExistenteId` do 409 DUPLICIDADE (`docs/04` §4). */
+    readonly extras: Readonly<Record<string, unknown>> = {},
   ) {
     super(detail);
     this.name = 'ErroApi';
@@ -92,11 +94,13 @@ async function converterErro(resposta: Response) {
     detail?: string;
     title?: string;
     campos?: ErroDeCampo[];
-  };
+  } & Record<string, unknown>;
+  const { codigo, detail, title, campos, ...extras } = corpo;
   return new ErroApi(
     resposta.status,
-    corpo.codigo ?? 'DESCONHECIDO',
-    corpo.detail ?? corpo.title ?? 'Não foi possível concluir a operação. Tente novamente.',
-    corpo.campos ?? [],
+    codigo ?? 'DESCONHECIDO',
+    detail ?? title ?? 'Não foi possível concluir a operação. Tente novamente.',
+    campos ?? [],
+    extras,
   );
 }

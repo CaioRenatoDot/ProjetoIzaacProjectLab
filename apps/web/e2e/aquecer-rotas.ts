@@ -2,7 +2,15 @@
  * O servidor de desenvolvimento compila cada rota na primeira visita. Sem aquecer, os workers em
  * paralelo clicam antes da hidratação e os testes ficam instáveis.
  */
-const ROTAS = ['/', '/login', '/acesso/perfis', '/triagem', '/cadastros/pacientes'];
+const ROTAS = [
+  '/',
+  '/login',
+  '/acesso/perfis',
+  '/triagem',
+  '/cadastros/pacientes',
+  '/cadastros/pacientes/novo',
+  '/cadastros/pacientes/paciente-1',
+];
 
 export default async function aquecerRotas() {
   for (const rota of ROTAS) {
