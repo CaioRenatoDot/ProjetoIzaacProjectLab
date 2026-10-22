@@ -10,6 +10,7 @@ const ROTAS = [
   '/cadastros/pacientes',
   '/cadastros/pacientes/novo',
   '/cadastros/pacientes/paciente-1',
+  '/auditoria',
 ];
 
 export default async function aquecerRotas() {

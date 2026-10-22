@@ -24,6 +24,8 @@ export interface OpcoesRequisicao {
   corpo?: unknown;
   /** Não tenta renovar o token num 401 (login, refresh e logout). */
   semRenovar?: boolean;
+  /** `blob` devolve o corpo como arquivo, para exportações em CSV. */
+  resposta?: 'json' | 'blob';
 }
 
 export interface ClienteHttp {
@@ -55,7 +57,9 @@ export function criarClienteHttp(config: ConfigClienteHttp): ClienteHttp {
 
   async function enviar(caminho: string, opcoes: OpcoesRequisicao) {
     const token = config.obterToken();
-    const headers: Record<string, string> = { Accept: 'application/json' };
+    const headers: Record<string, string> = {
+      Accept: opcoes.resposta === 'blob' ? '*/*' : 'application/json',
+    };
     if (opcoes.corpo !== undefined) headers['Content-Type'] = 'application/json';
     if (token) headers.Authorization = `Bearer ${token}`;
     try {
@@ -83,6 +87,7 @@ export function criarClienteHttp(config: ConfigClienteHttp): ClienteHttp {
       }
       if (!resposta.ok) throw await converterErro(resposta);
       if (resposta.status === 204) return undefined as T;
+      if (opcoes.resposta === 'blob') return (await resposta.blob()) as T;
       return (await resposta.json()) as T;
     },
   };
