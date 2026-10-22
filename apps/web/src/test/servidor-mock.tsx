@@ -7,16 +7,19 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 import { API_URL } from '@/lib/api/config';
 import { SessaoProvider } from '@/lib/sessao/sessao';
 import { COOKIE_REFRESH_MOCK } from '@/mocks/cookies';
+import { handlersCadastros, reiniciarMockCadastros } from '@/mocks/cadastros';
 import { handlers, reiniciarMockAuth } from '@/mocks/handlers';
 
-export const servidor = setupServer(...handlers);
+export const servidor = setupServer(...handlers, ...handlersCadastros);
 
-/** Liga a simulação de `/auth/*` (a mesma do navegador) durante os testes do arquivo. */
+/** Liga a simulação da API (a mesma do navegador) durante os testes do arquivo. */
 export function usarServidorMock() {
   beforeAll(() => servidor.listen({ onUnhandledRequest: 'error' }));
   afterEach(() => {
     servidor.resetHandlers();
     reiniciarMockAuth();
+    reiniciarMockCadastros();
+    window.sessionStorage.clear();
     document.cookie = `${COOKIE_REFRESH_MOCK}=; Max-Age=0; Path=/`;
   });
   afterAll(() => servidor.close());

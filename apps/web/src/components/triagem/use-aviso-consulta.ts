@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 
-const CHAVE = 'filas-aviso-consulta-registrada';
+import { PREFIXO_ESTADO_LOCAL } from '@/lib/sessao/estado-local';
+
+const CHAVE = `${PREFIXO_ESTADO_LOCAL}aviso-consulta-registrada`;
 
 /**
  * Aviso de que consultas a dado clínico são registradas, exibido uma vez por sessão (§3.4, RNF-07).
- * A sessão chama `reiniciarAvisoConsulta` ao entrar e ao sair, então o aviso reaparece a cada login.
+ * A sessão apaga a chave ao entrar e ao sair (`limparEstadoLocal`), então o aviso reaparece a cada login.
  */
 export function useAvisoConsultaRegistrada() {
   const [exibir, setExibir] = useState(false);
@@ -22,12 +24,4 @@ export function useAvisoConsultaRegistrada() {
   }, []);
 
   return exibir;
-}
-
-export function reiniciarAvisoConsulta() {
-  try {
-    window.sessionStorage.removeItem(CHAVE);
-  } catch {
-    // Sem storage disponível, não há o que reiniciar.
-  }
 }

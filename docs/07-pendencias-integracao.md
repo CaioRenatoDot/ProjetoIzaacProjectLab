@@ -22,6 +22,7 @@ indicada e remove o item deste arquivo no mesmo PR.
 | #10 (3.1, login, refresh e bloqueio)          | Login e sessão reais (hoje sobre a simulação MSW)  | [Sessão e acesso](#sessão-e-acesso)                     |
 | #11 (3.2, guard e catálogo de permissões)     | Permissões usadas em menu, home e telas            | [Sessão e acesso](#sessão-e-acesso)                     |
 | #12 (3.6, API de perfis)                      | Tela de perfis (W-05)                              | [Perfis](#perfis-w-05-36)                               |
+| #13 e #14 (4.1, API dos cadastros base)       | Lista de cadastros (W-03)                          | [Cadastros](#cadastros-w-03-37)                         |
 | #38 (4.3, cadastro de pacientes)              | Link "Cadastrar novo paciente" da triagem          | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
 | #15 (5.1, API de triagem)                     | Ficha de triagem (W-06)                            | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
 | #16 (5.2, emissão e reclassificação de senha) | Emissão da senha e modal de reclassificação (W-07) | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
@@ -44,6 +45,26 @@ indicada e remove o item deste arquivo no mesmo PR.
 | 3   | **Credencial inválida**: o front mostra um texto fixo para todo 401 que não seja `BLOQUEIO_TEMPORARIO`, para que nenhuma variação do servidor revele qual campo errou (T-01) | Texto em `apps/web/src/lib/sessao/login.ts`                                                                                                  | Nenhuma mudança; só aviso                                                                                                                     |
 | 4   | **Cookie de refresh entre portas**: o front (3000) chama a API (3333) com `credentials: 'include'`                                                                           | A simulação guarda o refresh num cookie comum                                                                                                | A API precisa de CORS com `credentials: true` e origem do `apps/web`; com `SameSite=Strict`, web e API têm de ficar no mesmo site em produção |
 | 5   | **"Manter conectado"**: o contrato tem `manterConectado`, mas não diz o efeito (cookie persistente ou de sessão)                                                             | Envia o valor; em terminal compartilhado o campo fica desabilitado por `NEXT_PUBLIC_TERMINAL_COMPARTILHADO=true` (**proposta**, a confirmar) | Definir o efeito no contrato e confirmar se "terminal compartilhado" é configuração por instalação                                            |
+
+## Cadastros (W-03, #37)
+
+A lista genérica (`apps/web/src/components/cadastros/lista-cadastro.tsx`) já consome a API pelo
+cliente HTTP; hoje quem responde é a simulação MSW (`apps/web/src/mocks/cadastros.ts`). Para
+integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de cadastros.
+
+| Status | Provisório                                                                      | Onde                              | Destrava                   | Troca a fazer                                          |
+| ------ | ------------------------------------------------------------------------------- | --------------------------------- | -------------------------- | ------------------------------------------------------ |
+| ⏳     | `GET`, `DELETE` e inativação dos cinco cadastros sobre MSW, com dados fictícios | `apps/web/src/mocks/cadastros.ts` | #13 e #14 (API, parte 4.1) | Conferir a lista contra a API real; apagar os handlers |
+
+### Lacunas do contrato dos cadastros (decisão antes de integrar com #13 e #14)
+
+| #   | Lacuna                                                                                                                                                                                                                                                   | O que o front faz hoje                                                                                                    | Pedido ao back-end                                                                            |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 1   | **Inativar** não existe no contrato: `PacienteEntrada` e as demais entradas não têm `ativo`, e não há endpoint próprio. A T-03 manda oferecer "inativar" quando a exclusão é recusada por vínculo, e a parte 4.1 prevê "inativação no lugar de exclusão" | Chama `PATCH /<entidade>/{id}` com `{ "ativo": false }` (`ativa` em especialidade). **Proposta**, só a simulação responde | Definir o endpoint em PR de contrato (este `PATCH` ou um `POST /<entidade>/{id}/inativacao`)  |
+| 2   | **Vínculo ativo não vem na listagem**: a T-03 diz que "Excluir" só é oferecido sem vínculo, mas os schemas não trazem esse dado                                                                                                                          | Oferece "Excluir" a quem tem `cadastros:excluir` e trata o `409 VINCULO_ATIVO` explicando o vínculo e oferecendo inativar | Avaliar um campo `possuiVinculoAtivo` nos itens da lista                                      |
+| 3   | **Filtros da T-03 sem parâmetro no contrato**: nível de formação (estudantes), disponibilidade (supervisores) e recurso (salas, `recursoId` existe, mas não há `GET /recursos` para montar as opções)                                                    | A tela só oferece os filtros que o contrato aceita                                                                        | Acrescentar os parâmetros e o catálogo de recursos (tabela de apoio da parte 4.1)             |
+| 4   | **Ordenação**: `docs/04` §5 prevê `ordenar` e `direcao`, mas o `openapi.yaml` não lista esses parâmetros nos `GET` de cadastros                                                                                                                          | Envia `ordenar=nome` (`identificacao` em salas) e `direcao`                                                               | Incluir os parâmetros no contrato, com os campos aceitos                                      |
+| 5   | **Mensagem do `409 VINCULO_ATIVO`**: a tela exibe o `detail` como explicação do vínculo                                                                                                                                                                  | A simulação devolve o texto com causa e próximo passo                                                                     | Garantir que `detail` diga com o que o registro está vinculado e sugira inativar (T-03, §3.2) |
 
 ## Perfis (W-05, #36)
 
@@ -69,8 +90,11 @@ indicada e remove o item deste arquivo no mesmo PR.
 ## Rotas ainda inexistentes
 
 Os links do menu (`apps/web/src/lib/modulos.ts`) e das ações da home apontam para rotas que
-outras issues criam: `/cadastros`, `/triagem`, `/fila`, `/chamada`, `/alocacao`, `/atendimento`,
+outras issues criam: `/triagem`, `/fila`, `/chamada`, `/alocacao`, `/atendimento`,
 `/encaminhamento`, `/ausencias`, `/indicadores`, `/auditoria`. Até lá, respondem 404.
+
+Na lista de cadastros (W-03, #37), "Novo" e "Editar" apontam para `/cadastros/<entidade>/novo` e
+`/cadastros/<entidade>/<id>`, que o formulário W-04 (#38) cria.
 
 ## Divergências do plano do front (`docs/.ref/SPECS/frontend/`)
 
