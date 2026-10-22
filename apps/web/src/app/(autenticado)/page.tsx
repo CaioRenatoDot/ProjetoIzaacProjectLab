@@ -1,8 +1,10 @@
+'use client';
+
 import { classesBotao, EstadoSemPermissao, EstadoVazio } from '@filas/ui';
 import Link from 'next/link';
 
 import { montarHome, rotuloIndicador } from '@/lib/home';
-import { obterSessao } from '@/lib/sessao';
+import { useUsuario } from '@/lib/sessao/sessao';
 
 const classeAcaoPrimaria = classesBotao.primario;
 
@@ -10,8 +12,8 @@ const classeAcaoPrimaria = classesBotao.primario;
  * Home por perfil (W-02 / T-02). Os blocos vêm das permissões da sessão (`lib/home.ts`).
  * Enquanto as APIs dos blocos não existem, cada bloco mostra o estado vazio.
  */
-export default async function Home() {
-  const sessao = await obterSessao();
+export default function Home() {
+  const sessao = useUsuario();
   const { blocos, indicadores } = montarHome(sessao.permissoes);
   const [principal, ...laterais] = blocos;
 

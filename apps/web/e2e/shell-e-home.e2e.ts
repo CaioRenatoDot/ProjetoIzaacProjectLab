@@ -1,6 +1,6 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
-import { entrarComPermissoes, semViolacoesDeAcessibilidade } from './apoio';
+import { entrarComPermissoes, semViolacoesDeAcessibilidade, test } from './apoio';
 
 const menu = (page: Page) => page.getByRole('navigation', { name: 'Módulos' }).getByRole('link');
 
@@ -23,6 +23,8 @@ test.describe('shell e menu (#34)', () => {
 
   test('primeiro Tab leva ao atalho "Pular para o conteúdo"', async ({ page }) => {
     await page.goto('/');
+    // A sessão é verificada no cliente; o shell aparece depois dela.
+    await expect(page.getByRole('navigation', { name: 'Módulos' })).toBeVisible();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('link', { name: 'Pular para o conteúdo' })).toBeFocused();
   });

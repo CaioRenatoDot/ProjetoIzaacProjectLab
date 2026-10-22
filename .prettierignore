@@ -7,3 +7,4 @@ pnpm-lock.yaml
 especificacao
 docs/api/openapi.yaml
 apps/api/prisma/migrations
+apps/web/public/mockServiceWorker.js

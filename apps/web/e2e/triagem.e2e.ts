@@ -1,6 +1,6 @@
-import { expect, type Page, test } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
-import { entrarComPermissoes, semViolacoesDeAcessibilidade } from './apoio';
+import { entrarComPermissoes, semViolacoesDeAcessibilidade, test } from './apoio';
 
 async function buscarEAbrirFicha(page: Page, termo = 'maria') {
   await page.goto('/triagem');

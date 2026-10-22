@@ -25,6 +25,8 @@ export default defineConfig({
     command: 'pnpm dev',
     url: `http://localhost:${PORTA}`,
     reuseExistingServer: !process.env.CI,
+    // Simulação da API (src/mocks) até o login real (#10).
+    env: { NEXT_PUBLIC_API_MOCK: 'true' },
     timeout: 120_000,
   },
 });
