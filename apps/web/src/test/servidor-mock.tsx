@@ -7,10 +7,10 @@ import { afterAll, afterEach, beforeAll } from 'vitest';
 import { API_URL } from '@/lib/api/config';
 import { SessaoProvider } from '@/lib/sessao/sessao';
 import { COOKIE_REFRESH_MOCK } from '@/mocks/cookies';
-import { handlersCadastros, reiniciarMockCadastros } from '@/mocks/cadastros';
+import { handlersCadastros, handlersCatalogos, reiniciarMockCadastros } from '@/mocks/cadastros';
 import { handlers, reiniciarMockAuth } from '@/mocks/handlers';
 
-export const servidor = setupServer(...handlers, ...handlersCadastros);
+export const servidor = setupServer(...handlers, ...handlersCadastros, ...handlersCatalogos);
 
 /** Liga a simulação da API (a mesma do navegador) durante os testes do arquivo. */
 export function usarServidorMock() {

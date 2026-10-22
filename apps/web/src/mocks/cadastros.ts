@@ -14,8 +14,9 @@ import {
 } from '@/lib/cadastros/tipos';
 
 /**
- * Simulação de `GET`, `DELETE` e da inativação dos cadastros base, até a API (#13, #14).
- * Dados fictícios (RNF-07). Registros em `comVinculoAtivo` recusam exclusão com 409 VINCULO_ATIVO.
+ * Simulação dos cadastros base (listar, consultar, criar, editar, excluir e a inativação
+ * proposta) e dos cadastros de apoio, até a API (#13, #14). Dados fictícios (RNF-07).
+ * Registros em `COM_VINCULO_ATIVO` recusam exclusão com 409 VINCULO_ATIVO.
  */
 
 const NOMES = ['Ana', 'Bruno', 'Carla', 'Diego', 'Elisa', 'Fábio', 'Gabriela', 'Heitor', 'Isabela'];
@@ -36,6 +37,25 @@ const RECURSOS: ItemReferencia[] = [
   { id: 'recurso-cadeira', nome: 'Cadeira odontológica' },
   { id: 'recurso-computador', nome: 'Computador' },
 ];
+
+/** Cadastros de apoio: só identificador e nome (Documento de Requisitos §5, seção 1). */
+const HABILITACOES: ItemReferencia[] = [
+  { id: 'hab-0', nome: 'Avaliação' },
+  { id: 'hab-1', nome: 'Reabilitação' },
+  { id: 'hab-2', nome: 'Orientação' },
+  { id: 'hab-3', nome: 'Triagem auditiva' },
+  { id: 'hab-4', nome: 'Atendimento infantil' },
+];
+
+const PROCEDIMENTOS: ItemReferencia[] = [
+  { id: 'proc-0', nome: 'Avaliação inicial' },
+  { id: 'proc-1', nome: 'Sessão de reabilitação' },
+  { id: 'proc-2', nome: 'Orientação nutricional' },
+  { id: 'proc-3', nome: 'Audiometria' },
+  { id: 'proc-4', nome: 'Profilaxia' },
+];
+
+const CATALOGOS = { habilitacoes: HABILITACOES, procedimentos: PROCEDIMENTOS, recursos: RECURSOS };
 
 const iniciais = (nome: string) =>
   nome
@@ -86,10 +106,8 @@ function criarDados() {
       especialidadeId: especialidade.id,
       especialidade: especialidade.nome,
       nivelFormacao: `${(i % 4) + 6}º período`,
-      habilitacoes: [
-        { id: `hab-${i % 3}`, nome: ['Avaliação', 'Reabilitação', 'Orientação'][i % 3]! },
-      ],
-      procedimentosAutorizados: [],
+      habilitacoes: [HABILITACOES[i % 3]!],
+      procedimentosAutorizados: [PROCEDIMENTOS[i % PROCEDIMENTOS.length]!],
       disponibilidade: [{ diaSemana: (i % 5) + 1, turno: turnos[i % 3]! }],
       ocupado: i % 4 === 1,
       ativo: true,
@@ -115,7 +133,7 @@ function criarDados() {
     identificacao: `Sala ${String(i + 1).padStart(2, '0')}`,
     caracteristicas: i % 2 === 0 ? 'Térreo, acessível' : '1º andar',
     recursos: [RECURSOS[i % RECURSOS.length]!],
-    situacao: 'Livre',
+    situacao: i === 5 ? 'Em manutenção' : 'Disponível',
     ocupada: i % 3 === 1,
     ativo: i !== 7,
   }));
@@ -134,8 +152,11 @@ export const COM_VINCULO_ATIVO = new Set([
   'especialidade-1',
 ]);
 
+let sequencia = 0;
+
 export function reiniciarMockCadastros() {
   dados = criarDados();
+  sequencia = 0;
 }
 
 type Registro = { id: string } & Record<string, unknown>;
@@ -149,6 +170,30 @@ interface RegrasEntidade {
   filtrar: (registro: Registro, parametros: URLSearchParams) => boolean;
   campoAtivo: 'ativo' | 'ativa';
   rotulo: string;
+  /** Monta o registro a partir da entrada (`PacienteEntrada` etc.), mantendo o que é do servidor. */
+  montar: (entrada: Entrada, anterior: Registro | null, id: string) => Registro;
+  /** Registro que torna a entrada duplicada (T-04: paciente, estudante e especialidade). */
+  duplicata?: (entrada: Entrada, ignorarId: string | null) => Registro | undefined;
+}
+
+type Entrada = Record<string, unknown>;
+
+const referencias = (valor: unknown, catalogo: readonly ItemReferencia[]) =>
+  ((valor as string[] | undefined) ?? [])
+    .map((id) => catalogo.find((c) => c.id === id))
+    .filter((c): c is ItemReferencia => c !== undefined);
+
+const especialidadesRef = () => dados.especialidades.map(({ id, nome }) => ({ id, nome }));
+
+const mesmoTexto = (a: unknown, b: unknown) => normalizar(String(a)) === normalizar(String(b));
+const digitos = (texto: unknown) => String(texto).replace(/\D/g, '');
+
+function procurarDuplicata(
+  registros: Registro[],
+  ignorarId: string | null,
+  igual: (registro: Registro) => boolean,
+) {
+  return registros.find((r) => r.id !== ignorarId && igual(r));
 }
 
 const bool = (parametros: URLSearchParams, nome: string) => {
@@ -174,6 +219,29 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
     },
     campoAtivo: 'ativo',
     rotulo: 'paciente',
+    montar: (e, anterior, id) => ({
+      restricaoAtiva: false,
+      restricaoAte: null,
+      ativo: true,
+      ...anterior,
+      id,
+      nomeCompleto: e.nomeCompleto,
+      iniciais: iniciais(String(e.nomeCompleto)),
+      documento: e.documento,
+      dataNascimento: e.dataNascimento,
+      contatoTelefone: e.contatoTelefone ?? null,
+      contatoEmail: e.contatoEmail ?? null,
+      vinculo: e.vinculo,
+    }),
+    // Duplicidade por documento, ou por nome completo e data de nascimento (docs/03 §3.2).
+    duplicata: (e, ignorarId) =>
+      procurarDuplicata(
+        dados.pacientes as unknown as Registro[],
+        ignorarId,
+        (p) =>
+          digitos(p.documento) === digitos(e.documento) ||
+          (mesmoTexto(p.nomeCompleto, e.nomeCompleto) && p.dataNascimento === e.dataNascimento),
+      ),
   },
   estudantes: {
     registros: () => dados.estudantes as unknown as Registro[],
@@ -190,6 +258,23 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
     },
     campoAtivo: 'ativo',
     rotulo: 'estudante',
+    montar: (e, anterior, id) => ({
+      ocupado: false,
+      ativo: true,
+      ...anterior,
+      id,
+      nome: e.nome,
+      especialidadeId: e.especialidadeId,
+      especialidade: dados.especialidades.find((x) => x.id === e.especialidadeId)?.nome ?? '',
+      nivelFormacao: e.nivelFormacao,
+      habilitacoes: referencias(e.habilitacoesIds, HABILITACOES),
+      procedimentosAutorizados: referencias(e.procedimentosIds, PROCEDIMENTOS),
+      disponibilidade: e.disponibilidade ?? [],
+    }),
+    duplicata: (e, ignorarId) =>
+      procurarDuplicata(dados.estudantes as unknown as Registro[], ignorarId, (x) =>
+        mesmoTexto(x.nome, e.nome),
+      ),
   },
   supervisores: {
     registros: () => dados.supervisores as unknown as Registro[],
@@ -205,6 +290,17 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
     },
     campoAtivo: 'ativo',
     rotulo: 'supervisor',
+    montar: (e, anterior, id) => ({
+      ocupacaoAtual: 0,
+      ativo: true,
+      ...anterior,
+      id,
+      nome: e.nome,
+      especialidades: referencias(e.especialidadesIds, especialidadesRef()),
+      procedimentos: referencias(e.procedimentosIds, PROCEDIMENTOS),
+      disponibilidade: e.disponibilidade ?? [],
+      limiteEstudantesSimultaneos: e.limiteEstudantesSimultaneos,
+    }),
   },
   salas: {
     registros: () => dados.salas as unknown as Registro[],
@@ -216,6 +312,16 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
     },
     campoAtivo: 'ativo',
     rotulo: 'sala',
+    montar: (e, anterior, id) => ({
+      ocupada: false,
+      ativo: true,
+      ...anterior,
+      id,
+      identificacao: e.identificacao,
+      caracteristicas: e.caracteristicas ?? '',
+      recursos: referencias(e.recursosIds, RECURSOS),
+      situacao: e.situacao ?? 'Disponível',
+    }),
   },
   especialidades: {
     registros: () => dados.especialidades as unknown as Registro[],
@@ -231,6 +337,22 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
     },
     campoAtivo: 'ativa',
     rotulo: 'especialidade',
+    montar: (e, anterior, id) => ({
+      filasVinculadas: 0,
+      ativa: true,
+      ...anterior,
+      id,
+      nome: e.nome,
+      descricao: e.descricao ?? '',
+      exigeSupervisaoDocente: e.exigeSupervisaoDocente,
+      exigeValidacaoEncerramento: e.exigeValidacaoEncerramento,
+      toleranciaMinutos: e.toleranciaMinutos ?? 5,
+      recursosExigidos: referencias(e.recursosExigidosIds, RECURSOS),
+    }),
+    duplicata: (e, ignorarId) =>
+      procurarDuplicata(dados.especialidades as unknown as Registro[], ignorarId, (x) =>
+        mesmoTexto(x.nome, e.nome),
+      ),
   },
 };
 
@@ -266,17 +388,64 @@ function listar(regras: RegrasEntidade, url: URL) {
   };
 }
 
-const problema = (status: number, codigo: string, title: string, detail: string) =>
+const problema = (
+  status: number,
+  codigo: string,
+  title: string,
+  detail: string,
+  extras: Record<string, unknown> = {},
+) =>
   HttpResponse.json(
-    { title, status, codigo, detail },
+    { title, status, codigo, detail, ...extras },
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
+
+/** 403 neutro também para registro inexistente (`docs/04` §3). */
+const semPermissao = () =>
+  problema(403, 'SEM_PERMISSAO', 'Sem permissão', 'Seu perfil não tem acesso a este conteúdo.');
+
+function duplicidade(regras: RegrasEntidade, existente: Registro) {
+  return problema(
+    409,
+    'DUPLICIDADE',
+    'Registro já cadastrado',
+    `Já existe um cadastro de ${regras.rotulo} com estes dados. Abra o cadastro existente em vez de criar outro.`,
+    { recursoExistenteId: existente.id },
+  );
+}
 
 export const handlersCadastros = (Object.keys(REGRAS) as SlugCadastro[]).flatMap((slug) => {
   const regras = REGRAS[slug];
   const base = `${API_URL}/${slug}`;
   return [
     http.get(base, ({ request }) => HttpResponse.json(listar(regras, new URL(request.url)))),
+
+    http.get(`${base}/:id`, ({ params }) => {
+      const registro = regras.registros().find((r) => r.id === String(params.id));
+      return registro ? HttpResponse.json(registro) : semPermissao();
+    }),
+
+    http.post(base, async ({ request }) => {
+      const entrada = (await request.json()) as Entrada;
+      const existente = regras.duplicata?.(entrada, null);
+      if (existente) return duplicidade(regras, existente);
+      sequencia += 1;
+      const novo = regras.montar(entrada, null, `${slug}-novo-${sequencia}`);
+      regras.registros().unshift(novo);
+      return HttpResponse.json(novo, { status: 201 });
+    }),
+
+    http.put(`${base}/:id`, async ({ params, request }) => {
+      const id = String(params.id);
+      const lista = regras.registros();
+      const indice = lista.findIndex((r) => r.id === id);
+      if (indice < 0) return semPermissao();
+      const entrada = (await request.json()) as Entrada;
+      const existente = regras.duplicata?.(entrada, id);
+      if (existente) return duplicidade(regras, existente);
+      lista[indice] = regras.montar(entrada, lista[indice]!, id);
+      return HttpResponse.json(lista[indice]);
+    }),
 
     http.delete(`${base}/:id`, ({ params }) => {
       const id = String(params.id);
@@ -298,8 +467,7 @@ export const handlersCadastros = (Object.keys(REGRAS) as SlugCadastro[]).flatMap
     http.patch(`${base}/:id`, async ({ params, request }) => {
       const corpo = (await request.json()) as Record<string, unknown>;
       const registro = regras.registros().find((r) => r.id === String(params.id));
-      if (!registro)
-        return problema(403, 'SEM_PERMISSAO', 'Sem permissão', 'Acesso não permitido.');
+      if (!registro) return semPermissao();
       if (typeof corpo[regras.campoAtivo] === 'boolean') {
         registro[regras.campoAtivo] = corpo[regras.campoAtivo];
       }
@@ -307,3 +475,15 @@ export const handlersCadastros = (Object.keys(REGRAS) as SlugCadastro[]).flatMap
     }),
   ];
 });
+
+/** Proposta: o contrato não lista os cadastros de apoio (`docs/07-pendencias-integracao.md`). */
+export const handlersCatalogos = (Object.keys(CATALOGOS) as (keyof typeof CATALOGOS)[]).map(
+  (nome) =>
+    http.get(`${API_URL}/${nome}`, () => {
+      const itens = CATALOGOS[nome];
+      return HttpResponse.json({
+        dados: itens,
+        meta: { pagina: 1, tamanho: 100, total: itens.length, totalPaginas: 1 },
+      });
+    }),
+);
