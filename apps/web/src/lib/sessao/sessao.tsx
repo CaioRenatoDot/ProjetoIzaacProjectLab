@@ -12,9 +12,9 @@ import {
   useState,
 } from 'react';
 
-import { reiniciarAvisoConsulta } from '@/components/triagem/use-aviso-consulta';
 import { type ClienteHttp, criarClienteHttp } from '@/lib/api/cliente-http';
 
+import { limparEstadoLocal } from './estado-local';
 import {
   type DadosLogin,
   type RespostaLogin,
@@ -109,7 +109,7 @@ export function SessaoProvider({ baseUrl, children }: SessaoProviderProps) {
         semRenovar: true,
       });
       token.current = resposta.accessToken;
-      reiniciarAvisoConsulta();
+      limparEstadoLocal();
       setUsuario(resposta.usuario);
       setEncerramento(null);
       setEstado('autenticado');
@@ -125,7 +125,7 @@ export function SessaoProvider({ baseUrl, children }: SessaoProviderProps) {
     }
     token.current = null;
     queryClient.clear();
-    reiniciarAvisoConsulta();
+    limparEstadoLocal();
     setUsuario(null);
     setEncerramento('saiu');
     setEstado('anonimo');
