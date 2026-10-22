@@ -92,7 +92,7 @@ export const INDICADORES: readonly IndicadorHome[] = [
   {
     rotulo: 'Alertas de SLA',
     unidade: 'alertas',
-    rota: '/indicadores?aba=alertas',
+    rota: '/indicadores/alertas',
     permissao: 'alertas:consultar',
   },
 ];
