@@ -25,6 +25,8 @@ indicada e remove o item deste arquivo no mesmo PR.
 | #13 e #14 (4.1, API dos cadastros base)       | Lista e formulário de cadastros (W-03, W-04)       | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)             |
 | #15 (5.1, API de triagem)                     | Ficha de triagem (W-06)                            | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
 | #16 (5.2, emissão e reclassificação de senha) | Emissão da senha e modal de reclassificação (W-07) | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
+| #29 (9.4, consulta e exportação da trilha)    | Trilha de auditoria (W-18)                         | [Auditoria](#trilha-de-auditoria-w-18-50)               |
+| #28 (9.3, alertas de SLA e escalonamento)     | Alertas de SLA (W-18)                              | [Alertas](#alertas-de-sla-w-18-49)                      |
 
 ## Sessão e acesso
 
@@ -88,15 +90,16 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 
 ## Tempo real
 
-| Status | Provisório                                                 | Onde                                | Destrava            | Troca a fazer                                                                        |
-| ------ | ---------------------------------------------------------- | ----------------------------------- | ------------------- | ------------------------------------------------------------------------------------ |
-| ⏳     | Conexão sempre "conectada" (`<ConexaoProvider conectado>`) | `apps/web/src/components/shell.tsx` | Etapa 6 (Socket.IO) | Ligar ao estado real do socket; o banner e o `podeEscrever` já reagem (`docs/04` §7) |
+| Status | Provisório                                                                                                                   | Onde                                                                  | Destrava                  | Troca a fazer                                                                                                                                    |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ⏳     | Conexão sempre "conectada" (`<ConexaoProvider conectado>`)                                                                   | `apps/web/src/components/shell.tsx`                                   | Etapa 6 (Socket.IO)       | Ligar ao estado real do socket; o banner e o `podeEscrever` já reagem (`docs/04` §7)                                                             |
+| ⏳     | Alertas sem o canal `/alertas`: a tela revalida por HTTP a cada 30 s e detecta alerta novo e normalizado comparando leituras | `apps/web/src/components/alertas/tela-alertas.tsx` (`REVALIDACAO_MS`) | Etapa 6 (Socket.IO) e #28 | Com `socket.io-client` (issue própria, AGENTS §3), em `sla.excedido` e `sla.normalizado` invalidar `['alertas']`; o anúncio já sai da comparação |
 
 ## Rotas ainda inexistentes
 
 Os links do menu (`apps/web/src/lib/modulos.ts`) e das ações da home apontam para rotas que
 outras issues criam: `/triagem`, `/fila`, `/chamada`, `/alocacao`, `/atendimento`,
-`/encaminhamento`, `/ausencias`, `/indicadores`, `/auditoria`. Até lá, respondem 404.
+`/encaminhamento`, `/ausencias`, `/indicadores`. Até lá, respondem 404.
 
 ## Divergências do plano do front (`docs/.ref/SPECS/frontend/`)
 
@@ -211,3 +214,47 @@ retorno ao gatilho e dimensões do modal a 390 px. As capturas ficam em
 `apps/web/test-results/ausencia-desktop.png` e `ausencia-celular.png` para anexar ao PR.
 
 Ainda faltam integração real, CI e revisão antes de concluir a issue.
+
+## Trilha de auditoria (W-18, #50)
+
+A tela (`apps/web/src/components/auditoria/`, rota `/auditoria`) já consome a API pelo cliente
+HTTP; hoje quem responde é a simulação MSW (`apps/web/src/mocks/auditoria.ts`). Para integrar:
+rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de auditoria.
+
+| Status | Provisório                                                                                     | Onde                              | Destrava                       | Troca a fazer                                                                             |
+| ------ | ---------------------------------------------------------------------------------------------- | --------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------- |
+| ⏳     | `GET /auditoria`, `/auditoria/{id}` e `/auditoria/exportacao` sobre MSW, com eventos fictícios | `apps/web/src/mocks/auditoria.ts` | #29 (API, parte 9.4)           | Conferir filtros, detalhe e exportação contra a API real; apagar os handlers de auditoria |
+| ⏳     | `GET /usuarios` (filtro por usuário) sobre MSW                                                 | `apps/web/src/mocks/auditoria.ts` | #12 (API de perfis e usuários) | Conferir contra a API real e mover o handler para junto da simulação de perfis, se houver |
+
+### Lacunas do contrato da auditoria (decisão antes de integrar com a #29)
+
+| #   | Lacuna                                                                                                                                                                                                     | O que o front faz hoje                                                                                                                     | Pedido ao back-end                                                                                         |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| 1   | **Exportação sem todos os filtros**: `GET /auditoria/exportacao` só aceita `de`, `ate` e `usuarioId`, mas a T-18 pede "exportar resultado filtrado" e a tela também filtra por operação, módulo e registro | Envia os mesmos filtros da tela (`operacao`, `modulo` e `entidadeId` incluídos)                                                            | Aceitar os seis filtros de `GET /auditoria` na exportação                                                  |
+| 2   | **Valores de `modulo` não enumerados**: o parâmetro e o campo são texto livre                                                                                                                              | Oferece os módulos do catálogo de permissões (`docs/04` §3) e `auth` para entrada e saída (proposta); valor desconhecido aparece como veio | Enumerar `modulo` no contrato (ou expor a lista), incluindo o módulo de `LOGIN`/`LOGOUT`                   |
+| 3   | **Registro afetado só por UUID**: `entidadeId` é `uuid`, mas o W-18 mostra o registro pelo identificador de negócio (ex.: senha F014)                                                                      | Valida UUID no campo e oferece "Filtrar por este registro" no detalhe do evento; a tabela mostra `entidade` e o início do UUID             | Avaliar um campo legível no evento (ex.: `registroRotulo`) e um filtro por ele                             |
+| 4   | **Permissão do filtro por usuário**: `GET /usuarios` é da tag de perfis; quem tem só `auditoria:consultar` pode receber 403                                                                                | Se a lista falhar, o filtro fica só com "Todos" e um aviso; os demais filtros seguem                                                       | Liberar a listagem de usuários (só `id` e `nome`) para `auditoria:consultar`, ou incluir a lista no módulo |
+| 5   | **Ordenação**: a T-18 pede "ordenação anunciada", e o contrato fixa a ordem cronológica decrescente                                                                                                        | Anuncia a ordem fixa (`aria-sort` e região `aria-live`), sem alternar                                                                      | Nenhuma, se a ordem fixa bastar; senão, incluir `ordenar`/`direcao`                                        |
+| 6   | **Perfil no evento**: o contrato traz `perfilNoMomento` já na listagem, e a T-18 o põe só no detalhe                                                                                                       | Mostra o perfil abaixo do nome do usuário, como no W-18                                                                                    | Nenhuma                                                                                                    |
+
+## Alertas de SLA (W-18, #49)
+
+A tela (`apps/web/src/components/alertas/`, rota `/indicadores/alertas`) já consome a API pelo
+cliente HTTP; hoje quem responde é a simulação MSW (`apps/web/src/mocks/alertas.ts`). Para
+integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de alertas.
+
+| Status | Provisório                                                                            | Onde                                                                 | Destrava                               | Troca a fazer                                                                                                                                                                                                                                  |
+| ------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ⏳     | `GET /alertas`, `/reconhecimento` e `/escalonamento` sobre MSW, com alertas fictícios | `apps/web/src/mocks/alertas.ts`                                      | #28 (API, parte 9.3)                   | Conferir contra a API real; apagar os handlers                                                                                                                                                                                                 |
+| ⏳     | Rota `/indicadores/alertas`, alcançada pelo cartão da home; não há item de menu       | `apps/web/src/app/(autenticado)/indicadores/alertas/`, `lib/home.ts` | Decisão (`tipo: decisão`) e #48 (W-17) | O W-18 junta alertas e auditoria, mas o supervisor tem `alertas:consultar` sem `auditoria:consultar`. Confirmar onde fica o acesso (aba em Indicadores, item próprio no menu ou junto da Auditoria) e, se for aba, a W-17 ligar para esta rota |
+
+### Lacunas do contrato dos alertas (decisão antes de integrar com a #28)
+
+| #   | Lacuna                                                                                                                                          | O que o front faz hoje                                                                                                                      | Pedido ao back-end                                                                |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 1   | **Medidas acionadas não vêm no alerta**: `Alerta` não lista os escalonamentos; a T-17 e a issue pedem que o alerta mostre quem acionou e quando | Lê `escalonamentos[]` do alerta (**proposta**, só a simulação devolve) e mostra o `Escalonamento` devolvido pelo `POST` no aviso de sucesso | Incluir `escalonamentos[]` em `Alerta` (ou um `GET /alertas/{id}/escalonamentos`) |
+| 2   | **Sem nível de gravidade**: a T-17 pede gravidade em texto; o contrato só diz que a lista vem "ordenada por gravidade"                          | Mantém a ordem da API e descreve em texto quanto a espera passou do limite; não classifica no front (seria regra de negócio)                | Avaliar um campo `gravidade` com rótulo, ou confirmar que a descrição basta       |
+| 3   | **"Entra no topo" × ordem por gravidade**: a issue diz que o alerta novo entra no topo; a T-17 ordena por gravidade                             | Segue a ordem da API; a simulação desempata pelo mais recente                                                                               | Definir o desempate na API (mais recente primeiro, sugerido)                      |
+| 4   | **Histórico "do período" sem filtro de data**: `GET /alertas` não aceita `de`/`ate`                                                             | O histórico lista os normalizados, paginado, na ordem da API                                                                                | Acrescentar `de` e `ate` (ou definir o período padrão do histórico)               |
+| 5   | **Respostas de erro** de `/reconhecimento` e `/escalonamento`: só o 403 está no contrato (reconhecer alerta já normalizado, `acao` inválida)    | Trata 403 com mensagem própria; outros erros com mensagem genérica                                                                          | Definir 409 para alerta normalizado e 422 para `acao` inválida                    |
+| 6   | **Bloqueio sem limite**: alerta `FILA_BLOQUEADA` vem com `tempoEsperaMinutos` e `limiteMinutos` nulos                                           | Mostra a causa (RN-10) no lugar dos tempos                                                                                                  | Nenhuma, se for o comportamento esperado                                          |
