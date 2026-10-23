@@ -53,7 +53,11 @@ test('desistência pelo painel, com origem e motivo', async ({ page }) => {
   await page.screenshot({ path: 'test-results/desistencia-desktop.png', fullPage: false });
   await modal.getByRole('button', { name: 'Confirmar', exact: true }).click();
   await expect(senha.getByText('Desistência', { exact: true })).toBeVisible();
-  await expect(page.getByText(/A senha saiu da fila ativa/)).toBeVisible();
+  await expect(
+    page
+      .getByRole('region', { name: 'Notificações (F8)', exact: true })
+      .getByText(/A senha saiu da fila ativa/),
+  ).toBeVisible();
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
