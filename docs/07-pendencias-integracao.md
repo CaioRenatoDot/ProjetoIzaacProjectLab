@@ -156,6 +156,65 @@ decisão do tech lead e do back-end dono do módulo.
 | ⏳     | Modal de reclassificação ainda não é aberto pelo painel de fila     | `apps/web/src/components/senha/modal-reclassificacao.tsx` | Parte 6.4 (#41): abrir a partir de "Detalhes" da senha, só se `podeReclassificar(status)` (`lib/triagem/reclassificacao.ts`)                                       |
 | ⏳     | Testes Playwright rodam contra os dados em memória                  | `apps/web/e2e/triagem.e2e.ts`                             | Com API real, rodar contra o banco de teste com seed (paciente com restrição, especialidade sem fila, especialidade bloqueada)                                     |
 
+## Ausência e desistência (W-15 e W-16, #47)
+
+O front pode ser usado em `/ausencias` com a API simulada do projeto (MSW). A parte 8.3
+permanece em andamento até integrar as dependências reais e concluir a revisão.
+
+### Como testar agora
+
+Execute `corepack pnpm --filter web dev`, entre com `admin@clinica.edu.br` e
+`senha-dev` e abra `http://localhost:3000/ausencias`. A simulação é ativada pela
+configuração já existente (`NEXT_PUBLIC_API_MOCK`); não exige banco nem API NestJS.
+O aviso de demonstração aparece somente quando os dados são simulados.
+
+- F013: ausência manual com confirmação antecipada e observação opcional.
+- F014: ausência que devolve restrição temporária e sua descrição (RN-13).
+- F015: desistência enquanto aguardando, origem paciente/equipe e motivo opcional.
+- F016: desistência em atendimento, com liberação de recursos.
+- F017: expira em 30 segundos; o polling da simulação entrega ausência automática sem modal.
+- F018: ausência que devolve exigência de confirmação prévia (RN-13).
+- Use **Reiniciar demonstração** para repor os cenários fictícios.
+
+Os tempos e as restrições em `mocks/ausencias.ts` são fixtures de demonstração.
+Não representam os parâmetros da unidade nem executam regras no servidor real.
+
+### Integração restante
+
+- **#24/#25:** os mesmos componentes já fazem requisições HTTP aos endpoints existentes:
+  `POST /senhas/{id}/ausencia` e `POST /senhas/{id}/desistencia`, com versão e corpos do
+  OpenAPI. Com `NEXT_PUBLIC_API_MOCK=false`, não há fallback para sucesso simulado.
+- A consulta usa `GET /filas?ativa=true&pagina=1&tamanho=100` e
+  `GET /filas/{id}/senhas?pagina=...&tamanho=20`, em projeção resumida e sem dados clínicos.
+  Exige `ausencia:consultar` e `fila:consultar`; escrita usa `ausencia:criar`.
+  Confirmar a permissão de desistência com o back, pois o catálogo não tem módulo próprio.
+  O seletor carrega até 100 filas; se a unidade ultrapassar isso, paginar também esse catálogo.
+- **#41:** reutilizar `PainelOcorrenciasSenha` no painel de fila definitivo. O painel lateral
+  de ocorrências já é utilizado em `/ausencias`; seus modais não abrem diretamente nos cartões. Passar a senha atual,
+  `criarAusenciasApi(cliente)`, `onRegistrada` para atualizar a fila, `onAtualizar` para
+  recarregar após 409 e `onAusenciaRegistrada` para manter a notificação no painel.
+  A tela de Ausências permite verificar o front sem implementar o painel completo da #41.
+  As capturas e o checklist estão em [entregas/GH-47-validacao.md](entregas/GH-47-validacao.md).
+- **RN-12, evento real:** ligar a fonte de registros automáticos do back à prop
+  `assinarAusenciasAutomaticas` de `TelaAusencias` ou a `NotificacaoAusencia` do painel.
+  O adaptador local em MSW é provisório. Não inferir ausência no componente pelo relógio:
+  a política pode devolver a senha à fila. Transporte e payload real seguem dependentes de #24/#41.
+- **RN-13:** exibir `restricaoAplicada.tipo`, `descricao` e `ate`, inclusive no evento
+  automático. Sem limites ou prazos de política fixos no código de produção.
+- **Divergência do OpenAPI:** a descrição da desistência também menciona CHAMADA e
+  AGUARDANDO_RECURSO. A UI e o mock seguem UC-17, docs/03 §5 e #47: só AGUARDANDO e
+  EM_ATENDIMENTO. O contrato não foi alterado.
+
+### Verificações
+
+`corepack pnpm --filter web test`, `lint`, `typecheck` e `build`.
+Teste no navegador: `corepack pnpm --filter web exec playwright test ausencias.e2e.ts --workers=1`.
+A suíte cobre os dois fluxos por HTTP, RN-12/RN-13, permissões, contraste com axe, foco,
+retorno ao gatilho e dimensões do modal a 390 px. As capturas ficam em
+`apps/web/test-results/ausencia-desktop.png` e `ausencia-celular.png` para anexar ao PR.
+
+Ainda faltam integração real, CI e revisão antes de concluir a issue.
+
 ## Trilha de auditoria (W-18, #50)
 
 A tela (`apps/web/src/components/auditoria/`, rota `/auditoria`) já consome a API pelo cliente

@@ -7,6 +7,7 @@ const ROTAS = [
   '/login',
   '/acesso/perfis',
   '/triagem',
+  '/ausencias',
   '/cadastros/pacientes',
   '/cadastros/pacientes/novo',
   '/cadastros/pacientes/paciente-1',

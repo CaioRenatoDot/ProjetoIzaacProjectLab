@@ -11,11 +11,14 @@ import { handlersAuditoria, reiniciarMockAuditoria } from '@/mocks/auditoria';
 import { COOKIE_REFRESH_MOCK } from '@/mocks/cookies';
 import { handlersCadastros, handlersCatalogos, reiniciarMockCadastros } from '@/mocks/cadastros';
 import { handlers, reiniciarMockAuth } from '@/mocks/handlers';
+import { handlersAusencias, reiniciarMockAusencias } from '@/mocks/ausencias';
 
 export const servidor = setupServer(
   ...handlers,
   ...handlersCadastros,
   ...handlersCatalogos,
+  ...handlersAusencias,
+
   ...handlersAuditoria,
   ...handlersAlertas,
 );
@@ -26,6 +29,7 @@ export function usarServidorMock() {
   afterEach(() => {
     servidor.resetHandlers();
     reiniciarMockAuth();
+    reiniciarMockAusencias();
     reiniciarMockCadastros();
     reiniciarMockAuditoria();
     reiniciarMockAlertas();

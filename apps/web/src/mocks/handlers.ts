@@ -129,3 +129,8 @@ export const handlers = [
     return HttpResponse.json(comPermissoesDev(usuario, cookies));
   }),
 ];
+
+export function usuarioMockDaRequisicao(request: Request, cookies: Record<string, string>) {
+  const usuario = usuarioDoToken(request.headers.get('Authorization'));
+  return usuario ? comPermissoesDev(usuario, cookies) : null;
+}

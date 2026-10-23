@@ -12,13 +12,23 @@ export interface ModalProps {
   titulo: string;
   descricao?: ReactNode;
   children?: ReactNode;
+  telaCheiaNoCelular?: boolean;
+  lateral?: boolean;
 }
 
 /**
  * Radix Dialog prende o foco no modal. Como os modais são controlados (sem Dialog.Trigger),
  * o elemento de origem é guardado na abertura e recebe o foco de volta ao fechar (RNF-06).
  */
-export function Modal({ aberto, onAbertoChange, titulo, descricao, children }: ModalProps) {
+export function Modal({
+  aberto,
+  onAbertoChange,
+  titulo,
+  descricao,
+  children,
+  telaCheiaNoCelular = false,
+  lateral = false,
+}: ModalProps) {
   const origem = useRef<HTMLElement | null>(null);
 
   return (
@@ -34,7 +44,13 @@ export function Modal({ aberto, onAbertoChange, titulo, descricao, children }: M
             evento.preventDefault();
             origem.current.focus();
           }}
-          className="fixed top-1/2 left-1/2 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg bg-superficie p-6 shadow-lg"
+          className={
+            lateral
+              ? 'fixed inset-y-0 right-0 flex w-full flex-col gap-4 overflow-y-auto border-l border-borda bg-superficie p-6 shadow-lg md:max-w-md'
+              : telaCheiaNoCelular
+                ? 'fixed inset-0 flex flex-col gap-4 overflow-y-auto bg-superficie p-6 shadow-lg md:inset-auto md:top-1/2 md:left-1/2 md:max-h-[calc(100dvh-2rem)] md:w-[calc(100%-2rem)] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg'
+                : 'fixed top-1/2 left-1/2 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg bg-superficie p-6 shadow-lg'
+          }
         >
           <Dialog.Title className="text-secao font-semibold text-texto">{titulo}</Dialog.Title>
           {descricao ? (

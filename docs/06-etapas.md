@@ -211,11 +211,15 @@ Objetivo: conduzir o atendimento do início ao encerramento.
 Objetivo: tratar o paciente que não comparece e o que desiste.
 **Pronto quando:** a tolerância expira e marca ausência automaticamente, e a desistência fica registrada à parte.
 
-| Parte | Descrição                                                                                      | Responsável   |
-| ----- | ---------------------------------------------------------------------------------------------- | ------------- |
-| 8.1   | Rotina de expiração da tolerância, ausência manual e restrição por reincidência (RN-12, RN-13) | Nathan, Rildo |
-| 8.2   | Registro de desistência, separado de ausência                                                  | Rildo         |
-| 8.3   | Telas W-15 · Ausências e W-16 · Desistência                                                    | Thalita       |
+| Parte  | Descrição                                                                                      | Responsável   |
+| ------ | ---------------------------------------------------------------------------------------------- | ------------- |
+| 8.1    | Rotina de expiração da tolerância, ausência manual e restrição por reincidência (RN-12, RN-13) | Nathan, Rildo |
+| 8.2    | Registro de desistência, separado de ausência                                                  | Rildo         |
+| 🔄 8.3 | Telas W-15 · Ausências e W-16 · Desistência                                                    | Thalita       |
+
+**8.3 (#47):** front validado com API simulada, painel lateral e evidências em
+[entregas/GH-47-validacao.md](entregas/GH-47-validacao.md). Integração real com
+#24/#25/#41, CI e revisão pendentes.
 
 ### Etapa 9 · Funcionalidades extras ⭐
 

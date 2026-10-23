@@ -113,3 +113,12 @@ pelo lint-staged, que aplica ESLint e Prettier só nos arquivos alterados.
 | Web (operacional)                   | 3000                          |
 | Público (telão + consulta de senha) | 3001 (`/telao` e `/consulta`) |
 | Adminer                             | 8080                          |
+
+### Verificar ausência e desistência sem o back-end (#47)
+
+Execute `corepack pnpm --filter web dev`, entre com `admin@clinica.edu.br` / `senha-dev`
+e abra `http://localhost:3000/ausencias`. A API simulada (MSW) permite testar ausência
+antecipada, as duas restrições, desistência e expiração automática com dados fictícios.
+Use **Reiniciar demonstração** para repetir. Não é necessário iniciar o banco ou a API.
+Com `NEXT_PUBLIC_API_MOCK=false`, a tela passa a consumir os endpoints reais.
+As integrações pendentes estão em [docs/07-pendencias-integracao.md](docs/07-pendencias-integracao.md#ausência-e-desistência-w-15-e-w-16-47).
