@@ -77,11 +77,11 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 
 ## Perfis (W-05, #36)
 
-| Status | Provisório                                                                            | Onde                                                           | Destrava                                   | Troca a fazer                                                                                                                                               |
-| ------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ⏳     | API de perfis em memória (dados somem ao recarregar)                                  | `apps/web/src/lib/perfis/api-em-memoria.ts`                    | #12 (API de perfis, permissões e usuários) | Criar um cliente HTTP que implemente `PerfisApi` (`lib/perfis/tipos.ts`) e usá-lo em `app/(autenticado)/acesso/perfis/page.tsx`; apagar a versão em memória |
-| ⏳     | Aviso "muda as permissões de N usuários" usa `usuariosVinculados` do perfil carregado | `apps/web/src/components/perfis/tela-perfis.tsx`               | #12                                        | Usar `usuariosAfetados` do `PUT /perfis/{id}` (definido no contrato da #12) ou `usuariosVinculados` antes de salvar                                         |
-| ⏳     | Aviso de perfil sem consulta é calculado no front                                     | `apps/web/src/lib/perfis/regras.ts` (`semPermissaoDeConsulta`) | #12                                        | Preferir `avisos[]` da API, código `PERFIL_SEM_CONSULTA` (contrato da #12), e manter o cálculo só como pré-validação                                        |
+| Status | Provisório                                                                            | Onde                                                           | Destrava     | Troca a fazer                                                                                                                                               |
+| ------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🔧     | API de perfis em memória (dados somem ao recarregar)                                  | `apps/web/src/lib/perfis/api-em-memoria.ts`                    | #12 entregue | Criar um cliente HTTP que implemente `PerfisApi` (`lib/perfis/tipos.ts`) e usá-lo em `app/(autenticado)/acesso/perfis/page.tsx`; apagar a versão em memória |
+| ⏳     | Aviso "muda as permissões de N usuários" usa `usuariosVinculados` do perfil carregado | `apps/web/src/components/perfis/tela-perfis.tsx`               | #12          | Usar `usuariosAfetados` do `PUT /perfis/{id}` (definido no contrato da #12) ou `usuariosVinculados` antes de salvar                                         |
+| ⏳     | Aviso de perfil sem consulta é calculado no front                                     | `apps/web/src/lib/perfis/regras.ts` (`semPermissaoDeConsulta`) | #12          | Preferir `avisos[]` da API, código `PERFIL_SEM_CONSULTA` (contrato da #12), e manter o cálculo só como pré-validação                                        |
 
 ## Home por perfil (W-02, #35)
 
@@ -272,10 +272,10 @@ A tela (`apps/web/src/components/auditoria/`, rota `/auditoria`) já consome a A
 HTTP; hoje quem responde é a simulação MSW (`apps/web/src/mocks/auditoria.ts`). Para integrar:
 rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de auditoria.
 
-| Status | Provisório                                                                                     | Onde                              | Destrava                       | Troca a fazer                                                                             |
-| ------ | ---------------------------------------------------------------------------------------------- | --------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------- |
-| ⏳     | `GET /auditoria`, `/auditoria/{id}` e `/auditoria/exportacao` sobre MSW, com eventos fictícios | `apps/web/src/mocks/auditoria.ts` | #29 (API, parte 9.4)           | Conferir filtros, detalhe e exportação contra a API real; apagar os handlers de auditoria |
-| ⏳     | `GET /usuarios` (filtro por usuário) sobre MSW                                                 | `apps/web/src/mocks/auditoria.ts` | #12 (API de perfis e usuários) | Conferir contra a API real e mover o handler para junto da simulação de perfis, se houver |
+| Status | Provisório                                                                                     | Onde                              | Destrava             | Troca a fazer                                                                             |
+| ------ | ---------------------------------------------------------------------------------------------- | --------------------------------- | -------------------- | ----------------------------------------------------------------------------------------- |
+| ⏳     | `GET /auditoria`, `/auditoria/{id}` e `/auditoria/exportacao` sobre MSW, com eventos fictícios | `apps/web/src/mocks/auditoria.ts` | #29 (API, parte 9.4) | Conferir filtros, detalhe e exportação contra a API real; apagar os handlers de auditoria |
+| 🔧     | `GET /usuarios` (filtro por usuário) sobre MSW                                                 | `apps/web/src/mocks/auditoria.ts` | #12 entregue         | Conferir contra a API real e mover o handler para junto da simulação de perfis, se houver |
 
 ### Lacunas do contrato da auditoria (decisão antes de integrar com a #29)
 
