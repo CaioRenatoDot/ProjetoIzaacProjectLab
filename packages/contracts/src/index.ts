@@ -4,4 +4,5 @@ export * from './erros';
 export * from './paginacao';
 export * from './perfis';
 export * from './permissoes';
+export * from './pessoas';
 export * from './sessao';
