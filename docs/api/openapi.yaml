@@ -236,7 +236,9 @@ paths:
       operationId: criarPerfil
       description: |
         UC-04, RF-02. Perfil salvo sem nenhuma permissão de consulta é aceito, mas a resposta
-        traz aviso em `avisos[]` para a confirmação descrita em T-05.
+        traz o aviso `PERFIL_SEM_CONSULTA` em `avisos[]` para a confirmação descrita em T-05.
+        Nome único sem diferenciar maiúsculas. Permissão fora do catálogo retorna 422.
+        `sistema` nunca é aceito no corpo: perfil criado pela API não é do sistema.
       requestBody:
         required: true
         content:
@@ -270,8 +272,10 @@ paths:
       summary: Atualizar perfil
       operationId: atualizarPerfil
       description: |
-        Perfil de sistema não é editável (T-05). A resposta traz `usuariosAfetados` para a
-        mensagem "altera permissões de N usuários".
+        Perfil de sistema não é editável (T-05): 409 `PERFIL_SISTEMA`. A resposta traz
+        `usuariosAfetados` (usuários vinculados, quando o conjunto de permissões mudou; 0 se não
+        mudou) para a mensagem "altera permissões de N usuários". A mudança vale na próxima
+        requisição de cada usuário (`docs/04` §3).
       requestBody:
         required: true
         content:
@@ -282,14 +286,21 @@ paths:
           description: Perfil atualizado
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/Perfil' }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Perfil'
+                  - type: object
+                    properties:
+                      usuariosAfetados: { type: integer }
         '403': { $ref: '#/components/responses/SemPermissao' }
         '409': { $ref: '#/components/responses/Conflito' }
     delete:
       tags: [Perfis e permissões]
       summary: Excluir perfil
       operationId: excluirPerfil
-      description: Bloqueado quando há usuários vinculados - retorna VINCULO_ATIVO (T-05).
+      description: |
+        Bloqueado quando há usuários vinculados: 409 `VINCULO_ATIVO` (T-05). Perfil de sistema:
+        409 `PERFIL_SISTEMA`.
       responses:
         '204': { description: Excluído }
         '409': { $ref: '#/components/responses/Conflito' }
@@ -323,6 +334,9 @@ paths:
       tags: [Perfis e permissões]
       summary: Criar usuário
       operationId: criarUsuario
+      description: |
+        Permissão `perfis:criar`. `identificacao` é gravada em minúsculas e sem espaços nas pontas
+        e é única. A senha inicial é obrigatória (8 a 128 caracteres) e só o hash é gravado.
       requestBody:
         required: true
         content:
@@ -335,6 +349,46 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Usuario' }
         '409': { $ref: '#/components/responses/Duplicidade' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
+
+  /usuarios/{id}:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Perfis e permissões]
+      summary: Consultar usuário
+      operationId: consultarUsuario
+      description: Permissão `perfis:consultar`. Nunca devolve a senha nem o hash.
+      responses:
+        '200':
+          description: Usuário
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+    patch:
+      tags: [Perfis e permissões]
+      summary: Alterar usuário
+      operationId: alterarUsuario
+      description: |
+        Permissão `perfis:editar`. Altera nome, perfil, situação ou senha e desbloqueia o login
+        (`desbloquear: true` zera as tentativas). Não há exclusão de usuário: a trilha de
+        auditoria aponta para ele e é retida por 5 anos; inativar substitui excluir.
+        Inativar ou redefinir a senha encerra as sessões abertas do usuário. Quem está logado
+        não pode inativar o próprio usuário nem trocar o próprio perfil (422).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UsuarioAlteracao' }
+      responses:
+        '200':
+          description: Usuário alterado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Usuario' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
 
   # ─────────────────────────────── Cadastros base ─────────────────────────────
   /pacientes:
@@ -2200,15 +2254,31 @@ components:
         perfilNome: { type: string }
         ativo: { type: boolean }
         ultimoLoginEm: { type: [string, 'null'], format: date-time }
+        bloqueadoAte:
+          type: [string, 'null']
+          format: date-time
+          description: Fim do bloqueio por tentativas, quando vigente
     UsuarioEntrada:
       type: object
-      required: [nome, identificacao, perfilId]
+      required: [nome, identificacao, perfilId, senhaInicial]
       properties:
         nome: { type: string }
         identificacao: { type: string }
-        senhaInicial: { type: string, format: password }
+        senhaInicial: { type: string, format: password, minLength: 8, maxLength: 128 }
         perfilId: { type: string, format: uuid }
         ativo: { type: boolean, default: true }
+    UsuarioAlteracao:
+      type: object
+      minProperties: 1
+      properties:
+        nome: { type: string }
+        perfilId: { type: string, format: uuid }
+        ativo: { type: boolean }
+        novaSenha: { type: string, format: password, minLength: 8, maxLength: 128 }
+        desbloquear:
+          type: boolean
+          enum: [true]
+          description: Libera o login bloqueado por tentativas
     Perfil:
       type: object
       properties:

@@ -98,7 +98,8 @@ mudança de perfil valem na requisição seguinte. A lista `permissoes` do token
 
 O catálogo é a constante `CATALOGO_PERMISSOES` de `packages/contracts/src/permissoes.ts`: a API
 valida contra ela, inclusive na gravação de perfis, e permissão gravada no banco fora do catálogo
-é ignorada. Ausência e desistência usam o mesmo módulo `ausencia` (`ausencia:consultar` e
+é ignorada. Usuários (`/usuarios`) usam o módulo `perfis` (`perfis:consultar`, `perfis:criar`,
+`perfis:editar`). Ausência e desistência usam o mesmo módulo `ausencia` (`ausencia:consultar` e
 `ausencia:criar`); não há módulo próprio de desistência.
 
 Toda rota exige uma permissão (`@Requer`) ou é marcada pública (`@Publico`); rota sem nenhum dos
@@ -161,6 +162,7 @@ causa e o próximo passo, nunca apenas "erro" (item 3.2 da especificação de UI
 | `LIMITE_SUPERVISAO_ATINGIDO` | 409         | Supervisor no limite de estudantes simultâneos                                | RN-08        |
 | `SUPERVISOR_INDISPONIVEL`    | 409         | Nenhum supervisor habilitado; dispara bloqueio da fila                        | RN-07, RN-10 |
 | `DESFECHO_OBRIGATORIO`       | 422         | Encerramento sem desfecho                                                     | UC-13        |
+| `PERFIL_SISTEMA`             | 409         | Edição ou exclusão de perfil do sistema                                       | T-05         |
 | `ESPECIALIDADE_INATIVA`      | 409         | Encaminhamento interno para especialidade inativa                             | UC-14        |
 | `PACIENTE_COM_RESTRICAO`     | 200 + aviso | Reincidência de ausências; **não bloqueia**, apenas avisa                     | RN-13        |
 
