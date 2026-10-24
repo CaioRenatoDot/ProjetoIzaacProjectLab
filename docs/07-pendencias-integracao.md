@@ -17,16 +17,17 @@ indicada e remove o item deste arquivo no mesmo PR.
 
 ## Índice por issue do back-end
 
-| Issue (back-end)                              | O que destrava no front                            | Seção                                                   |
-| --------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- |
-| #10 (3.1, login, refresh e bloqueio)          | Login e sessão reais (hoje sobre a simulação MSW)  | [Sessão e acesso](#sessão-e-acesso)                     |
-| #11 (3.2, guard e catálogo de permissões)     | Permissões usadas em menu, home e telas            | [Sessão e acesso](#sessão-e-acesso)                     |
-| #12 (3.6, API de perfis)                      | Tela de perfis (W-05)                              | [Perfis](#perfis-w-05-36)                               |
-| #13 e #14 (4.1, API dos cadastros base)       | Lista e formulário de cadastros (W-03, W-04)       | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)             |
-| #15 (5.1, API de triagem)                     | Ficha de triagem (W-06)                            | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
-| #16 (5.2, emissão e reclassificação de senha) | Emissão da senha e modal de reclassificação (W-07) | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
-| #29 (9.4, consulta e exportação da trilha)    | Trilha de auditoria (W-18)                         | [Auditoria](#trilha-de-auditoria-w-18-50)               |
-| #28 (9.3, alertas de SLA e escalonamento)     | Alertas de SLA (W-18)                              | [Alertas](#alertas-de-sla-w-18-49)                      |
+| Issue (back-end)                                | O que destrava no front                            | Seção                                                   |
+| ----------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- |
+| #10 (3.1, login, refresh e bloqueio)            | Login e sessão reais (hoje sobre a simulação MSW)  | [Sessão e acesso](#sessão-e-acesso)                     |
+| #11 (3.2, guard e catálogo de permissões)       | Permissões usadas em menu, home e telas            | [Sessão e acesso](#sessão-e-acesso)                     |
+| #12 (3.6, API de perfis)                        | Tela de perfis (W-05)                              | [Perfis](#perfis-w-05-36)                               |
+| #13 e #14 (4.1, API dos cadastros base)         | Lista e formulário de cadastros (W-03, W-04)       | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)             |
+| #15 (5.1, API de triagem)                       | Ficha de triagem (W-06)                            | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
+| #16 (5.2, emissão e reclassificação de senha)   | Emissão da senha e modal de reclassificação (W-07) | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
+| #29 (9.4, consulta e exportação da trilha)      | Trilha de auditoria (W-18)                         | [Auditoria](#trilha-de-auditoria-w-18-50)               |
+| #28 (9.3, alertas de SLA e escalonamento)       | Alertas de SLA (W-18)                              | [Alertas](#alertas-de-sla-w-18-49)                      |
+| #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                              | [Painel de fila](#painel-de-fila-w-08-41)               |
 
 ## Sessão e acesso
 
@@ -90,16 +91,20 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 
 ## Tempo real
 
-| Status | Provisório                                                                                                                   | Onde                                                                  | Destrava                  | Troca a fazer                                                                                                                                    |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ⏳     | Conexão sempre "conectada" (`<ConexaoProvider conectado>`)                                                                   | `apps/web/src/components/shell.tsx`                                   | Etapa 6 (Socket.IO)       | Ligar ao estado real do socket; o banner e o `podeEscrever` já reagem (`docs/04` §7)                                                             |
-| ⏳     | Alertas sem o canal `/alertas`: a tela revalida por HTTP a cada 30 s e detecta alerta novo e normalizado comparando leituras | `apps/web/src/components/alertas/tela-alertas.tsx` (`REVALIDACAO_MS`) | Etapa 6 (Socket.IO) e #28 | Com `socket.io-client` (issue própria, AGENTS §3), em `sla.excedido` e `sla.normalizado` invalidar `['alertas']`; o anúncio já sai da comparação |
+| Status | Provisório                                                                                                                                                                                                                                                                                   | Onde                                                                  | Destrava                          | Troca a fazer                                                                                                                                    |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ⏳     | Conexão sempre "conectada" (`<ConexaoProvider conectado>`)                                                                                                                                                                                                                                   | `apps/web/src/components/shell.tsx`                                   | Etapa 6 (Socket.IO)               | Ligar ao estado real do socket; o banner e o `podeEscrever` já reagem (`docs/04` §7)                                                             |
+| ⏳     | Painel de fila com cliente Socket.IO de `/filas` (`socket.io-client` 4.8.4): conecta com o token no `auth` do handshake, invalida o quadro a cada evento do `docs/04` §7 e liga o banner e o congelamento de escrita ao estado da conexão. Na simulação (MSW) não conecta e fica "conectado" | `apps/web/src/components/fila/use-tempo-real-fila.ts`                 | Etapa 6 (servidor Socket.IO, #24) | Com o servidor no ar, rodar com `NEXT_PUBLIC_API_MOCK=false` e conferir conexão, sala e eventos (lacuna 2 do painel de fila)                     |
+| ⏳     | Alertas sem o canal `/alertas`: a tela revalida por HTTP a cada 30 s e detecta alerta novo e normalizado comparando leituras                                                                                                                                                                 | `apps/web/src/components/alertas/tela-alertas.tsx` (`REVALIDACAO_MS`) | Etapa 6 (Socket.IO) e #28         | Com `socket.io-client` (issue própria, AGENTS §3), em `sla.excedido` e `sla.normalizado` invalidar `['alertas']`; o anúncio já sai da comparação |
 
 ## Rotas ainda inexistentes
 
 Os links do menu (`apps/web/src/lib/modulos.ts`) e das ações da home apontam para rotas que
-outras issues criam: `/triagem`, `/fila`, `/chamada`, `/alocacao`, `/atendimento`,
+outras issues criam: `/triagem`, `/chamada`, `/alocacao`, `/atendimento`,
 `/encaminhamento`, `/ausencias`, `/indicadores`. Até lá, respondem 404.
+
+No painel de fila (W-08, #41), "Alocar recursos" leva a `/alocacao?senha=<id>` (#43) e "Abrir
+atendimento" leva a `/atendimento?senha=<id>` (Etapa 7).
 
 ## Divergências do plano do front (`docs/.ref/SPECS/frontend/`)
 
@@ -148,13 +153,36 @@ decisão do tech lead e do back-end dono do módulo.
 
 ### Pendências só do front (sem depender de API)
 
-| Status | Provisório                                                          | Onde                                                      | Troca a fazer                                                                                                                                                      |
-| ------ | ------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ⏳     | Schema Zod da ficha é uma cópia local, com RN-02 e RN-03            | `apps/web/src/lib/triagem/schema.ts`                      | Quando a #15 criar o schema oficial em `packages/contracts`, importar de lá e apagar a cópia (e `prioridadeEfetiva`, se o servidor passar a devolver a prioridade) |
-| ⏳     | "Imprimir senha" só chama `window.print()`, sem layout de impressão | `apps/web/src/components/triagem/etapa-senha.tsx`         | Criar estilo de impressão com a senha em destaque (e decidir se há impressora térmica)                                                                             |
-| ⏳     | Posição estimada na fila é fixa no mock                             | `apps/web/src/lib/triagem/api-em-memoria.ts`              | Usar `posicaoEstimada` real da API                                                                                                                                 |
-| ⏳     | Modal de reclassificação ainda não é aberto pelo painel de fila     | `apps/web/src/components/senha/modal-reclassificacao.tsx` | Parte 6.4 (#41): abrir a partir de "Detalhes" da senha, só se `podeReclassificar(status)` (`lib/triagem/reclassificacao.ts`)                                       |
-| ⏳     | Testes Playwright rodam contra os dados em memória                  | `apps/web/e2e/triagem.e2e.ts`                             | Com API real, rodar contra o banco de teste com seed (paciente com restrição, especialidade sem fila, especialidade bloqueada)                                     |
+| Status | Provisório                                                          | Onde                                              | Troca a fazer                                                                                                                                                      |
+| ------ | ------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ⏳     | Schema Zod da ficha é uma cópia local, com RN-02 e RN-03            | `apps/web/src/lib/triagem/schema.ts`              | Quando a #15 criar o schema oficial em `packages/contracts`, importar de lá e apagar a cópia (e `prioridadeEfetiva`, se o servidor passar a devolver a prioridade) |
+| ⏳     | "Imprimir senha" só chama `window.print()`, sem layout de impressão | `apps/web/src/components/triagem/etapa-senha.tsx` | Criar estilo de impressão com a senha em destaque (e decidir se há impressora térmica)                                                                             |
+| ⏳     | Posição estimada na fila é fixa no mock                             | `apps/web/src/lib/triagem/api-em-memoria.ts`      | Usar `posicaoEstimada` real da API                                                                                                                                 |
+| ⏳     | Testes Playwright rodam contra os dados em memória                  | `apps/web/e2e/triagem.e2e.ts`                     | Com API real, rodar contra o banco de teste com seed (paciente com restrição, especialidade sem fila, especialidade bloqueada)                                     |
+
+## Painel de fila (W-08, #41)
+
+O painel (`apps/web/src/components/fila/`) consome a API pelo cliente HTTP; hoje quem responde é a
+simulação única das filas (`apps/web/src/mocks/filas.ts`), que também atende a tela de Ausências.
+Especialidades de teste: Fisioterapia (cenários da #47), Fonoaudiologia (bloqueada, RN-10),
+Nutrição (RN-03, RN-04, SLA e todos os status) e Psicologia (vazia).
+
+| Status | Provisório                                                                                                                                   | Onde                                            | Destrava                                    | Troca a fazer                                           |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------------- |
+| ⏳     | `GET /filas`, quadro, chamada com `Idempotency-Key`, rechamada, reclassificação e `GET /senhas/{id}` sobre MSW, com dados fictícios          | `apps/web/src/mocks/filas.ts`                   | #17 a #19 (API) e #16 (reclassificação)     | Conferir o painel contra a API real; apagar os handlers |
+| ⏳     | O modal de reclassificação lê o mínimo da justificativa de `GET /parametros` (proposta, lacuna 1 da triagem)                                 | `apps/web/src/lib/fila/reclassificacao-http.ts` | decisão do back sobre parâmetros da unidade | Trocar pelo endpoint definido                           |
+| ⏳     | Visão consolidada multiespecialidade e seletor de turno (T-09) não implementados: o contrato só tem o quadro por fila e não filtra por turno | `apps/web/src/components/fila/tela-fila.tsx`    | contrato (lacunas 4 e 5)                    | Implementar quando o contrato tiver os parâmetros       |
+
+### Lacunas do contrato da fila (decisão antes de integrar com #17 a #19)
+
+| #   | Lacuna                                                                                                                 | O que o front faz hoje                                                                                                    | Pedido ao back-end                                                                       |
+| --- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| 1   | **`SenhaResumo` não traz a chamada vigente**: "Rechamar" usa `POST /chamadas/{id}/rechamada`, que pede o id da chamada | Lê `chamadaId` na senha (a simulação devolve) e só mostra "Rechamar" quando ele existe                                    | Incluir `chamadaId` em `SenhaResumo` ou aceitar a rechamada por `/senhas/{id}/rechamada` |
+| 2   | **Sala `especialidade:{id}` do `/filas`**: o `docs/04` §7 não diz como o cliente entra na sala                         | Envia `especialidadeId` na query do handshake (**proposta**)                                                              | Definir o mecanismo (query do handshake ou evento de inscrição)                          |
+| 3   | **Confirmação de urgente (RN-03)**: `furouFilaPorUrgencia` só chega depois da chamada feita                            | Antes de chamar, verifica no quadro se a primeira aguardando é urgente e chegou depois de outra senha, e pede confirmação | Confirmar que a checagem no front basta ou expor a próxima senha antes da chamada        |
+| 4   | **Seletor de turno (T-09)**: `GET /filas/{id}/senhas` não filtra por turno                                             | Não oferece o seletor                                                                                                     | Acrescentar o parâmetro                                                                  |
+| 5   | **Visão consolidada (T-09, RNF-08)**: o quadro é por fila; não há quadro de várias especialidades                      | Mostra uma especialidade por vez e os bloqueios de todas na faixa de avisos                                               | Definir se a visão consolidada é um endpoint próprio                                     |
+| 6   | **"Aguardando recurso" no quadro**: a T-09 tem cinco colunas e nenhuma para `AGUARDANDO_RECURSO`                       | A senha aparece na coluna "Chamada", com a etiqueta do próprio status                                                     | Confirmar com a especificação de UI                                                      |
 
 ## Ausência e desistência (W-15 e W-16, #47)
 
@@ -189,11 +217,9 @@ Não representam os parâmetros da unidade nem executam regras no servidor real.
   Exige `ausencia:consultar` e `fila:consultar`; escrita usa `ausencia:criar`.
   Confirmar a permissão de desistência com o back, pois o catálogo não tem módulo próprio.
   O seletor carrega até 100 filas; se a unidade ultrapassar isso, paginar também esse catálogo.
-- **#41:** reutilizar `PainelOcorrenciasSenha` no painel de fila definitivo. O painel lateral
-  de ocorrências já é utilizado em `/ausencias`; seus modais não abrem diretamente nos cartões. Passar a senha atual,
-  `criarAusenciasApi(cliente)`, `onRegistrada` para atualizar a fila, `onAtualizar` para
-  recarregar após 409 e `onAusenciaRegistrada` para manter a notificação no painel.
-  A tela de Ausências permite verificar o front sem implementar o painel completo da #41.
+- **#41 (feito):** o painel de fila usa `AcoesAusenciaDesistencia` no painel lateral de
+  "Detalhes", e a simulação das senhas passou para `mocks/filas.ts`, compartilhada pelas duas
+  telas (os cenários F013 a F018 continuam iguais, na fila de Fisioterapia).
   As capturas e o checklist estão em [entregas/GH-47-validacao.md](entregas/GH-47-validacao.md).
 - **RN-12, evento real:** ligar a fonte de registros automáticos do back à prop
   `assinarAusenciasAutomaticas` de `TelaAusencias` ou a `NotificacaoAusencia` do painel.
