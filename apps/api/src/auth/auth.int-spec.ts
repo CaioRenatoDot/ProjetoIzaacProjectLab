@@ -5,6 +5,7 @@ import { PrismaClient } from '@prisma/client';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
+import { AutorizacaoModule } from '../common/autorizacao/autorizacao.module';
 import { garantirBancoDeTeste } from '../common/testing/banco-de-teste';
 import { criarAppDeTeste, type AppDeTeste } from '../common/testing/criar-app-de-teste';
 import { validarAmbiente } from '../config/ambiente';
@@ -77,6 +78,7 @@ describe('autenticação e sessão (#10)', () => {
         ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true, validate: validarAmbiente }),
         PrismaModule,
         AuthModule,
+        AutorizacaoModule,
       ],
     });
   });
