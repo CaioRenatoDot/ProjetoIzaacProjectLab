@@ -12,6 +12,7 @@ import { COOKIE_REFRESH_MOCK } from '@/mocks/cookies';
 import { handlersCadastros, handlersCatalogos, reiniciarMockCadastros } from '@/mocks/cadastros';
 import { handlers, reiniciarMockAuth } from '@/mocks/handlers';
 import { handlersAusencias, reiniciarMockAusencias } from '@/mocks/ausencias';
+import { handlersAlocacao, reiniciarMockAlocacao } from '@/mocks/alocacao';
 import { handlersFilas } from '@/mocks/filas';
 
 export const servidor = setupServer(
@@ -19,6 +20,7 @@ export const servidor = setupServer(
   ...handlersCadastros,
   ...handlersCatalogos,
   ...handlersFilas,
+  ...handlersAlocacao,
   ...handlersAusencias,
 
   ...handlersAuditoria,
@@ -32,6 +34,7 @@ export function usarServidorMock() {
     servidor.resetHandlers();
     reiniciarMockAuth();
     reiniciarMockAusencias();
+    reiniciarMockAlocacao();
     reiniciarMockCadastros();
     reiniciarMockAuditoria();
     reiniciarMockAlertas();
