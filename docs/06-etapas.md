@@ -185,13 +185,13 @@ Objetivo: paciente triado recebe senha posicionada na fila.
 Objetivo: equipe chama a próxima senha e o telão mostra a chamada em tempo real.
 **Pronto quando:** a senha vai de _aguardando_ para _chamada_ e aparece no telão sem recarregar.
 
-| Parte | Descrição                                                                            | Responsável |
-| ----- | ------------------------------------------------------------------------------------ | ----------- |
-| 6.1   | Máquina de estados da senha, com teste de cada transição                             | Nathan      |
-| 6.2   | Quadro da fila ordenado (RN-04) e "Chamar próxima" sem chamada duplicada             | Nathan      |
-| 6.3   | Bloqueio da fila por falta de supervisor (RN-10) e eventos em tempo real (Socket.IO) | Nathan      |
-| 6.4   | Tela W-08 · Painel de fila                                                           | Caio Renato |
-| 6.5   | Tela W-09 · Telão e W-10 · Consulta de senha pelo paciente                           | Thalita     |
+| Parte | Descrição                                                                            | Responsável     |
+| ----- | ------------------------------------------------------------------------------------ | --------------- |
+| 6.1   | Máquina de estados da senha, com teste de cada transição                             | Nathan          |
+| 6.2   | Quadro da fila ordenado (RN-04) e "Chamar próxima" sem chamada duplicada             | Nathan          |
+| 6.3   | Bloqueio da fila por falta de supervisor (RN-10) e eventos em tempo real (Socket.IO) | Nathan          |
+| 6.4   | Tela W-08 · Painel de fila                                                           | Caio Gabriel ✅ |
+| 6.5   | Tela W-09 · Telão e W-10 · Consulta de senha pelo paciente                           | Thalita         |
 
 ### Etapa 7 · Alocação e atendimento
 
@@ -249,8 +249,8 @@ Objetivo: garantir que o sistema funciona e está pronto para a demonstração.
 
 | Integrante   | Partes                                                              |
 | ------------ | ------------------------------------------------------------------- |
-| Caio Renato  | 1.1–1.3 (1-A), 3.4, 6.4, 7.3, 7.4 · ⭐ 7.5, 9.1, 9.3, 9.4           |
-| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4 · ⭐ 3.6       |
+| Caio Renato  | 1.1–1.3 (1-A), 3.4, 7.3, 7.4 · ⭐ 7.5, 9.1, 9.3, 9.4                |
+| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4, 6.4 · ⭐ 3.6  |
 | Thalita      | 6.5, 8.3, 10.2 · ⭐ 9.2, 9.5                                        |
 | Rildo        | 2.1, 2.3, 2.4, 3.1, 3.2, 4.1, 5.1, 5.2, 8.1, 8.2 · ⭐ 3.6, 9.2, 9.4 |
 | Nathan       | 2.2, 2.3, 6.1–6.3, 7.1, 7.2, 8.1 · ⭐ 7.5, 9.1, 9.3                 |

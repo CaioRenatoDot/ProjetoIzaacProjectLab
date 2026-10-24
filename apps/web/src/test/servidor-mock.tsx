@@ -12,11 +12,13 @@ import { COOKIE_REFRESH_MOCK } from '@/mocks/cookies';
 import { handlersCadastros, handlersCatalogos, reiniciarMockCadastros } from '@/mocks/cadastros';
 import { handlers, reiniciarMockAuth } from '@/mocks/handlers';
 import { handlersAusencias, reiniciarMockAusencias } from '@/mocks/ausencias';
+import { handlersFilas } from '@/mocks/filas';
 
 export const servidor = setupServer(
   ...handlers,
   ...handlersCadastros,
   ...handlersCatalogos,
+  ...handlersFilas,
   ...handlersAusencias,
 
   ...handlersAuditoria,
