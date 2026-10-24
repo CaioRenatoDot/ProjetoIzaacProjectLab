@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { LoggerModule } from 'nestjs-pino';
 
-import { validarAmbiente } from './config/ambiente';
+import { opcoesLog } from './common/logging/opcoes-log';
+import { type Ambiente, validarAmbiente } from './config/ambiente';
 import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 
@@ -13,6 +15,12 @@ import { PrismaModule } from './prisma/prisma.module';
       // de onde o pnpm --filter api executa os scripts.
       envFilePath: ['.env', '../../.env'],
       validate: validarAmbiente,
+    }),
+    LoggerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<Ambiente, true>) => ({
+        pinoHttp: opcoesLog(config.get('LOG_LEVEL', { infer: true })),
+      }),
     }),
     PrismaModule,
     HealthModule,
