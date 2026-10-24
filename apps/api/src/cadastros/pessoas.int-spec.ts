@@ -29,6 +29,11 @@ let procedimentoId: string;
 let seq = 0;
 const unico = (base: string) => `${base} ${Date.now()}-${++seq}`;
 const documentoUnico = () => `${Date.now()}${++seq}`.slice(-11);
+/** Nascimento único por chamada: nome fixo + mesma data seria duplicidade entre execuções. */
+const nascimentoUnico = () =>
+  new Date(Date.UTC(1930, 0, 1) + ((Date.now() + ++seq * 7919) % (70 * 365)) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 const corpo = <T>(resposta: request.Response) => resposta.body as T;
 const api = () => request(contexto.servidor);
 const comToken = (req: request.Test) => req.set('Authorization', `Bearer ${admin.token}`);
@@ -37,7 +42,7 @@ const novoPaciente = (dados: Record<string, unknown> = {}) =>
   comToken(api().post('/api/v1/pacientes')).send({
     nomeCompleto: unico('Maria Aparecida da Silva'),
     documento: documentoUnico(),
-    dataNascimento: '1950-03-10',
+    dataNascimento: nascimentoUnico(),
     vinculo: 'EXTERNO',
     ...dados,
   });
@@ -89,7 +94,7 @@ describe('cadastros de paciente, estudante e supervisor (#14)', () => {
       const paciente = corpo<Paciente>(resposta);
       expect(paciente.iniciais).toBe('M. A. S.');
       expect(paciente.documento).toMatch(/^\d+$/);
-      expect(paciente.dataNascimento).toBe('1950-03-10');
+      expect(paciente.dataNascimento).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     });
 
     it('UC-01 recusa documento repetido e nome + nascimento repetidos', async () => {
@@ -102,6 +107,7 @@ describe('cadastros de paciente, estudante e supervisor (#14)', () => {
 
       const porNome = await novoPaciente({
         nomeCompleto: `  ${original.nomeCompleto.toUpperCase()}  `,
+        dataNascimento: original.dataNascimento,
       }).expect(409);
       expect(corpo<Problema & { recursoExistenteId: string }>(porNome).recursoExistenteId).toBe(
         original.id,
