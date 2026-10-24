@@ -16,7 +16,10 @@ export interface SenhaReclassificavel {
 }
 
 export interface ModalReclassificacaoProps {
-  api: TriagemApi;
+  api: Pick<
+    TriagemApi,
+    'historicoReclassificacoes' | 'consultarSenha' | 'reclassificar' | 'parametros'
+  >;
   aberto: boolean;
   onAbertoChange: (aberto: boolean) => void;
   senha: SenhaReclassificavel;

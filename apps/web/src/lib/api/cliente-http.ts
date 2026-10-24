@@ -26,6 +26,8 @@ export interface OpcoesRequisicao {
   semRenovar?: boolean;
   /** `blob` devolve o corpo como arquivo, para exportações em CSV. */
   resposta?: 'json' | 'blob';
+  /** Cabeçalhos extras, como `Idempotency-Key` (`docs/04` §6). */
+  cabecalhos?: Record<string, string>;
 }
 
 export interface ClienteHttp {
@@ -59,6 +61,7 @@ export function criarClienteHttp(config: ConfigClienteHttp): ClienteHttp {
     const token = config.obterToken();
     const headers: Record<string, string> = {
       Accept: opcoes.resposta === 'blob' ? '*/*' : 'application/json',
+      ...opcoes.cabecalhos,
     };
     if (opcoes.corpo !== undefined) headers['Content-Type'] = 'application/json';
     if (token) headers.Authorization = `Bearer ${token}`;

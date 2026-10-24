@@ -35,6 +35,8 @@ export interface Sessao {
   entrar: (dados: DadosLogin) => Promise<void>;
   sair: () => Promise<void>;
   cliente: ClienteHttp;
+  /** Access token atual, para o handshake do Socket.IO (`docs/04` §7). Nunca persistir. */
+  obterToken: () => string | null;
 }
 
 const SessaoContext = createContext<Sessao | null>(null);
@@ -140,6 +142,7 @@ export function SessaoProvider({ baseUrl, children }: SessaoProviderProps) {
       entrar,
       sair,
       cliente,
+      obterToken: () => token.current,
     }),
     [estado, usuario, encerramento, entrar, sair, cliente],
   );
