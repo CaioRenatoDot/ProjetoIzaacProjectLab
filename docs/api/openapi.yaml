@@ -404,6 +404,8 @@ paths:
         - { $ref: '#/components/parameters/Pagina' }
         - { $ref: '#/components/parameters/Tamanho' }
         - { $ref: '#/components/parameters/Busca' }
+        - { name: ordenar, in: query, schema: { type: string, enum: [nome], default: nome } }
+        - { $ref: '#/components/parameters/Direcao' }
         - name: vinculo
           in: query
           schema: { $ref: '#/components/schemas/VinculoPaciente' }
@@ -489,6 +491,30 @@ paths:
         '204': { description: Excluído }
         '409': { $ref: '#/components/responses/Conflito' }
 
+    patch:
+      tags: [Cadastros base]
+      summary: Ativar ou inativar paciente
+      operationId: alterarSituacaoPaciente
+      description: |
+        Permissão `cadastros:editar`. Inativar substitui a exclusão quando o registro tem vínculo
+        ativo (T-03): ele deixa de aparecer para novas operações e o histórico é mantido.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ativo]
+              properties:
+                ativo: { type: boolean }
+      responses:
+        '200':
+          description: Situação alterada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Paciente' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
   /estudantes:
     get:
       tags: [Cadastros base]
@@ -499,6 +525,8 @@ paths:
         - { $ref: '#/components/parameters/Pagina' }
         - { $ref: '#/components/parameters/Tamanho' }
         - { $ref: '#/components/parameters/Busca' }
+        - { name: ordenar, in: query, schema: { type: string, enum: [nome], default: nome } }
+        - { $ref: '#/components/parameters/Direcao' }
         - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
         - { name: turno, in: query, schema: { $ref: '#/components/schemas/Turno' } }
         - { name: disponivel, in: query, schema: { type: boolean } }
@@ -575,6 +603,30 @@ paths:
         '204': { description: Excluído }
         '409': { $ref: '#/components/responses/Conflito' }
 
+    patch:
+      tags: [Cadastros base]
+      summary: Ativar ou inativar estudante
+      operationId: alterarSituacaoEstudante
+      description: |
+        Permissão `cadastros:editar`. Inativar substitui a exclusão quando o registro tem vínculo
+        ativo (T-03): ele deixa de aparecer para novas operações e o histórico é mantido.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ativo]
+              properties:
+                ativo: { type: boolean }
+      responses:
+        '200':
+          description: Situação alterada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Estudante' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
   /supervisores:
     get:
       tags: [Cadastros base]
@@ -587,6 +639,8 @@ paths:
         - { $ref: '#/components/parameters/Pagina' }
         - { $ref: '#/components/parameters/Tamanho' }
         - { $ref: '#/components/parameters/Busca' }
+        - { name: ordenar, in: query, schema: { type: string, enum: [nome], default: nome } }
+        - { $ref: '#/components/parameters/Direcao' }
         - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
         - { name: turno, in: query, schema: { $ref: '#/components/schemas/Turno' } }
       responses:
@@ -659,6 +713,30 @@ paths:
         '204': { description: Excluído }
         '409': { $ref: '#/components/responses/Conflito' }
 
+    patch:
+      tags: [Cadastros base]
+      summary: Ativar ou inativar supervisor
+      operationId: alterarSituacaoSupervisor
+      description: |
+        Permissão `cadastros:editar`. Inativar substitui a exclusão quando o registro tem vínculo
+        ativo (T-03): ele deixa de aparecer para novas operações e o histórico é mantido.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ativo]
+              properties:
+                ativo: { type: boolean }
+      responses:
+        '200':
+          description: Situação alterada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Supervisor' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
   /salas:
     get:
       tags: [Cadastros base]
@@ -668,6 +746,8 @@ paths:
         - { $ref: '#/components/parameters/Pagina' }
         - { $ref: '#/components/parameters/Tamanho' }
         - { $ref: '#/components/parameters/Busca' }
+        - { name: ordenar, in: query, schema: { type: string, enum: [identificacao], default: identificacao } }
+        - { $ref: '#/components/parameters/Direcao' }
         - { name: recursoId, in: query, schema: { type: string, format: uuid } }
         - { name: disponivel, in: query, schema: { type: boolean } }
       responses:
@@ -740,6 +820,30 @@ paths:
         '204': { description: Excluída }
         '409': { $ref: '#/components/responses/Conflito' }
 
+    patch:
+      tags: [Cadastros base]
+      summary: Ativar ou inativar sala
+      operationId: alterarSituacaoSala
+      description: |
+        Permissão `cadastros:editar`. Inativar substitui a exclusão quando o registro tem vínculo
+        ativo (T-03): ele deixa de aparecer para novas operações e o histórico é mantido.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ativo]
+              properties:
+                ativo: { type: boolean }
+      responses:
+        '200':
+          description: Situação alterada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sala' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
   /especialidades:
     get:
       tags: [Cadastros base]
@@ -749,6 +853,8 @@ paths:
         - { $ref: '#/components/parameters/Pagina' }
         - { $ref: '#/components/parameters/Tamanho' }
         - { $ref: '#/components/parameters/Busca' }
+        - { name: ordenar, in: query, schema: { type: string, enum: [nome], default: nome } }
+        - { $ref: '#/components/parameters/Direcao' }
         - { name: ativa, in: query, schema: { type: boolean } }
         - { name: exigeSupervisao, in: query, schema: { type: boolean } }
       responses:
@@ -824,6 +930,114 @@ paths:
         '409': { $ref: '#/components/responses/Conflito' }
 
   # ──────────────────────────────── Triagem ───────────────────────────────────
+    patch:
+      tags: [Cadastros base]
+      summary: Ativar ou inativar especialidade
+      operationId: alterarSituacaoEspecialidade
+      description: |
+        Permissão `cadastros:editar`. Inativar substitui a exclusão quando o registro tem vínculo
+        ativo (T-03): ele deixa de aparecer para novas operações e o histórico é mantido.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ativa]
+              properties:
+                ativa: { type: boolean }
+      responses:
+        '200':
+          description: Situação alterada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Especialidade' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
+  /habilitacoes:
+    get:
+      tags: [Cadastros base]
+      summary: Listar habilitações
+      operationId: listarHabilitacoes
+      description: |
+        Cadastro de apoio (identificador e nome) usado nas seleções múltiplas de W-04 e nos
+        filtros (Documento de Requisitos §5, tabelas 2 a 5). Permissão `cadastros:consultar`.
+        Os registros vêm do seed; não há criação pela API nesta versão.
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemReferencia' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  /procedimentos:
+    get:
+      tags: [Cadastros base]
+      summary: Listar procedimentos
+      operationId: listarProcedimentos
+      description: |
+        Cadastro de apoio (identificador e nome) usado nas seleções múltiplas de W-04 e nos
+        filtros (Documento de Requisitos §5, tabelas 2 a 5). Permissão `cadastros:consultar`.
+        Os registros vêm do seed; não há criação pela API nesta versão.
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemReferencia' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
+  /recursos:
+    get:
+      tags: [Cadastros base]
+      summary: Listar recursos
+      operationId: listarRecursos
+      description: |
+        Cadastro de apoio (identificador e nome) usado nas seleções múltiplas de W-04 e nos
+        filtros (Documento de Requisitos §5, tabelas 2 a 5). Permissão `cadastros:consultar`.
+        Os registros vêm do seed; não há criação pela API nesta versão.
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemReferencia' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
   /triagens:
     post:
       tags: [Triagem]
@@ -2093,6 +2307,10 @@ components:
       in: query
       description: Busca textual do filtro da tela
       schema: { type: string }
+    Direcao:
+      name: direcao
+      in: query
+      schema: { type: string, enum: [asc, desc], default: asc }
     IdempotencyKey:
       name: Idempotency-Key
       in: header
@@ -2433,8 +2651,10 @@ components:
         recursos:
           type: array
           items: { $ref: '#/components/schemas/ItemReferencia' }
-        situacao: { type: string }
-        ocupada: { type: boolean }
+        situacao: { $ref: '#/components/schemas/SituacaoSala' }
+        ocupada:
+          type: boolean
+          description: Tem alocação não liberada (RN-09); falso até existir a alocação (#7)
         ativo: { type: boolean }
     SalaEntrada:
       type: object
@@ -2445,7 +2665,7 @@ components:
         recursosIds:
           type: array
           items: { type: string, format: uuid }
-        situacao: { type: string }
+        situacao: { $ref: '#/components/schemas/SituacaoSala' }
     Especialidade:
       type: object
       properties:
@@ -2454,7 +2674,9 @@ components:
         descricao: { type: string }
         exigeSupervisaoDocente: { type: boolean, description: RN-07 }
         exigeValidacaoEncerramento: { type: boolean, description: RN-11 }
-        toleranciaMinutos: { type: integer, description: RN-12 }
+        toleranciaMinutos:
+          type: [integer, 'null']
+          description: RN-12. Tolerância própria da especialidade; nulo usa o parâmetro geral da unidade
         recursosExigidos:
           type: array
           items: { $ref: '#/components/schemas/ItemReferencia' }
@@ -2473,6 +2695,11 @@ components:
         recursosExigidosIds:
           type: array
           items: { type: string, format: uuid }
+    SituacaoSala:
+      type: string
+      description: Tabela 4, ID04
+      enum: [DISPONIVEL, EM_MANUTENCAO, INDISPONIVEL]
+      default: DISPONIVEL
     ItemReferencia:
       type: object
       properties:
