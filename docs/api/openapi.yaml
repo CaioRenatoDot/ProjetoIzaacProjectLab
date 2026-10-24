@@ -62,9 +62,12 @@ paths:
       summary: Autenticar usuário
       operationId: autenticarUsuario
       description: |
-        Retorna access token no corpo e refresh token em cookie httpOnly.
-        Credencial inválida retorna sempre a mesma mensagem, sem distinguir usuário
-        inexistente de senha incorreta. Cinco tentativas falhas bloqueiam temporariamente (T-01).
+        Retorna access token no corpo e refresh token no cookie `filas_refresh`
+        (`HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth`). Credencial inválida retorna
+        sempre a mesma resposta para usuário inexistente, senha incorreta e conta inativa.
+        A quinta falha seguida bloqueia novos logins por 15 minutos (T-01); sessões já abertas
+        continuam. Todo usuário tem perfil (`usuario.perfil_id` é obrigatório), por isso não
+        há resposta de "conta sem perfil".
       security: []
       requestBody:
         required: true
@@ -84,7 +87,10 @@ paths:
                 manterConectado:
                   type: boolean
                   default: false
-                  description: Não deve ser oferecido em terminal compartilhado
+                  description: |
+                    `false`: cookie de refresh de sessão (some ao fechar o navegador).
+                    `true`: cookie persistente até o fim da sessão. Nos dois casos a sessão
+                    expira 8 horas depois do login. Não deve ser oferecido em terminal compartilhado.
       responses:
         '200':
           description: Autenticado
@@ -100,7 +106,14 @@ paths:
           description: Credencial inválida ou conta bloqueada
           content:
             application/problem+json:
-              schema: { $ref: '#/components/schemas/Problema' }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/Problema'
+                  - type: object
+                    properties:
+                      minutosRestantes:
+                        type: integer
+                        description: Só em `BLOQUEIO_TEMPORARIO`; minutos até liberar novo login
               examples:
                 credencialInvalida:
                   value:
@@ -114,18 +127,17 @@ paths:
                     status: 401
                     codigo: BLOQUEIO_TEMPORARIO
                     detail: Excesso de tentativas. Tente novamente em 12 minutos.
-        '403':
-          description: Conta sem perfil vinculado
-          content:
-            application/problem+json:
-              schema: { $ref: '#/components/schemas/Problema' }
+                    minutosRestantes: 12
 
   /auth/refresh:
     post:
       tags: [Autenticação]
       summary: Renovar access token
       operationId: renovarAccessToken
-      description: Usa o refresh token do cookie httpOnly.
+      description: |
+        Usa o refresh token do cookie `filas_refresh` e devolve um cookie novo (rotação).
+        Um refresh já trocado, apresentado de novo depois de 30 segundos, revoga a sessão.
+        A renovação não estende a sessão além das 8 horas do login.
       security: []
       responses:
         '200':
@@ -144,11 +156,12 @@ paths:
       tags: [Autenticação]
       summary: Encerrar sessão
       operationId: encerrarSessao
-      description: Invalida o refresh token e registra evento LOGOUT na auditoria (RNF-05).
+      description: |
+        Invalida o refresh token do cookie, limpa o cookie e registra LOGOUT na auditoria (RNF-05).
+        Funciona mesmo com o access token expirado; sem cookie válido, responde 204 do mesmo jeito.
+      security: []
       responses:
         '204': { description: Sessão encerrada }
-
-        '403': { $ref: '#/components/responses/SemPermissao' }
   /auth/me:
     get:
       tags: [Autenticação]

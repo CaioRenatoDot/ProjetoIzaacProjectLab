@@ -33,22 +33,22 @@ operacional.
 
 ## 2. Stack
 
-| Camada | Escolha | Versão-alvo | Justificativa |
-| --- | --- | --- | --- |
-| Front-end | Next.js (App Router) + React + TypeScript | 15 / 19 | Server Components reduzem o JS enviado a terminais modestos da clínica; roteamento por segmento casa com a navegação por módulos (ADR-002) |
-| Estado servidor | TanStack Query | 5 | Cache, revalidação por intervalo e invalidação por evento WebSocket no painel de fila (RNF-03) |
-| Formulários | React Hook Form + Zod | — | Validação idêntica no cliente e no servidor, reaproveitando os schemas de `packages/contracts` |
-| Estilo | Tailwind CSS + Radix Primitives | 4 / — | Radix entrega foco preso em modal, atributos `aria` corretos e navegação por teclado exigidos pelo RNF-06 sem reimplementação |
-| Back-end | NestJS + TypeScript | 11 | Módulos, guards e interceptadores mapeiam diretamente RBAC (RNF-01) e auditoria implícita (RNF-05) |
-| ORM | Prisma | 6 | Migrações versionadas, tipagem forte e transação interativa, necessária no "chamar próxima" |
-| Banco | PostgreSQL | 16 | Bloqueio de linha com SKIP LOCKED, índices parciais e funções de janela para os indicadores (RF-10) |
-| Tempo real | Socket.IO | 4 | Reconexão automática e salas por especialidade; adaptador Redis opcional para múltiplas instâncias (RNF-08) |
-| Agendamento | @nestjs/schedule | — | Expiração de tolerância (RN-12) e varredura de SLA (RF-11) |
-| Autenticação | JWT access + refresh em cookie httpOnly | — | Sessão curta em terminal compartilhado (T-01) |
-| Testes | Vitest, Supertest, Playwright | — | Unidade, integração HTTP e E2E incluindo auditoria de acessibilidade com axe-core |
-| Qualidade | ESLint, Prettier, Husky, lint-staged, Commitlint | — | Padrão único de código e de mensagem de commit |
-| Infra local | Docker Compose (PostgreSQL + Adminer) | — | Ambiente idêntico para os cinco integrantes |
-| CI | GitHub Actions | — | Lint, testes e build em todo PR |
+| Camada          | Escolha                                          | Versão-alvo | Justificativa                                                                                                                              |
+| --------------- | ------------------------------------------------ | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Front-end       | Next.js (App Router) + React + TypeScript        | 15 / 19     | Server Components reduzem o JS enviado a terminais modestos da clínica; roteamento por segmento casa com a navegação por módulos (ADR-002) |
+| Estado servidor | TanStack Query                                   | 5           | Cache, revalidação por intervalo e invalidação por evento WebSocket no painel de fila (RNF-03)                                             |
+| Formulários     | React Hook Form + Zod                            | —           | Validação idêntica no cliente e no servidor, reaproveitando os schemas de `packages/contracts`                                             |
+| Estilo          | Tailwind CSS + Radix Primitives                  | 4 / —       | Radix entrega foco preso em modal, atributos `aria` corretos e navegação por teclado exigidos pelo RNF-06 sem reimplementação              |
+| Back-end        | NestJS + TypeScript                              | 11          | Módulos, guards e interceptadores mapeiam diretamente RBAC (RNF-01) e auditoria implícita (RNF-05)                                         |
+| ORM             | Prisma                                           | 6           | Migrações versionadas, tipagem forte e transação interativa, necessária no "chamar próxima"                                                |
+| Banco           | PostgreSQL                                       | 16          | Bloqueio de linha com SKIP LOCKED, índices parciais e funções de janela para os indicadores (RF-10)                                        |
+| Tempo real      | Socket.IO                                        | 4           | Reconexão automática e salas por especialidade; adaptador Redis opcional para múltiplas instâncias (RNF-08)                                |
+| Agendamento     | @nestjs/schedule                                 | —           | Expiração de tolerância (RN-12) e varredura de SLA (RF-11)                                                                                 |
+| Autenticação    | JWT access + refresh em cookie httpOnly          | —           | Sessão curta em terminal compartilhado (T-01)                                                                                              |
+| Testes          | Vitest, Supertest, Playwright                    | —           | Unidade, integração HTTP e E2E incluindo auditoria de acessibilidade com axe-core                                                          |
+| Qualidade       | ESLint, Prettier, Husky, lint-staged, Commitlint | —           | Padrão único de código e de mensagem de commit                                                                                             |
+| Infra local     | Docker Compose (PostgreSQL + Adminer)            | —           | Ambiente idêntico para os cinco integrantes                                                                                                |
+| CI              | GitHub Actions                                   | —           | Lint, testes e build em todo PR                                                                                                            |
 
 ## 3. Camadas do back-end
 
@@ -73,7 +73,8 @@ regra de negócio fica no service e tem teste de unidade que cita a RN no nome d
 
 Permissão é uma string `modulo:operacao` — por exemplo `triagem:criar`, `auditoria:consultar`.
 O perfil (RF-02) é um conjunto dessas strings, editável na matriz de W-05. O guard do NestJS lê
-a permissão exigida do decorator `@Requer('fila:chamar')` e a compara com as permissões do token.
+a permissão exigida do decorator `@Requer('fila:chamar')` e a compara com as permissões do perfil,
+lidas do banco a cada requisição (a lista do token serve só à interface; `docs/04` §3).
 
 No front-end, ação sem permissão **não é renderizada** — nunca renderizada desabilitada (T-09).
 O estado "sem permissão" usa mensagem neutra, sem revelar existência ou volume de dados (item 3.1
@@ -123,11 +124,11 @@ do mesmo estado no servidor:
 
 Três namespaces Socket.IO:
 
-| Namespace | Autenticação | Salas | Eventos |
-| --- | --- | --- | --- |
-| `/filas` | JWT obrigatório | `especialidade:{id}` | `senha.criada`, `senha.chamada`, `senha.status_alterado`, `fila.bloqueada`, `fila.desbloqueada` |
-| `/painel` | Nenhuma | `unidade:{id}` | `chamada.exibir` — apenas número, especialidade e local |
-| `/alertas` | JWT + permissão de gestão | `unidade:{id}` | `sla.excedido`, `sla.normalizado` |
+| Namespace  | Autenticação              | Salas                | Eventos                                                                                         |
+| ---------- | ------------------------- | -------------------- | ----------------------------------------------------------------------------------------------- |
+| `/filas`   | JWT obrigatório           | `especialidade:{id}` | `senha.criada`, `senha.chamada`, `senha.status_alterado`, `fila.bloqueada`, `fila.desbloqueada` |
+| `/painel`  | Nenhuma                   | `unidade:{id}`       | `chamada.exibir` — apenas número, especialidade e local                                         |
+| `/alertas` | JWT + permissão de gestão | `unidade:{id}`       | `sla.excedido`, `sla.normalizado`                                                               |
 
 O namespace `/painel` nunca transporta identificador de paciente, prioridade clínica ou dado de
 saúde. Toda tela que consome WebSocket também faz polling de baixa frequência como degradação
@@ -140,36 +141,36 @@ A seção 7 da especificação de UI lista cinco valores que dependem de defini�
 deles é constante no código: todos ficam na tabela `parametro_unidade`, editáveis por
 administração.
 
-| Parâmetro | Onde afeta | Padrão provisório |
-| --- | --- | --- |
-| Prazo de tolerância por especialidade | RN-12, W-15 | 5 minutos |
-| Limite de SLA por fila | RF-11, W-18 | 25 minutos |
-| Reincidências que disparam restrição | RN-13, W-06 | 3 ausências em 90 dias |
-| Limite de estudantes por supervisor | RN-08, W-11 | 3 |
-| Tamanho mínimo da justificativa de reclassificação | RN-01, W-07 | 20 caracteres |
+| Parâmetro                                          | Onde afeta  | Padrão provisório      |
+| -------------------------------------------------- | ----------- | ---------------------- |
+| Prazo de tolerância por especialidade              | RN-12, W-15 | 5 minutos              |
+| Limite de SLA por fila                             | RF-11, W-18 | 25 minutos             |
+| Reincidências que disparam restrição               | RN-13, W-06 | 3 ausências em 90 dias |
+| Limite de estudantes por supervisor                | RN-08, W-11 | 3                      |
+| Tamanho mínimo da justificativa de reclassificação | RN-01, W-07 | 20 caracteres          |
 
 Os padrões são provisórios e estão registrados como pendência na issue de decisão do backlog.
 
 ## 5. Requisitos não funcionais e onde são atendidos
 
-| RNF | Atendimento técnico |
-| --- | --- |
-| RNF-01 Segurança e acesso | Guard de permissão por rota; ação sem permissão não renderizada; estado neutro de negação |
-| RNF-02 Dado sensível | DTOs separados resumo/detalhe; TLS; coluna de dado clínico com acesso auditado |
-| RNF-03 Desempenho | Índices em `(fila_id, status, prioridade, criado_em)`; WebSocket em vez de polling pesado; paginação obrigatória |
-| RNF-04 Disponibilidade | Health check, restart automático em container, banner de perda de conexão com escrita congelada |
-| RNF-05 Rastreabilidade | `audit_log` append-only alimentado por interceptador global |
-| RNF-06 Usabilidade e acessibilidade | Design system sobre Radix, WCAG 2.1 AA no sistema e 7:1 no público, teste axe-core no CI |
-| RNF-07 LGPD | Trilha de consulta a prontuário, aviso de registro por sessão, retenção configurável |
-| RNF-08 Escalabilidade | API sem estado, adaptador Redis para Socket.IO, filtro por unidade em todas as consultas |
-| RNF-09 Backup | Dump diário agendado do PostgreSQL, RPO 24h e RTO 4h documentados no runbook |
+| RNF                                 | Atendimento técnico                                                                                              |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| RNF-01 Segurança e acesso           | Guard de permissão por rota; ação sem permissão não renderizada; estado neutro de negação                        |
+| RNF-02 Dado sensível                | DTOs separados resumo/detalhe; TLS; coluna de dado clínico com acesso auditado                                   |
+| RNF-03 Desempenho                   | Índices em `(fila_id, status, prioridade, criado_em)`; WebSocket em vez de polling pesado; paginação obrigatória |
+| RNF-04 Disponibilidade              | Health check, restart automático em container, banner de perda de conexão com escrita congelada                  |
+| RNF-05 Rastreabilidade              | `audit_log` append-only alimentado por interceptador global                                                      |
+| RNF-06 Usabilidade e acessibilidade | Design system sobre Radix, WCAG 2.1 AA no sistema e 7:1 no público, teste axe-core no CI                         |
+| RNF-07 LGPD                         | Trilha de consulta a prontuário, aviso de registro por sessão, retenção configurável                             |
+| RNF-08 Escalabilidade               | API sem estado, adaptador Redis para Socket.IO, filtro por unidade em todas as consultas                         |
+| RNF-09 Backup                       | Dump diário agendado do PostgreSQL, RPO 24h e RTO 4h documentados no runbook                                     |
 
 ## 6. Ambientes
 
-| Ambiente | Onde | Banco | Observação |
-| --- | --- | --- | --- |
-| Local | Docker Compose | `filas_dev` com seed | Seed cria perfis, 5 especialidades, salas, supervisores e pacientes fictícios |
-| Homologação | Container único | `filas_hml` | Dados fictícios; usado na validação com a clínica |
-| Produção | A definir com a instituição | `filas_prd` | Requer TLS, backup diário e política de retenção (RNF-07, RNF-09) |
+| Ambiente    | Onde                        | Banco                | Observação                                                                    |
+| ----------- | --------------------------- | -------------------- | ----------------------------------------------------------------------------- |
+| Local       | Docker Compose              | `filas_dev` com seed | Seed cria perfis, 5 especialidades, salas, supervisores e pacientes fictícios |
+| Homologação | Container único             | `filas_hml`          | Dados fictícios; usado na validação com a clínica                             |
+| Produção    | A definir com a instituição | `filas_prd`          | Requer TLS, backup diário e política de retenção (RNF-07, RNF-09)             |
 
 Nenhum dado real de paciente entra em ambiente local ou de homologação.

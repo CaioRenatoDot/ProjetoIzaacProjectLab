@@ -27,9 +27,19 @@ semântica — exige `/api/v2` e período de convivência.
 
 ## 2. Autenticação e sessão
 
-`POST /auth/login` devolve o access token no corpo e o refresh token em cookie `httpOnly`,
-`Secure`, `SameSite=Strict`. O access token vale 15 minutos; o refresh, 8 horas — a duração de um
-turno da clínica.
+`POST /auth/login` devolve o access token no corpo e o refresh token no cookie `filas_refresh`
+(`HttpOnly; Secure; SameSite=Strict; Path=/api/v1/auth`). O access token vale 15 minutos; a
+sessão, 8 horas contadas do login — a duração de um turno da clínica. A renovação não estende
+esse prazo.
+
+- **Rotação:** cada `POST /auth/refresh` troca o refresh token. Um refresh já trocado,
+  reapresentado depois de 30 segundos, é tratado como roubo e revoga a sessão (a janela de 30
+  segundos cobre duas abas renovando ao mesmo tempo).
+- **`manterConectado`:** `false` grava o cookie de sessão (some ao fechar o navegador); `true`,
+  um cookie persistente até o fim das 8 horas.
+- **Logout:** usa só o cookie, funciona com o access token expirado e responde sempre 204.
+- **Revogação:** logout, reuso de refresh, inativação do usuário e redefinição de senha encerram
+  a sessão na hora, porque cada requisição confere a sessão no banco (§3).
 
 ```
 Authorization: Bearer {accessToken}
@@ -52,8 +62,10 @@ Conteúdo do token:
 O front nunca decide permissão por nome de perfil — decide pela lista `permissoes`. Perfis são
 editáveis pela administração (RF-02); nome de perfil no código quebraria no primeiro perfil novo.
 
-Cinco tentativas falhas bloqueiam temporariamente (T-01). A resposta de credencial inválida é
-sempre a mesma, sem distinguir usuário inexistente de senha incorreta.
+Cinco tentativas falhas seguidas bloqueiam novos logins por 15 minutos (T-01): a quinta já
+responde `401 BLOQUEIO_TEMPORARIO`, com `minutosRestantes` no corpo. Sessões abertas continuam,
+para que tentativas erradas de terceiros não derrubem quem está trabalhando. A resposta de
+credencial inválida é sempre a mesma para usuário inexistente, senha incorreta e conta inativa.
 
 ### Endpoints públicos
 
@@ -63,7 +75,10 @@ clínica ou dado de saúde (ADR-003).
 
 ## 3. Autorização
 
-Cada operação exige uma permissão `modulo:operacao`. O catálogo completo vem de
+Cada operação exige uma permissão `modulo:operacao`. O guard valida o access token e confere no banco, a cada
+requisição, a sessão aberta, o usuário ativo e as permissões do perfil: logout, inativação e
+mudança de perfil valem na requisição seguinte. A lista `permissoes` do token serve só à interface
+(menu e ações). O catálogo completo vem de
 `GET /permissoes` e alimenta a matriz de W-05.
 
 | Módulo           | Operações                                             |
