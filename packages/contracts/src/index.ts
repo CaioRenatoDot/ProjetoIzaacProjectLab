@@ -1,3 +1,4 @@
+export * from './auditoria';
 export * from './cadastros';
 export * from './enums';
 export * from './erros';

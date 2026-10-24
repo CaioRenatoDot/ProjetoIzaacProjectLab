@@ -44,3 +44,10 @@ export const Turno = z.enum(['MANHA', 'TARDE', 'NOITE'], {
   error: 'Escolha manhã, tarde ou noite.',
 });
 export type Turno = z.infer<typeof Turno>;
+
+/** Operações registradas na trilha de auditoria (docs/03 §1). */
+export const OperacaoAuditoria = z.enum(
+  ['CRIAR', 'EDITAR', 'EXCLUIR', 'CONSULTAR_SENSIVEL', 'EXPORTAR', 'LOGIN', 'LOGOUT'],
+  { error: 'Operação de auditoria desconhecida.' },
+);
+export type OperacaoAuditoria = z.infer<typeof OperacaoAuditoria>;

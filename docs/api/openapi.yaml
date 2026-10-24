@@ -2099,10 +2099,11 @@ paths:
         registro de auditoria em nenhuma circunstância.
 
         Consultas a dado de prontuário vêm com `sensivel: true`, para a marcação distinta
-        exigida pelo RNF-07 (T-18).
+        exigida pelo RNF-07 (T-18). Permissão `auditoria:consultar`. A consulta não gera
+        registro; a exportação gera `EXPORTAR`. `de` não pode ser depois de `ate`.
       parameters:
         - { name: usuarioId, in: query, schema: { type: string, format: uuid } }
-        - { name: modulo, in: query, schema: { type: string } }
+        - { name: modulo, in: query, schema: { $ref: '#/components/schemas/ModuloAuditoria' } }
         - { name: operacao, in: query, schema: { $ref: '#/components/schemas/OperacaoAuditoria' } }
         - { name: entidadeId, in: query, schema: { type: string, format: uuid } }
         - { name: de, in: query, schema: { type: string, format: date-time } }
@@ -2147,19 +2148,56 @@ paths:
       tags: [Auditoria]
       summary: Exportar trilha filtrada
       operationId: exportarTrilhaFiltrada
-      description: A própria exportação é registrada como evento de auditoria (T-18).
+      description: |
+        Permissão `auditoria:exportar`. Aceita os mesmos filtros da consulta ("exportar resultado
+        filtrado", T-18); `de` e `ate` são obrigatórios, com no máximo 366 dias entre eles.
+        A própria exportação é registrada como evento `EXPORTAR`, com os filtros usados (T-18).
+        CSV em UTF-8, separado por ponto e vírgula, com as colunas `ocorridoEm`, `usuario`,
+        `perfilNoMomento`, `operacao`, `modulo`, `entidade`, `entidadeId`, `sensivel`,
+        `justificativa` e `requestId`, em ordem cronológica decrescente.
       parameters:
-        - { name: de, in: query, schema: { type: string, format: date-time } }
-        - { name: ate, in: query, schema: { type: string, format: date-time } }
+        - { name: de, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: ate, in: query, required: true, schema: { type: string, format: date-time } }
         - { name: usuarioId, in: query, schema: { type: string, format: uuid } }
+        - { name: modulo, in: query, schema: { $ref: '#/components/schemas/ModuloAuditoria' } }
+        - { name: operacao, in: query, schema: { $ref: '#/components/schemas/OperacaoAuditoria' } }
+        - { name: entidadeId, in: query, schema: { type: string, format: uuid } }
       responses:
         '200':
           description: Arquivo CSV
           content:
             text/csv:
               schema: { type: string }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
 
         '403': { $ref: '#/components/responses/SemPermissao' }
+  /auditoria/usuarios:
+    get:
+      tags: [Auditoria]
+      summary: Usuários para o filtro da trilha
+      operationId: usuariosDoFiltroDeAuditoria
+      description: |
+        Permissão `auditoria:consultar`. Só `id` e `nome`, para o filtro por usuário de W-18
+        sem exigir `perfis:consultar` (inclui usuários inativos, que podem ter registros).
+      parameters:
+        - { $ref: '#/components/parameters/Pagina' }
+        - { $ref: '#/components/parameters/Tamanho' }
+        - { $ref: '#/components/parameters/Busca' }
+      responses:
+        '200':
+          description: Lista paginada
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/RespostaPaginada'
+                  - type: object
+                    properties:
+                      dados:
+                        type: array
+                        items: { $ref: '#/components/schemas/ItemReferencia' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+
   # ──────────────────────────────── Público ───────────────────────────────────
   /publico/painel/{unidadeId}:
     parameters:
@@ -3083,6 +3121,11 @@ components:
           description: Volume baixo - a média pode não ser representativa (T-16)
 
     # ── Auditoria ──
+    ModuloAuditoria:
+      type: string
+      description: Módulos do catálogo de permissões (`docs/04` §3) e `auth` para LOGIN e LOGOUT
+      enum:
+        [auth, cadastros, perfis, triagem, senha, fila, alocacao, atendimento, encaminhamento, ausencia, indicadores, alertas, auditoria]
     EventoAuditoria:
       type: object
       properties:
