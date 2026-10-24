@@ -202,7 +202,7 @@ Objetivo: conduzir o atendimento do início ao encerramento.
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------- |
 | 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Nathan              |
 | 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Nathan              |
-| 7.3    | Tela W-11 · Alocação                                                                                           | Caio Renato         |
+| 7.3    | Tela W-11 · Alocação                                                                                           | Caio Gabriel ✅     |
 | 7.4    | Telas W-12 · Atendimento e W-13 · Encerramento e validação                                                     | Caio Renato         |
 | ⭐ 7.5 | Sugestão automática de recursos, com o motivo de inaptidão                                                     | Nathan, Caio Renato |
 
@@ -247,10 +247,10 @@ Objetivo: garantir que o sistema funciona e está pronto para a demonstração.
 
 ## Partes por integrante
 
-| Integrante   | Partes                                                              |
-| ------------ | ------------------------------------------------------------------- |
-| Caio Renato  | 1.1–1.3 (1-A), 3.4, 7.3, 7.4 · ⭐ 7.5, 9.1, 9.3, 9.4                |
-| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4, 6.4 · ⭐ 3.6  |
-| Thalita      | 6.5, 8.3, 10.2 · ⭐ 9.2, 9.5                                        |
-| Rildo        | 2.1, 2.3, 2.4, 3.1, 3.2, 4.1, 5.1, 5.2, 8.1, 8.2 · ⭐ 3.6, 9.2, 9.4 |
-| Nathan       | 2.2, 2.3, 6.1–6.3, 7.1, 7.2, 8.1 · ⭐ 7.5, 9.1, 9.3                 |
+| Integrante   | Partes                                                                  |
+| ------------ | ----------------------------------------------------------------------- |
+| Caio Renato  | 1.1–1.3 (1-A), 3.4, 7.4 · ⭐ 7.5, 9.1, 9.3, 9.4                         |
+| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4, 6.4, 7.3 · ⭐ 3.6 |
+| Thalita      | 6.5, 8.3, 10.2 · ⭐ 9.2, 9.5                                            |
+| Rildo        | 2.1, 2.3, 2.4, 3.1, 3.2, 4.1, 5.1, 5.2, 8.1, 8.2 · ⭐ 3.6, 9.2, 9.4     |
+| Nathan       | 2.2, 2.3, 6.1–6.3, 7.1, 7.2, 8.1 · ⭐ 7.5, 9.1, 9.3                     |

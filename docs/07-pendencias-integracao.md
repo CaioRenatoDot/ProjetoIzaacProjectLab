@@ -28,6 +28,7 @@ indicada e remove o item deste arquivo no mesmo PR.
 | #29 (9.4, consulta e exportação da trilha)      | Trilha de auditoria (W-18)                         | [Auditoria](#trilha-de-auditoria-w-18-50)               |
 | #28 (9.3, alertas de SLA e escalonamento)       | Alertas de SLA (W-18)                              | [Alertas](#alertas-de-sla-w-18-49)                      |
 | #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                              | [Painel de fila](#painel-de-fila-w-08-41)               |
+| #21 (7.1, API de alocação)                      | Alocação de recursos (W-11)                        | [Alocação](#alocação-de-recursos-w-11-43)               |
 
 ## Sessão e acesso
 
@@ -100,11 +101,12 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 ## Rotas ainda inexistentes
 
 Os links do menu (`apps/web/src/lib/modulos.ts`) e das ações da home apontam para rotas que
-outras issues criam: `/triagem`, `/chamada`, `/alocacao`, `/atendimento`,
+outras issues criam: `/triagem`, `/chamada`, `/atendimento`,
 `/encaminhamento`, `/ausencias`, `/indicadores`. Até lá, respondem 404.
 
-No painel de fila (W-08, #41), "Alocar recursos" leva a `/alocacao?senha=<id>` (#43) e "Abrir
-atendimento" leva a `/atendimento?senha=<id>` (Etapa 7).
+No painel de fila (W-08, #41), "Abrir atendimento" leva a `/atendimento?senha=<id>` (Etapa 7).
+"Alocar recursos" abre `/fila/senhas/<id>/alocacao` (#43); `/alocacao`, do menu, redireciona para
+a alocação quando recebe `?senha=<id>` e, sem senha, para a fila.
 
 ## Divergências do plano do front (`docs/.ref/SPECS/frontend/`)
 
@@ -183,6 +185,29 @@ Nutrição (RN-03, RN-04, SLA e todos os status) e Psicologia (vazia).
 | 4   | **Seletor de turno (T-09)**: `GET /filas/{id}/senhas` não filtra por turno                                             | Não oferece o seletor                                                                                                     | Acrescentar o parâmetro                                                                  |
 | 5   | **Visão consolidada (T-09, RNF-08)**: o quadro é por fila; não há quadro de várias especialidades                      | Mostra uma especialidade por vez e os bloqueios de todas na faixa de avisos                                               | Definir se a visão consolidada é um endpoint próprio                                     |
 | 6   | **"Aguardando recurso" no quadro**: a T-09 tem cinco colunas e nenhuma para `AGUARDANDO_RECURSO`                       | A senha aparece na coluna "Chamada", com a etiqueta do próprio status                                                     | Confirmar com a especificação de UI                                                      |
+
+## Alocação de recursos (W-11, #43)
+
+A tela (`apps/web/src/components/alocacao/`) consome a API pelo cliente HTTP e não deduz regra:
+quem está apto e o motivo de quem não está vêm prontos de `GET /senhas/{id}/alocacao/sugestoes`.
+Hoje quem responde é a simulação `apps/web/src/mocks/alocacao.ts`, sobre as senhas de
+`mocks/filas.ts`: Fisioterapia exige supervisor e tem inaptos de cada tipo; "Ana Ribeiro" fica
+indisponível na confirmação (409 `RECURSO_INDISPONIVEL`); Nutrição não exige supervisor; N106 não
+tem sala compatível.
+
+| Status | Provisório                                                                                                              | Onde                             | Destrava                           | Troca a fazer                                         |
+| ------ | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ---------------------------------- | ----------------------------------------------------- |
+| ⏳     | Sugestões, confirmação com `Idempotency-Key` e "Manter aguardando recurso" sobre MSW, com dados fictícios               | `apps/web/src/mocks/alocacao.ts` | #21 (API, parte 7.1)               | Conferir a tela contra a API real; apagar os handlers |
+| ⏳     | "Trocar recurso" de uma alocação já confirmada (`PUT /senhas/{id}/alocacao`, "Reavaliar alocação" da T-09) não tem tela | —                                | parte 7.4 (#44) ou decisão do time | Definir onde a reavaliação acontece                   |
+
+### Lacunas do contrato da alocação (decisão antes de integrar com a #21)
+
+| #   | Lacuna                                                                                                                                            | O que o front faz hoje                                                          | Pedido ao back-end                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| 1   | **Status depois da alocação**: o contrato não diz se a senha muda de status ao confirmar (nem se `AGUARDANDO_RECURSO` volta a `CHAMADA`)          | A simulação deixa a senha em `CHAMADA`, com `versao` nova                       | Definir a transição (P-01)                                                |
+| 2   | **Sala ocupada**: `motivoInaptidao` não tem valor para sala ocupada por outro atendimento                                                         | A simulação usa `ATENDIMENTO_ATIVO` com o texto "Ocupada por outro atendimento" | Acrescentar o valor ou confirmar o uso de `ATENDIMENTO_ATIVO`             |
+| 3   | **Cabeçalho da tela**: número, especialidade e horário da chamada vêm de `GET /senhas/{id}`, que exige `senha:consultar` além de `alocacao:criar` | Usa `GET /senhas/{id}` (sem `incluirTriagem`, então sem dado sensível)          | Incluir esses dados em `SugestoesAlocacao` ou confirmar a dupla permissão |
+| 4   | **`SUPERVISOR_INDISPONIVEL`**: a tela mostra o `detail` e avisa que a senha ficou aguardando recurso e que a gestão foi notificada                | Não simulado                                                                    | Garantir que `detail` diga a causa e o próximo passo                      |
 
 ## Ausência e desistência (W-15 e W-16, #47)
 
