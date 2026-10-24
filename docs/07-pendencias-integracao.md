@@ -240,7 +240,7 @@ Não representam os parâmetros da unidade nem executam regras no servidor real.
 - A consulta usa `GET /filas?ativa=true&pagina=1&tamanho=100` e
   `GET /filas/{id}/senhas?pagina=...&tamanho=20`, em projeção resumida e sem dados clínicos.
   Exige `ausencia:consultar` e `fila:consultar`; escrita usa `ausencia:criar`.
-  Confirmar a permissão de desistência com o back, pois o catálogo não tem módulo próprio.
+  Desistência usa `ausencia:criar` (decidido no contrato da #11, `docs/04` §3).
   O seletor carrega até 100 filas; se a unidade ultrapassar isso, paginar também esse catálogo.
 - **#41 (feito):** o painel de fila usa `AcoesAusenciaDesistencia` no painel lateral de
   "Detalhes", e a simulação das senhas passou para `mocks/filas.ts`, compartilhada pelas duas

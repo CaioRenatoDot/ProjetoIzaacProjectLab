@@ -96,6 +96,15 @@ mudança de perfil valem na requisição seguinte. A lista `permissoes` do token
 | `alertas`        | consultar, reconhecer, escalonar                      |
 | `auditoria`      | consultar, exportar                                   |
 
+O catálogo é a constante `CATALOGO_PERMISSOES` de `packages/contracts/src/permissoes.ts`: a API
+valida contra ela, inclusive na gravação de perfis, e permissão gravada no banco fora do catálogo
+é ignorada. Ausência e desistência usam o mesmo módulo `ausencia` (`ausencia:consultar` e
+`ausencia:criar`); não há módulo próprio de desistência.
+
+Toda rota exige uma permissão (`@Requer`) ou é marcada pública (`@Publico`); rota sem nenhum dos
+dois é recusada com 403. Operações sem permissão própria que só exigem sessão (como `GET /auth/me`)
+usam `@Autenticado`.
+
 Falta de permissão retorna **403** com corpo neutro, sem revelar existência ou volume de dados
 (item 3.1 da especificação de UI). Recurso inexistente sob permissão negada também retorna 403,
 nunca 404 — 404 revelaria que o recurso existe.
