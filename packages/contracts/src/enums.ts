@@ -38,3 +38,9 @@ export type EnquadramentoLegal = z.infer<typeof EnquadramentoLegal>;
 
 export const VinculoPaciente = z.enum(['EXTERNO', 'ALUNO', 'SERVIDOR']);
 export type VinculoPaciente = z.infer<typeof VinculoPaciente>;
+
+/** Turno de disponibilidade de estudante e supervisor (RN-05, RN-07). */
+export const Turno = z.enum(['MANHA', 'TARDE', 'NOITE'], {
+  error: 'Escolha manhã, tarde ou noite.',
+});
+export type Turno = z.infer<typeof Turno>;
