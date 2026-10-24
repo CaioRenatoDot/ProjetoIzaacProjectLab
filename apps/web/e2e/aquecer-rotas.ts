@@ -12,6 +12,7 @@ const ROTAS = [
   '/cadastros/pacientes/novo',
   '/cadastros/pacientes/paciente-1',
   '/fila',
+  '/fila/senhas/senha-f013/alocacao',
   '/auditoria',
   '/indicadores/alertas',
 ];

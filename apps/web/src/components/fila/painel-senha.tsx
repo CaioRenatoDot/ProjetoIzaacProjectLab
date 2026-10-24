@@ -142,7 +142,7 @@ export function PainelSenha({
           {comAlocacao && (
             <Permitido permissao="alocacao:criar">
               <Link
-                href={`/alocacao?senha=${encodeURIComponent(senha.id)}`}
+                href={`/fila/senhas/${encodeURIComponent(senha.id)}/alocacao`}
                 className={classesBotao.primario}
               >
                 Alocar recursos

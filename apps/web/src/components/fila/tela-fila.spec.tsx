@@ -168,7 +168,7 @@ describe('<TelaFila> (W-08 / T-09)', () => {
     expect(within(painel).getByRole('button', { name: 'Rechamar' })).toBeInTheDocument();
     expect(within(painel).getByRole('link', { name: 'Alocar recursos' })).toHaveAttribute(
       'href',
-      '/alocacao?senha=senha-n105',
+      '/fila/senhas/senha-n105/alocacao',
     );
     expect(within(painel).getByRole('button', { name: 'Registrar ausência' })).toBeInTheDocument();
     expect(
