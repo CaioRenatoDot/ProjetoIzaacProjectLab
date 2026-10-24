@@ -90,7 +90,7 @@ composta. O catálogo de permissões é constante no código e exposto por `GET 
 **sessao** — uma por login, para renovar e revogar o refresh token (`docs/04` §2). `id`,
 `usuario_id`, `token_hash` (SHA-256 do segredo do refresh; o segredo nunca é gravado),
 `hash_anterior?` (aceito por 30 segundos depois da rotação), `rotacionada_em?`, `expira_em`
-(login + 8 h), `revogada_em?`, `motivo_revogacao?` (`LOGOUT` | `REUSO` | `USUARIO_INATIVADO` |
+(login + 8 h), `manter_conectado` (cookie de refresh persistente ou de sessão), `revogada_em?`, `motivo_revogacao?` (`LOGOUT` | `REUSO` | `USUARIO_INATIVADO` |
 `SENHA_REDEFINIDA`), `criado_em`.
 
 **audit_log** — append-only (RNF-05). `id`, `usuario_id`, `perfil_nome_no_momento`, `operacao`,

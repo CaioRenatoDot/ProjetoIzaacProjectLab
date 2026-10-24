@@ -151,7 +151,7 @@ Objetivo: usuário entra no sistema e só vê o que o perfil permite; ações se
 | Parte  | Descrição                                                                     | Responsável     |
 | ------ | ----------------------------------------------------------------------------- | --------------- |
 | 3.0    | Preparação da API: erros RFC 7807, validação Zod, paginação, log e CORS (#31) | Rildo ✅        |
-| 3.1    | Login com JWT + refresh em cookie, bloqueio após 5 tentativas                 | Rildo           |
+| 3.1    | Login com JWT + refresh em cookie, bloqueio após 5 tentativas                 | Rildo ✅        |
 | 3.2    | Guard de permissão (`modulo:operacao`) e interceptador global de auditoria    | Rildo           |
 | 3.3    | Tela W-01 · Login (erro genérico, sessão expirada)                            | Caio Gabriel ✅ |
 | 3.4    | Shell da aplicação: barra superior e menu lateral filtrado por permissão      | Caio Renato ✅  |

@@ -55,6 +55,13 @@ enum OperacaoAuditoria {
   LOGOUT
 }
 
+enum MotivoRevogacao {
+  LOGOUT
+  REUSO
+  USUARIO_INATIVADO
+  SENHA_REDEFINIDA
+}
+
 /// Chaves de parametro_unidade (docs/03 §3.1, Tabela 8).
 enum ChaveParametro {
   TOLERANCIA_MINUTOS           @map("tolerancia_minutos")
@@ -117,8 +124,31 @@ model Usuario {
   unidade               Unidade            @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
   registrosAuditoria    AuditLog[]
   parametrosAtualizados ParametroUnidade[]
+  sessoes               Sessao[]
 
   @@map("usuario")
+}
+
+/// Uma por login: renova e revoga o refresh token (docs/04 §2). O segredo do refresh nunca é
+/// gravado, só o SHA-256 dele; `hash_anterior` é aceito por 30 s depois da rotação.
+model Sessao {
+  id              String           @id @default(uuid(7)) @db.Uuid
+  usuarioId       String           @map("usuario_id") @db.Uuid
+  tokenHash       String           @map("token_hash")
+  hashAnterior    String?          @map("hash_anterior")
+  rotacionadaEm   DateTime?        @map("rotacionada_em") @db.Timestamptz(3)
+  /// Login + 8 h; a renovação não estende.
+  expiraEm        DateTime         @map("expira_em") @db.Timestamptz(3)
+  /// Define se o cookie de refresh é persistente (docs/04 §2).
+  manterConectado Boolean          @default(false) @map("manter_conectado")
+  revogadaEm      DateTime?        @map("revogada_em") @db.Timestamptz(3)
+  motivoRevogacao MotivoRevogacao? @map("motivo_revogacao")
+  criadoEm        DateTime         @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([usuarioId])
+  @@map("sessao")
 }
 
 /// Perfil com `sistema` não é editável nem excluível (T-05); exclusão com usuário vinculado é bloqueada pela FK.

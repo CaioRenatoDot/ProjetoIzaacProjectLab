@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 
+import { AuthModule } from './auth/auth.module';
 import { opcoesLog } from './common/logging/opcoes-log';
 import { type Ambiente, validarAmbiente } from './config/ambiente';
 import { HealthModule } from './health/health.module';
@@ -24,6 +25,7 @@ import { PrismaModule } from './prisma/prisma.module';
     }),
     PrismaModule,
     HealthModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
