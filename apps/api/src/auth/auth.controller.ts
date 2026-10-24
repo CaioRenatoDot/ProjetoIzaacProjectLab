@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 import {
   COOKIE_REFRESH,
   LoginEntrada,
@@ -8,10 +8,11 @@ import {
 } from '@filas/contracts';
 import { type CookieOptions, type Request, type Response } from 'express';
 
+import { Autenticado, Publico } from '../common/autorizacao/decorators';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe';
 import { AuthService, type ContextoRequisicao, type SessaoEmitida } from './auth.service';
-import { AutenticadoGuard, type RequisicaoAutenticada } from './autenticado.guard';
 import { CAMINHO_COOKIE_REFRESH } from './sessao.constantes';
+import { type UsuarioAutenticado } from './usuario-autenticado';
 
 const OPCOES_COOKIE: CookieOptions = {
   httpOnly: true,
@@ -25,6 +26,7 @@ export class AuthController {
   constructor(private readonly auth: AuthService) {}
 
   @Post('login')
+  @Publico()
   @HttpCode(200)
   async entrar(
     @Body(new ZodValidationPipe(LoginEntrada)) entrada: LoginEntrada,
@@ -37,6 +39,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Publico()
   @HttpCode(200)
   async renovar(
     @Req() requisicao: Request,
@@ -53,6 +56,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @Publico()
   @HttpCode(204)
   async encerrar(
     @Req() requisicao: Request,
@@ -63,8 +67,8 @@ export class AuthController {
   }
 
   @Get('me')
-  @UseGuards(AutenticadoGuard)
-  sessaoAtual(@Req() requisicao: RequisicaoAutenticada): UsuarioSessao {
+  @Autenticado()
+  sessaoAtual(@Req() requisicao: Request & { usuario: UsuarioAutenticado }): UsuarioSessao {
     const { sessaoId: _sessaoId, ...usuario } = requisicao.usuario;
     return usuario;
   }

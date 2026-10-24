@@ -1,4 +1,5 @@
-import { type UsuarioSessao } from '@filas/contracts';
+import { ehPermissao, type UsuarioSessao } from '@filas/contracts';
+import { type Request } from 'express';
 
 import { type UsuarioComPerfil } from './auth.repository';
 
@@ -7,6 +8,9 @@ export interface UsuarioAutenticado extends UsuarioSessao {
   sessaoId: string;
 }
 
+export type RequisicaoAutenticada = Request & { usuario?: UsuarioAutenticado };
+
+/** Permissão gravada no banco fora do catálogo é ignorada (docs/04 §3). */
 export function paraUsuarioSessao(usuario: UsuarioComPerfil): UsuarioSessao {
   return {
     id: usuario.id,
@@ -15,6 +19,6 @@ export function paraUsuarioSessao(usuario: UsuarioComPerfil): UsuarioSessao {
     perfilNome: usuario.perfil.nome,
     unidadeId: usuario.unidadeId,
     unidadeNome: usuario.unidade.nome,
-    permissoes: usuario.perfil.permissoes.map(({ permissao }) => permissao),
+    permissoes: usuario.perfil.permissoes.map(({ permissao }) => permissao).filter(ehPermissao),
   };
 }
