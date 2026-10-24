@@ -89,6 +89,16 @@ pnpm --filter api prisma migrate dev
 pnpm dev                      # sobe api, web e publico
 ```
 
+O banco tem dois usuários: o administrador (`filas`, dono das tabelas, usado pelas migrações via
+`DIRECT_URL`) e o da aplicação (`filas_app`, usado pela API via `DATABASE_URL`), que não altera
+nem apaga o `audit_log` (RNF-05). O `filas_app` é criado na primeira subida do volume; quem já
+tinha o volume antes disso precisa recriá-lo uma vez, o que apaga os dados locais:
+
+```bash
+docker compose down -v && docker compose up -d
+pnpm --filter api prisma migrate dev
+```
+
 Em desenvolvimento, o `apps/web` usa uma simulação da API (MSW, `apps/web/src/mocks/`) até o login
 real (#10). Entre com `admin@clinica.edu.br` e a senha `senha-dev`. Para usar a API real, defina
 `NEXT_PUBLIC_API_MOCK=false` em `apps/web/.env.local`.

@@ -17,6 +17,7 @@ jobs:
     env:
       # Variáveis mínimas para o build da API; os testes de integração usam banco próprio quando existirem.
       DATABASE_URL: postgresql://filas:filas@localhost:5432/filas_dev?schema=public
+      DIRECT_URL: postgresql://filas:filas@localhost:5432/filas_dev?schema=public
     steps:
       - uses: actions/checkout@v4
 
