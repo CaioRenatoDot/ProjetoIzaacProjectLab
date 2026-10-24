@@ -233,6 +233,7 @@ Entram se o MVP estiver pronto antes do prazo.
 | ⭐ 9.2 | Indicadores com filtros, gráfico e exportação · W-17      | Rildo, Thalita         |
 | ⭐ 9.3 | Alertas de tempo de espera (SLA) e escalonamento          | Nathan, Caio Renato ✅ |
 | ⭐ 9.4 | Tela da trilha de auditoria · W-18                        | Rildo, Caio Renato ✅  |
+| ⭐ 9.4 | API de consulta e exportação da trilha (#29)              | Rildo ✅               |
 | ⭐ 9.5 | Sinal sonoro no telão                                     | Thalita                |
 
 ### Etapa 10 · Qualidade e entrega

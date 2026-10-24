@@ -272,10 +272,10 @@ A tela (`apps/web/src/components/auditoria/`, rota `/auditoria`) já consome a A
 HTTP; hoje quem responde é a simulação MSW (`apps/web/src/mocks/auditoria.ts`). Para integrar:
 rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de auditoria.
 
-| Status | Provisório                                                                                     | Onde                              | Destrava             | Troca a fazer                                                                             |
-| ------ | ---------------------------------------------------------------------------------------------- | --------------------------------- | -------------------- | ----------------------------------------------------------------------------------------- |
-| ⏳     | `GET /auditoria`, `/auditoria/{id}` e `/auditoria/exportacao` sobre MSW, com eventos fictícios | `apps/web/src/mocks/auditoria.ts` | #29 (API, parte 9.4) | Conferir filtros, detalhe e exportação contra a API real; apagar os handlers de auditoria |
-| 🔧     | `GET /usuarios` (filtro por usuário) sobre MSW                                                 | `apps/web/src/mocks/auditoria.ts` | #12 entregue         | Conferir contra a API real e mover o handler para junto da simulação de perfis, se houver |
+| Status | Provisório                                                                                     | Onde                              | Destrava                                                       | Troca a fazer                                                                             |
+| ------ | ---------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| 🔧     | `GET /auditoria`, `/auditoria/{id}` e `/auditoria/exportacao` sobre MSW, com eventos fictícios | `apps/web/src/mocks/auditoria.ts` | #29 entregue (a exportação exige `de` e `ate`)                 | Conferir filtros, detalhe e exportação contra a API real; apagar os handlers de auditoria |
+| 🔧     | `GET /usuarios` (filtro por usuário) sobre MSW                                                 | `apps/web/src/mocks/auditoria.ts` | #29: usar `GET /auditoria/usuarios` (só `auditoria:consultar`) | Conferir contra a API real e mover o handler para junto da simulação de perfis, se houver |
 
 ### Lacunas do contrato da auditoria (decisão antes de integrar com a #29)
 

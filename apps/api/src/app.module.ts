@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 
+import { AuditoriaConsultaModule } from './auditoria/auditoria-consulta.module';
 import { AuthModule } from './auth/auth.module';
 import { CadastrosModule } from './cadastros/cadastros.module';
 import { AutorizacaoModule } from './common/autorizacao/autorizacao.module';
@@ -32,6 +33,7 @@ import { PrismaModule } from './prisma/prisma.module';
     AutorizacaoModule,
     PerfisModule,
     CadastrosModule,
+    AuditoriaConsultaModule,
   ],
 })
 export class AppModule {}
