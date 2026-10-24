@@ -8,6 +8,7 @@
     "start": "node dist/main.js",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:integracao": "dotenv -e ../../.env -- vitest run -c vitest.integracao.config.mts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "prisma": "dotenv -e ../../.env -- prisma",
