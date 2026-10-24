@@ -5,11 +5,13 @@ import { handlersAuditoria } from './auditoria';
 import { handlersCadastros, handlersCatalogos } from './cadastros';
 import { handlers } from './handlers';
 import { handlersAusencias } from './ausencias';
+import { handlersFilas } from './filas';
 
 export const worker = setupWorker(
   ...handlers,
   ...handlersCadastros,
   ...handlersCatalogos,
+  ...handlersFilas,
   ...handlersAusencias,
 
   ...handlersAuditoria,

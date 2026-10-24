@@ -8,56 +8,27 @@ import {
 } from '@/lib/ausencias/api';
 import { type SenhaAusencias } from '@/lib/ausencias/consulta';
 
+import {
+  aoConsultarQuadro,
+  reiniciarMockFilas,
+  semCamposInternos,
+  senhasDaSimulacao,
+} from './filas';
 import { usuarioMockDaRequisicao } from './handlers';
 
-/** Fixtures da #47. Prazos e restrições são cenários fictícios, não políticas de produção. */
-const FILA = {
-  id: 'fila-ausencias-dev',
-  nome: 'Fila de Fisioterapia',
-  especialidade: 'Fisioterapia',
-};
+/**
+ * Fixtures da #47. Prazos e restrições são cenários fictícios, não políticas de produção.
+ * As senhas (F013 a F018) ficam na simulação da fila (`mocks/filas.ts`), compartilhada com o
+ * painel de fila (#41); aqui ficam as restrições e as regras de ausência e desistência.
+ */
 const ouvintes = new Set<(registro: RegistroAusencia) => void>();
-let senhas: SenhaAusencias[] = [];
 const restricoes = new Map<string, NonNullable<RegistroAusencia['restricaoAplicada']>>();
 
+const senhas = (): SenhaAusencias[] => senhasDaSimulacao();
+
 export function reiniciarMockAusencias() {
+  reiniciarMockFilas();
   const agora = Date.now();
-  const base = {
-    versao: 1,
-    especialidade: FILA.especialidade,
-    chamadaEm: new Date(agora).toISOString(),
-    toleranciaAte: new Date(agora + 300_000).toISOString(),
-  };
-  senhas = [
-    { ...base, id: 'senha-f013', numero: 'F013', pacienteIniciais: 'A. B. T.', status: 'CHAMADA' },
-    { ...base, id: 'senha-f014', numero: 'F014', pacienteIniciais: 'M. A. S.', status: 'CHAMADA' },
-    {
-      ...base,
-      id: 'senha-f015',
-      numero: 'F015',
-      pacienteIniciais: 'J. C. L.',
-      status: 'AGUARDANDO',
-      chamadaEm: null,
-      toleranciaAte: null,
-    },
-    {
-      ...base,
-      id: 'senha-f016',
-      numero: 'F016',
-      pacienteIniciais: 'P. R. A.',
-      status: 'EM_ATENDIMENTO',
-      toleranciaAte: null,
-    },
-    {
-      ...base,
-      id: 'senha-f017',
-      numero: 'F017',
-      pacienteIniciais: 'L. F. R.',
-      status: 'CHAMADA',
-      toleranciaAte: new Date(agora + 30_000).toISOString(),
-    },
-    { ...base, id: 'senha-f018', numero: 'F018', pacienteIniciais: 'C. D. S.', status: 'CHAMADA' },
-  ];
   restricoes.clear();
   restricoes.set('senha-f014', {
     tipo: 'RESTRICAO_TEMPORARIA',
@@ -101,7 +72,7 @@ function registrarAusencia(senha: SenhaAusencias, automatica: boolean): Registro
   senha.status = 'AUSENTE';
   senha.versao += 1;
   return {
-    senha: { ...senha },
+    senha: semCamposInternos(senha),
     automatica,
     recursosLiberados: true,
     restricaoAplicada: restricoes.get(senha.id) ?? null,
@@ -109,7 +80,7 @@ function registrarAusencia(senha: SenhaAusencias, automatica: boolean): Registro
 }
 
 function expirarTolerancias() {
-  for (const senha of senhas) {
+  for (const senha of senhas()) {
     if (
       senha.status !== 'CHAMADA' ||
       !senha.toleranciaAte ||
@@ -121,42 +92,13 @@ function expirarTolerancias() {
   }
 }
 
+aoConsultarQuadro(expirarTolerancias);
+
 export const handlersAusencias = [
-  http.get(`${API_URL}/filas`, ({ request, cookies }) => {
-    const erro = autorizar(request, cookies, 'fila:consultar');
-    return (
-      erro ??
-      HttpResponse.json({
-        dados: [FILA],
-        meta: { pagina: 1, tamanho: 100, total: 1, totalPaginas: 1 },
-      })
-    );
-  }),
-  http.get(`${API_URL}/filas/:id/senhas`, ({ request, cookies, params }) => {
-    const erro = autorizar(request, cookies, 'fila:consultar');
-    if (erro) return erro;
-    if (params.id !== FILA.id)
-      return problema(404, 'NAO_ENCONTRADO', 'Fila não encontrada. Atualize a lista.');
-    expirarTolerancias();
-    const url = new URL(request.url);
-    const pagina = Math.max(1, Number(url.searchParams.get('pagina')) || 1);
-    const tamanho = Math.min(100, Math.max(1, Number(url.searchParams.get('tamanho')) || 20));
-    return HttpResponse.json({
-      fila: FILA,
-      dados: senhas.slice((pagina - 1) * tamanho, pagina * tamanho),
-      meta: {
-        pagina,
-        tamanho,
-        total: senhas.length,
-        totalPaginas: Math.ceil(senhas.length / tamanho),
-      },
-      sincronizadoEm: new Date().toISOString(),
-    });
-  }),
   http.post(`${API_URL}/senhas/:id/ausencia`, async ({ request, cookies, params }) => {
     const erro = autorizar(request, cookies, 'ausencia:criar');
     if (erro) return erro;
-    const senha = senhas.find((s) => s.id === params.id);
+    const senha = senhas().find((s) => s.id === params.id);
     if (!senha) return problema(404, 'NAO_ENCONTRADO', 'Senha não encontrada. Atualize a lista.');
     const corpo = (await request.json()) as Partial<AusenciaEntrada>;
     if (
@@ -186,7 +128,7 @@ export const handlersAusencias = [
   http.post(`${API_URL}/senhas/:id/desistencia`, async ({ request, cookies, params }) => {
     const erro = autorizar(request, cookies, 'ausencia:criar');
     if (erro) return erro;
-    const senha = senhas.find((s) => s.id === params.id);
+    const senha = senhas().find((s) => s.id === params.id);
     if (!senha) return problema(404, 'NAO_ENCONTRADO', 'Senha não encontrada. Atualize a lista.');
     const corpo = (await request.json()) as Partial<DesistenciaEntrada>;
     if (
@@ -206,6 +148,6 @@ export const handlersAusencias = [
     const recursosLiberados = senha.status === 'EM_ATENDIMENTO';
     senha.status = 'DESISTENCIA';
     senha.versao += 1;
-    return HttpResponse.json({ senha: { ...senha }, recursosLiberados });
+    return HttpResponse.json({ senha: semCamposInternos(senha), recursosLiberados });
   }),
 ];
