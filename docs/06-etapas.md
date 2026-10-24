@@ -157,6 +157,7 @@ Objetivo: usuário entra no sistema e só vê o que o perfil permite; ações se
 | 3.4    | Shell da aplicação: barra superior e menu lateral filtrado por permissão      | Caio Renato ✅  |
 | 3.5    | Tela W-02 · Home por perfil                                                   | Caio Renato ✅  |
 | ⭐ 3.6 | Tela W-05 · Perfis e matriz de permissões editável                            | Caio Renato ✅  |
+| ⭐ 3.6 | API de perfis, permissões e usuários (#12)                                    | Rildo ✅        |
 
 ### Etapa 4 · Cadastros base
 

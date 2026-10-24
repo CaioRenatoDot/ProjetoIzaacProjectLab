@@ -7,6 +7,7 @@ import { AutorizacaoModule } from './common/autorizacao/autorizacao.module';
 import { opcoesLog } from './common/logging/opcoes-log';
 import { type Ambiente, validarAmbiente } from './config/ambiente';
 import { HealthModule } from './health/health.module';
+import { PerfisModule } from './perfis/perfis.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
@@ -28,6 +29,7 @@ import { PrismaModule } from './prisma/prisma.module';
     HealthModule,
     AuthModule,
     AutorizacaoModule,
+    PerfisModule,
   ],
 })
 export class AppModule {}
