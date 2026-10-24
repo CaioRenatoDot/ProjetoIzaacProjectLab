@@ -87,6 +87,12 @@ editável nem excluível — T-05). Exclusão bloqueada quando há usuário vinc
 **perfil_permissao** — `perfil_id`, `permissao` (string `modulo:operacao`). Chave primária
 composta. O catálogo de permissões é constante no código e exposto por `GET /permissoes`.
 
+**sessao** — uma por login, para renovar e revogar o refresh token (`docs/04` §2). `id`,
+`usuario_id`, `token_hash` (SHA-256 do segredo do refresh; o segredo nunca é gravado),
+`hash_anterior?` (aceito por 30 segundos depois da rotação), `rotacionada_em?`, `expira_em`
+(login + 8 h), `revogada_em?`, `motivo_revogacao?` (`LOGOUT` | `REUSO` | `USUARIO_INATIVADO` |
+`SENHA_REDEFINIDA`), `criado_em`.
+
 **audit_log** — append-only (RNF-05). `id`, `usuario_id`, `perfil_nome_no_momento`, `operacao`,
 `modulo`, `entidade`, `entidade_id`, `justificativa?`, `origem_ip`, `user_agent`, `sensivel`
 (boolean), `ocorrido_em`. Índices em `(ocorrido_em)`, `(usuario_id, ocorrido_em)` e
@@ -100,20 +106,24 @@ composta. O catálogo de permissões é constante no código e exposto por `GET 
 `data_nascimento`. Campo derivado `iniciais` calculado no servidor para listas (ADR-003).
 
 **estudante** — `id`, `nome`, `especialidade_id`, `nivel_formacao`, `ativo`.
+
 - **estudante_habilitacao** — `estudante_id`, `habilitacao_id` (RN-06)
 - **estudante_procedimento** — `estudante_id`, `procedimento_id` (RN-06)
 - **estudante_disponibilidade** — `estudante_id`, `dia_semana`, `turno` (RN-05)
 
 **supervisor** — `id`, `nome`, `limite_estudantes_simultaneos` (inteiro positivo, RN-08), `ativo`.
+
 - **supervisor_especialidade** — `supervisor_id`, `especialidade_id` (RN-07)
 - **supervisor_procedimento** — `supervisor_id`, `procedimento_id`
 - **supervisor_disponibilidade** — `supervisor_id`, `dia_semana`, `turno` (RN-07)
 
 **sala** — `id`, `identificacao`, `unidade_id`, `caracteristicas`, `situacao`, `ativo`.
+
 - **sala_recurso** — `sala_id`, `recurso_id` (RN-09)
 
 **especialidade** — `id`, `nome` (único), `descricao`, `exige_supervisao_docente` (RN-07),
 `exige_validacao_encerramento` (RN-11), `unidade_id`, `ativo`.
+
 - **especialidade_procedimento_requisito** — `especialidade_id`, `recurso_id` — recursos que a
   sala precisa ter para atender a especialidade (RN-09)
 
@@ -142,6 +152,7 @@ terceiro critério de RN-04), `chegada_em`, `chamada_em?`, `tolerancia_ate?`, `i
 `criado_em`.
 
 Índice de ordenação — implementa RN-04 diretamente:
+
 ```sql
 CREATE INDEX idx_senha_ordem ON senha (fila_id, status, prioridade DESC, chegada_em ASC, tem_agendamento_previo DESC);
 ```
@@ -195,16 +206,16 @@ indicadores (RF-10).
 Regra que depende só do service quebra quando alguém esquece uma chamada. Estas são garantidas
 por restrição:
 
-| Invariante | Mecanismo | Regra |
-| --- | --- | --- |
-| Uma senha por atendimento | `UNIQUE (senha_id)` em `atendimento` | RF-07 |
-| Estudante sem duas alocações ativas | índice único parcial `WHERE liberada_em IS NULL` | RN-05 |
-| Sala sem duas alocações ativas | índice único parcial `WHERE liberada_em IS NULL` | RN-09 |
-| Justificativa presente na reclassificação | `CHECK (length(trim(justificativa)) > 0)`; o tamanho mínimo é validado no service pelo parâmetro `justificativa_min_caracteres`, editável (Tabela 8) | RN-01 |
-| Justificativa clínica presente em urgência | `CHECK (prioridade <> 'URGENTE' OR justificativa_clinica IS NOT NULL)` | RN-03 |
-| Limite de estudantes por supervisor | verificado no service, dentro da transação de alocação | RN-08 |
-| Auditoria imutável | `REVOKE UPDATE, DELETE ON audit_log` | RNF-05 |
-| Uma fila ativa por especialidade | índice único parcial `WHERE ativa` | RF-04 |
+| Invariante                                 | Mecanismo                                                                                                                                            | Regra  |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Uma senha por atendimento                  | `UNIQUE (senha_id)` em `atendimento`                                                                                                                 | RF-07  |
+| Estudante sem duas alocações ativas        | índice único parcial `WHERE liberada_em IS NULL`                                                                                                     | RN-05  |
+| Sala sem duas alocações ativas             | índice único parcial `WHERE liberada_em IS NULL`                                                                                                     | RN-09  |
+| Justificativa presente na reclassificação  | `CHECK (length(trim(justificativa)) > 0)`; o tamanho mínimo é validado no service pelo parâmetro `justificativa_min_caracteres`, editável (Tabela 8) | RN-01  |
+| Justificativa clínica presente em urgência | `CHECK (prioridade <> 'URGENTE' OR justificativa_clinica IS NOT NULL)`                                                                               | RN-03  |
+| Limite de estudantes por supervisor        | verificado no service, dentro da transação de alocação                                                                                               | RN-08  |
+| Auditoria imutável                         | `REVOKE UPDATE, DELETE ON audit_log`                                                                                                                 | RNF-05 |
+| Uma fila ativa por especialidade           | índice único parcial `WHERE ativa`                                                                                                                   | RF-04  |
 
 O limite de supervisor (RN-08) e o tamanho mínimo da justificativa (RN-01) não viram restrição
 declarativa, porque dependem de contagem ou de parâmetro editável da unidade. O limite fica dentro da
@@ -252,12 +263,12 @@ proibida.
 
 ## 6. Retenção e LGPD (RNF-07)
 
-| Dado | Retenção | Observação |
-| --- | --- | --- |
-| Triagem e atendimento | conforme política da instituição | Base legal e prazo a confirmar com a coordenação |
-| `audit_log` | mínimo 5 anos | Nunca apagado por rotina automática |
-| Senha, chamada, alocação | 2 anos | Após o prazo, anonimizar `paciente_id` mantendo o agregado para indicadores |
-| Dados de indicador | indefinido | Já agregados, sem identificação individual |
+| Dado                     | Retenção                         | Observação                                                                  |
+| ------------------------ | -------------------------------- | --------------------------------------------------------------------------- |
+| Triagem e atendimento    | conforme política da instituição | Base legal e prazo a confirmar com a coordenação                            |
+| `audit_log`              | mínimo 5 anos                    | Nunca apagado por rotina automática                                         |
+| Senha, chamada, alocação | 2 anos                           | Após o prazo, anonimizar `paciente_id` mantendo o agregado para indicadores |
+| Dados de indicador       | indefinido                       | Já agregados, sem identificação individual                                  |
 
 A anonimização substitui o vínculo com o paciente por um identificador irreversível, preservando
 os indicadores de RF-10 sem manter dado pessoal além do necessário. O prazo exato depende de
