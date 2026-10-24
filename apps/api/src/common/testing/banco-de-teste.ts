@@ -7,17 +7,19 @@ export const BANCO_DE_TESTE = 'filas_test';
  */
 export function garantirBancoDeTeste(url: string | undefined): string {
   if (!url) {
-    throw new Error('DATABASE_URL_TEST não definida. Copie o .env.example para .env na raiz.');
+    throw new Error(
+      'URL do banco de teste não definida (DATABASE_URL_TEST, DIRECT_URL_TEST). Copie o .env.example para .env na raiz.',
+    );
   }
   let banco: string;
   try {
     banco = new URL(url).pathname.replace(/^\//, '');
   } catch {
-    throw new Error('DATABASE_URL_TEST não é uma URL válida do PostgreSQL.');
+    throw new Error('A URL do banco de teste não é uma URL válida do PostgreSQL.');
   }
   if (banco !== BANCO_DE_TESTE) {
     throw new Error(
-      `Os testes de integração só rodam no banco ${BANCO_DE_TESTE}; DATABASE_URL_TEST aponta para "${banco}".`,
+      `Os testes de integração só rodam no banco ${BANCO_DE_TESTE}; a URL aponta para "${banco}".`,
     );
   }
   return url;

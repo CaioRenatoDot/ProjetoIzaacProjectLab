@@ -8,8 +8,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  // A API usa o usuário da aplicação; as migrações usam o administrador (dono das tabelas).
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ── Enums (docs/03 §1) ──
@@ -93,6 +95,8 @@ model ParametroUnidade {
   especialidade Especialidade? @relation(fields: [especialidadeId], references: [id], onDelete: Restrict)
   autor         Usuario?       @relation(fields: [atualizadoPor], references: [id], onDelete: Restrict)
 
+  /// Na migração este índice é recriado com NULLS NOT DISTINCT: um valor geral (sem especialidade) por chave.
+  @@unique([unidadeId, especialidadeId, chave], map: "parametro_unidade_chave_key")
   @@map("parametro_unidade")
 }
 
