@@ -1,9 +1,8 @@
 import { type Type } from '@nestjs/common';
 import { MODULE_METADATA, PATH_METADATA } from '@nestjs/common/constants';
 import { MetadataScanner } from '@nestjs/core';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
-import { AppModule } from '../../app.module';
 import { CHAVE_AUTENTICADO, CHAVE_PUBLICO, CHAVE_REQUER } from './decorators';
 
 type ItemModulo = Type | { module: Type; controllers?: Type[]; imports?: ItemModulo[] };
@@ -29,6 +28,15 @@ const temDecorator = (alvo: object) =>
   );
 
 describe('cobertura de autorização (docs/04 §3)', () => {
+  let AppModule: Type;
+
+  // O ConfigModule valida o ambiente ao importar o AppModule; no CI não há .env.
+  beforeAll(async () => {
+    process.env.DATABASE_URL ??= 'postgresql://filas:filas@localhost:5432/filas_dev';
+    process.env.JWT_SEGREDO ??= 'segredo-ficticio-de-teste-com-32-caracteres!';
+    ({ AppModule } = await import('../../app.module'));
+  });
+
   it('toda rota da API tem @Requer, @Publico ou @Autenticado', () => {
     const scanner = new MetadataScanner();
     const semDecorator: string[] = [];
