@@ -1,4 +1,7 @@
-// Schema mínimo da Etapa 1. Os modelos entram na Etapa 2 (docs/03-modelo-de-dados.md).
+// Modelo de dados: docs/03-modelo-de-dados.md. Tabelas e colunas em snake_case (@@map/@map),
+// campos do domínio em português e identificadores UUID v7.
+// Parte 2.1 (#6): acesso e configuração, cadastros base e auditoria.
+// Fila, senha, triagem, alocação e atendimento entram na parte 2.2 (#7).
 
 generator client {
   provider = "prisma-client-js"
@@ -7,4 +10,364 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// ── Enums (docs/03 §1) ──
+
+enum VinculoPaciente {
+  EXTERNO
+  ALUNO
+  SERVIDOR
+}
+
+enum Turno {
+  MANHA
+  TARDE
+  NOITE
+}
+
+enum DiaSemana {
+  DOMINGO
+  SEGUNDA
+  TERCA
+  QUARTA
+  QUINTA
+  SEXTA
+  SABADO
+}
+
+/// Tabela 4, ID04 do Documento de Requisitos.
+enum SituacaoSala {
+  DISPONIVEL
+  EM_MANUTENCAO
+  INDISPONIVEL
+}
+
+enum OperacaoAuditoria {
+  CRIAR
+  EDITAR
+  EXCLUIR
+  CONSULTAR_SENSIVEL
+  EXPORTAR
+  LOGIN
+  LOGOUT
+}
+
+/// Chaves de parametro_unidade (docs/03 §3.1, Tabela 8).
+enum ChaveParametro {
+  TOLERANCIA_MINUTOS           @map("tolerancia_minutos")
+  SLA_MINUTOS                  @map("sla_minutos")
+  REINCIDENCIAS_RESTRICAO      @map("reincidencias_restricao")
+  JANELA_REINCIDENCIA_DIAS     @map("janela_reincidencia_dias")
+  LIMITE_ESTUDANTES_SUPERVISOR @map("limite_estudantes_supervisor")
+  JUSTIFICATIVA_MIN_CARACTERES @map("justificativa_min_caracteres")
+}
+
+// ── Acesso e configuração (docs/03 §3.1) ──
+
+model Unidade {
+  id    String  @id @default(uuid(7)) @db.Uuid
+  nome  String
+  ativo Boolean @default(true)
+
+  parametros     ParametroUnidade[]
+  usuarios       Usuario[]
+  pacientes      Paciente[]
+  salas          Sala[]
+  especialidades Especialidade[]
+
+  @@map("unidade")
+}
+
+/// Valor com especialidadeId sobrepõe o da unidade. Valores e restrições: parte 2.3 (#8).
+model ParametroUnidade {
+  id              String         @id @default(uuid(7)) @db.Uuid
+  unidadeId       String         @map("unidade_id") @db.Uuid
+  especialidadeId String?        @map("especialidade_id") @db.Uuid
+  chave           ChaveParametro
+  valor           Int
+  atualizadoPor   String?        @map("atualizado_por") @db.Uuid
+  atualizadoEm    DateTime       @default(now()) @updatedAt @map("atualizado_em") @db.Timestamptz(3)
+
+  unidade       Unidade        @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  especialidade Especialidade? @relation(fields: [especialidadeId], references: [id], onDelete: Restrict)
+  autor         Usuario?       @relation(fields: [atualizadoPor], references: [id], onDelete: Restrict)
+
+  @@map("parametro_unidade")
+}
+
+model Usuario {
+  id               String    @id @default(uuid(7)) @db.Uuid
+  nome             String
+  /// Matrícula ou e-mail institucional; gravada em minúsculas e sem espaços nas pontas.
+  identificacao    String    @unique
+  senhaHash        String    @map("senha_hash")
+  perfilId         String    @map("perfil_id") @db.Uuid
+  unidadeId        String    @map("unidade_id") @db.Uuid
+  ativo            Boolean   @default(true)
+  tentativasFalhas Int       @default(0) @map("tentativas_falhas")
+  bloqueadoAte     DateTime? @map("bloqueado_ate") @db.Timestamptz(3)
+  ultimoLoginEm    DateTime? @map("ultimo_login_em") @db.Timestamptz(3)
+
+  perfil                Perfil             @relation(fields: [perfilId], references: [id], onDelete: Restrict)
+  unidade               Unidade            @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  registrosAuditoria    AuditLog[]
+  parametrosAtualizados ParametroUnidade[]
+
+  @@map("usuario")
+}
+
+/// Perfil com `sistema` não é editável nem excluível (T-05); exclusão com usuário vinculado é bloqueada pela FK.
+model Perfil {
+  id        String  @id @default(uuid(7)) @db.Uuid
+  nome      String  @unique
+  descricao String?
+  sistema   Boolean @default(false)
+
+  permissoes PerfilPermissao[]
+  usuarios   Usuario[]
+
+  @@map("perfil")
+}
+
+/// `permissao` no formato `modulo:operacao`; o catálogo é constante no código (docs/04 §3).
+model PerfilPermissao {
+  perfilId  String @map("perfil_id") @db.Uuid
+  permissao String
+
+  perfil Perfil @relation(fields: [perfilId], references: [id], onDelete: Cascade)
+
+  @@id([perfilId, permissao])
+  @@map("perfil_permissao")
+}
+
+/// Append-only (RNF-05): o REVOKE de UPDATE/DELETE fica na parte 2.3 (#8).
+/// Usuário nunca é excluído (FK Restrict): a trilha é retida por no mínimo 5 anos (docs/03 §6).
+model AuditLog {
+  id                  String            @id @default(uuid(7)) @db.Uuid
+  /// Nulo em operação feita por rotina agendada, sem usuário.
+  usuarioId           String?           @map("usuario_id") @db.Uuid
+  perfilNomeNoMomento String?           @map("perfil_nome_no_momento")
+  operacao            OperacaoAuditoria
+  modulo              String
+  entidade            String
+  entidadeId          String?           @map("entidade_id") @db.Uuid
+  justificativa       String?
+  origemIp            String?           @map("origem_ip")
+  userAgent           String?           @map("user_agent")
+  /// X-Request-Id da requisição (docs/04 §9), para ligar o registro ao log.
+  requestId           String?           @map("request_id")
+  sensivel            Boolean           @default(false)
+  ocorridoEm          DateTime          @default(now()) @map("ocorrido_em") @db.Timestamptz(3)
+
+  usuario Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([ocorridoEm])
+  @@index([usuarioId, ocorridoEm])
+  @@index([entidade, entidadeId])
+  @@map("audit_log")
+}
+
+// ── Cadastros base (docs/03 §3.2, RF-01) ──
+
+/// Duplicidade por `documento` (único) e por `nome_completo` + `data_nascimento` (verificada no service).
+model Paciente {
+  id              String          @id @default(uuid(7)) @db.Uuid
+  nomeCompleto    String          @map("nome_completo")
+  /// Só dígitos, normalizado antes de gravar.
+  documento       String          @unique
+  dataNascimento  DateTime        @map("data_nascimento") @db.Date
+  contatoTelefone String?         @map("contato_telefone")
+  contatoEmail    String?         @map("contato_email")
+  vinculo         VinculoPaciente
+  unidadeId       String          @map("unidade_id") @db.Uuid
+  restricaoAtiva  Boolean         @default(false) @map("restricao_ativa")
+  restricaoAte    DateTime?       @map("restricao_ate") @db.Date
+  ativo           Boolean         @default(true)
+
+  unidade Unidade @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+
+  @@index([nomeCompleto, dataNascimento])
+  @@map("paciente")
+}
+
+model Estudante {
+  id              String  @id @default(uuid(7)) @db.Uuid
+  nome            String
+  especialidadeId String  @map("especialidade_id") @db.Uuid
+  nivelFormacao   String  @map("nivel_formacao")
+  ativo           Boolean @default(true)
+
+  especialidade    Especialidade              @relation(fields: [especialidadeId], references: [id], onDelete: Restrict)
+  habilitacoes     EstudanteHabilitacao[]
+  procedimentos    EstudanteProcedimento[]
+  disponibilidades EstudanteDisponibilidade[]
+
+  @@map("estudante")
+}
+
+model EstudanteHabilitacao {
+  estudanteId   String @map("estudante_id") @db.Uuid
+  habilitacaoId String @map("habilitacao_id") @db.Uuid
+
+  estudante   Estudante   @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+  habilitacao Habilitacao @relation(fields: [habilitacaoId], references: [id], onDelete: Restrict)
+
+  @@id([estudanteId, habilitacaoId])
+  @@map("estudante_habilitacao")
+}
+
+model EstudanteProcedimento {
+  estudanteId    String @map("estudante_id") @db.Uuid
+  procedimentoId String @map("procedimento_id") @db.Uuid
+
+  estudante    Estudante    @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+  procedimento Procedimento @relation(fields: [procedimentoId], references: [id], onDelete: Restrict)
+
+  @@id([estudanteId, procedimentoId])
+  @@map("estudante_procedimento")
+}
+
+model EstudanteDisponibilidade {
+  estudanteId String    @map("estudante_id") @db.Uuid
+  diaSemana   DiaSemana @map("dia_semana")
+  turno       Turno
+
+  estudante Estudante @relation(fields: [estudanteId], references: [id], onDelete: Cascade)
+
+  @@id([estudanteId, diaSemana, turno])
+  @@map("estudante_disponibilidade")
+}
+
+/// Sem `limite_estudantes_simultaneos`, vale o parâmetro `limite_estudantes_supervisor` da unidade (Tabela 8, ID05).
+model Supervisor {
+  id                          String  @id @default(uuid(7)) @db.Uuid
+  nome                        String
+  limiteEstudantesSimultaneos Int?    @map("limite_estudantes_simultaneos")
+  ativo                       Boolean @default(true)
+
+  especialidades   SupervisorEspecialidade[]
+  procedimentos    SupervisorProcedimento[]
+  disponibilidades SupervisorDisponibilidade[]
+
+  @@map("supervisor")
+}
+
+model SupervisorEspecialidade {
+  supervisorId    String @map("supervisor_id") @db.Uuid
+  especialidadeId String @map("especialidade_id") @db.Uuid
+
+  supervisor    Supervisor    @relation(fields: [supervisorId], references: [id], onDelete: Cascade)
+  especialidade Especialidade @relation(fields: [especialidadeId], references: [id], onDelete: Restrict)
+
+  @@id([supervisorId, especialidadeId])
+  @@map("supervisor_especialidade")
+}
+
+model SupervisorProcedimento {
+  supervisorId   String @map("supervisor_id") @db.Uuid
+  procedimentoId String @map("procedimento_id") @db.Uuid
+
+  supervisor   Supervisor   @relation(fields: [supervisorId], references: [id], onDelete: Cascade)
+  procedimento Procedimento @relation(fields: [procedimentoId], references: [id], onDelete: Restrict)
+
+  @@id([supervisorId, procedimentoId])
+  @@map("supervisor_procedimento")
+}
+
+model SupervisorDisponibilidade {
+  supervisorId String    @map("supervisor_id") @db.Uuid
+  diaSemana    DiaSemana @map("dia_semana")
+  turno        Turno
+
+  supervisor Supervisor @relation(fields: [supervisorId], references: [id], onDelete: Cascade)
+
+  @@id([supervisorId, diaSemana, turno])
+  @@map("supervisor_disponibilidade")
+}
+
+model Sala {
+  id              String       @id @default(uuid(7)) @db.Uuid
+  identificacao   String
+  unidadeId       String       @map("unidade_id") @db.Uuid
+  caracteristicas String?
+  situacao        SituacaoSala @default(DISPONIVEL)
+  ativo           Boolean      @default(true)
+
+  unidade  Unidade       @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  recursos SalaRecurso[]
+
+  @@map("sala")
+}
+
+model SalaRecurso {
+  salaId    String @map("sala_id") @db.Uuid
+  recursoId String @map("recurso_id") @db.Uuid
+
+  sala    Sala    @relation(fields: [salaId], references: [id], onDelete: Cascade)
+  recurso Recurso @relation(fields: [recursoId], references: [id], onDelete: Restrict)
+
+  @@id([salaId, recursoId])
+  @@map("sala_recurso")
+}
+
+model Especialidade {
+  id                         String  @id @default(uuid(7)) @db.Uuid
+  nome                       String  @unique
+  descricao                  String?
+  exigeSupervisaoDocente     Boolean @default(false) @map("exige_supervisao_docente")
+  exigeValidacaoEncerramento Boolean @default(false) @map("exige_validacao_encerramento")
+  unidadeId                  String  @map("unidade_id") @db.Uuid
+  ativo                      Boolean @default(true)
+
+  unidade          Unidade                              @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  recursosExigidos EspecialidadeProcedimentoRequisito[]
+  estudantes       Estudante[]
+  supervisores     SupervisorEspecialidade[]
+  parametros       ParametroUnidade[]
+
+  @@map("especialidade")
+}
+
+/// Recursos que a sala precisa ter para atender a especialidade (RN-09). Nome conforme docs/03 §3.2.
+model EspecialidadeProcedimentoRequisito {
+  especialidadeId String @map("especialidade_id") @db.Uuid
+  recursoId       String @map("recurso_id") @db.Uuid
+
+  especialidade Especialidade @relation(fields: [especialidadeId], references: [id], onDelete: Cascade)
+  recurso       Recurso       @relation(fields: [recursoId], references: [id], onDelete: Restrict)
+
+  @@id([especialidadeId, recursoId])
+  @@map("especialidade_procedimento_requisito")
+}
+
+// ── Tabelas de apoio: RN-06 e RN-09 comparam conjuntos, por isso não são texto livre ──
+
+model Habilitacao {
+  id   String @id @default(uuid(7)) @db.Uuid
+  nome String @unique
+
+  estudantes EstudanteHabilitacao[]
+
+  @@map("habilitacao")
+}
+
+model Procedimento {
+  id   String @id @default(uuid(7)) @db.Uuid
+  nome String @unique
+
+  estudantes   EstudanteProcedimento[]
+  supervisores SupervisorProcedimento[]
+
+  @@map("procedimento")
+}
+
+model Recurso {
+  id   String @id @default(uuid(7)) @db.Uuid
+  nome String @unique
+
+  salas          SalaRecurso[]
+  especialidades EspecialidadeProcedimentoRequisito[]
+
+  @@map("recurso")
 }

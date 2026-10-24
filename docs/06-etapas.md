@@ -136,7 +136,7 @@ Objetivo: schema Prisma completo e dados fictícios para desenvolver.
 
 | Parte | Descrição                                                                                                         | Responsável   |
 | ----- | ----------------------------------------------------------------------------------------------------------------- | ------------- |
-| 2.1   | Schema de acesso, cadastros base e auditoria                                                                      | Rildo         |
+| 2.1   | Schema de acesso, cadastros base e auditoria                                                                      | Rildo ✅      |
 | 2.2   | Schema de fila, senha, chamada, alocação, atendimento e encaminhamento                                            | Nathan        |
 | 2.3   | Restrições no banco (únicos parciais, CHECKs, `audit_log` somente leitura) e tabela de parâmetros da unidade      | Rildo, Nathan |
 | 2.4   | Seed: unidade, perfis, usuários de teste, 5 especialidades, salas, estudantes, supervisores e pacientes fictícios | Rildo         |

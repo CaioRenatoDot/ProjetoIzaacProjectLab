@@ -104,6 +104,13 @@ pnpm contract:lint            # valida docs/api/openapi.yaml
 pnpm format                   # formata com Prettier
 ```
 
+Testes de integração (banco real, só no `filas_test`; recriam o banco de teste do zero a cada
+execução e exigem o `docker compose up -d`):
+
+```bash
+pnpm --filter api test:integracao
+```
+
 Os commits passam pelo Commitlint (Conventional Commits, escopos de `docs/05-fluxo-github.md` §3) e
 pelo lint-staged, que aplica ESLint e Prettier só nos arquivos alterados.
 
