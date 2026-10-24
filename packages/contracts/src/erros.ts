@@ -27,6 +27,7 @@ export const CodigoErro = z.enum([
   'SUPERVISOR_INDISPONIVEL',
   'DESFECHO_OBRIGATORIO',
   'ESPECIALIDADE_INATIVA',
+  'PERFIL_SISTEMA',
   'SENHA_NAO_ENCONTRADA',
 ]);
 export type CodigoErro = z.infer<typeof CodigoErro>;
