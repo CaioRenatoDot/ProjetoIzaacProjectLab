@@ -5,6 +5,17 @@ const ambienteSchema = z.object({
   DATABASE_URL: z
     .string({ error: 'DATABASE_URL não definida. Copie o .env.example para .env na raiz.' })
     .min(1, 'DATABASE_URL não definida. Copie o .env.example para .env na raiz.'),
+  /** Origens do web (3000) e do publico (3001), separadas por vírgula. */
+  CORS_ORIGENS: z
+    .string()
+    .default('http://localhost:3000,http://localhost:3001')
+    .transform((valor) =>
+      valor
+        .split(',')
+        .map((origem) => origem.trim())
+        .filter(Boolean),
+    ),
+  LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 
 export type Ambiente = z.infer<typeof ambienteSchema>;
