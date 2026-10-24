@@ -9,15 +9,15 @@ arquivo; divergência é bug de quem se afastou do contrato.
 
 ## 1. Convenções gerais
 
-| Item | Definição |
-| --- | --- |
-| Base URL | `https://{host}/api/v1` |
-| Formato | JSON, `Content-Type: application/json; charset=utf-8` |
-| Nomes de campo | `camelCase` |
-| Datas | ISO-8601 com offset, sempre — `2026-09-08T08:31:00-03:00` |
-| Durações | inteiro em minutos, com sufixo no nome: `tempoEsperaMinutos` |
-| Identificadores | UUID v7 em string |
-| Idioma | mensagens de erro em português, prontas para exibição |
+| Item            | Definição                                                    |
+| --------------- | ------------------------------------------------------------ |
+| Base URL        | `https://{host}/api/v1`                                      |
+| Formato         | JSON, `Content-Type: application/json; charset=utf-8`        |
+| Nomes de campo  | `camelCase`                                                  |
+| Datas           | ISO-8601 com offset, sempre — `2026-09-08T08:31:00-03:00`    |
+| Durações        | inteiro em minutos, com sufixo no nome: `tempoEsperaMinutos` |
+| Identificadores | UUID v7 em string                                            |
+| Idioma          | mensagens de erro em português, prontas para exibição        |
 
 ### Versionamento
 
@@ -66,20 +66,20 @@ clínica ou dado de saúde (ADR-003).
 Cada operação exige uma permissão `modulo:operacao`. O catálogo completo vem de
 `GET /permissoes` e alimenta a matriz de W-05.
 
-| Módulo | Operações |
-| --- | --- |
-| `cadastros` | consultar, criar, editar, excluir |
-| `perfis` | consultar, criar, editar, excluir |
-| `triagem` | consultar, criar, editar, consultar_sensivel |
-| `senha` | consultar, criar, reclassificar |
-| `fila` | consultar, criar, editar, excluir, chamar |
-| `alocacao` | consultar, criar, editar |
-| `atendimento` | consultar, criar, editar, validar, consultar_sensivel |
-| `encaminhamento` | consultar, criar |
-| `ausencia` | consultar, criar |
-| `indicadores` | consultar, exportar |
-| `alertas` | consultar, reconhecer, escalonar |
-| `auditoria` | consultar, exportar |
+| Módulo           | Operações                                             |
+| ---------------- | ----------------------------------------------------- |
+| `cadastros`      | consultar, criar, editar, excluir                     |
+| `perfis`         | consultar, criar, editar, excluir                     |
+| `triagem`        | consultar, criar, editar, consultar_sensivel          |
+| `senha`          | consultar, criar, reclassificar                       |
+| `fila`           | consultar, criar, editar, excluir, chamar             |
+| `alocacao`       | consultar, criar, editar                              |
+| `atendimento`    | consultar, criar, editar, validar, consultar_sensivel |
+| `encaminhamento` | consultar, criar                                      |
+| `ausencia`       | consultar, criar                                      |
+| `indicadores`    | consultar, exportar                                   |
+| `alertas`        | consultar, reconhecer, escalonar                      |
+| `auditoria`      | consultar, exportar                                   |
 
 Falta de permissão retorna **403** com corpo neutro, sem revelar existência ou volume de dados
 (item 3.1 da especificação de UI). Recurso inexistente sob permissão negada também retorna 403,
@@ -109,7 +109,10 @@ Erro de validação:
   "status": 422,
   "codigo": "VALIDACAO",
   "campos": [
-    { "campo": "justificativaClinica", "mensagem": "Justificativa é obrigatória para prioridade Urgente." }
+    {
+      "campo": "justificativaClinica",
+      "mensagem": "Justificativa é obrigatória para prioridade Urgente."
+    }
   ]
 }
 ```
@@ -119,26 +122,42 @@ causa e o próximo passo, nunca apenas "erro" (item 3.2 da especificação de UI
 
 ### Códigos de erro do domínio
 
-| Código | HTTP | Quando | Regra |
-| --- | --- | --- | --- |
-| `VALIDACAO` | 422 | Campo obrigatório ausente ou inválido | — |
-| `DUPLICIDADE` | 409 | Registro já cadastrado; o corpo traz `recursoExistenteId` para o link de W-04 | UC-01 |
-| `VINCULO_ATIVO` | 409 | Exclusão de cadastro com vínculo ativo; sugere inativar | T-03 |
-| `TRANSICAO_INVALIDA` | 409 | Mudança de status não prevista na máquina de estados | P-01 |
-| `VERSAO_DESATUALIZADA` | 409 | Bloqueio otimista; corpo traz o estado atual | — |
-| `FILA_BLOQUEADA` | 409 | Chamada em fila sem supervisor disponível | RN-10 |
-| `FILA_VAZIA` | 409 | "Chamar próxima" sem senha aguardando | UC-09 |
-| `SEM_FILA_CONFIGURADA` | 409 | Emissão de senha para especialidade sem fila ativa | UC-06 |
-| `JUSTIFICATIVA_OBRIGATORIA` | 422 | Reclassificação sem justificativa | RN-01 |
-| `RECURSO_INDISPONIVEL` | 409 | Recurso deixou de estar disponível entre a sugestão e a confirmação | RN-05, RN-09 |
-| `LIMITE_SUPERVISAO_ATINGIDO` | 409 | Supervisor no limite de estudantes simultâneos | RN-08 |
-| `SUPERVISOR_INDISPONIVEL` | 409 | Nenhum supervisor habilitado; dispara bloqueio da fila | RN-07, RN-10 |
-| `DESFECHO_OBRIGATORIO` | 422 | Encerramento sem desfecho | UC-13 |
-| `ESPECIALIDADE_INATIVA` | 409 | Encaminhamento interno para especialidade inativa | UC-14 |
-| `PACIENTE_COM_RESTRICAO` | 200 + aviso | Reincidência de ausências; **não bloqueia**, apenas avisa | RN-13 |
+| Código                       | HTTP        | Quando                                                                        | Regra        |
+| ---------------------------- | ----------- | ----------------------------------------------------------------------------- | ------------ |
+| `VALIDACAO`                  | 422         | Campo obrigatório ausente ou inválido                                         | —            |
+| `DUPLICIDADE`                | 409         | Registro já cadastrado; o corpo traz `recursoExistenteId` para o link de W-04 | UC-01        |
+| `VINCULO_ATIVO`              | 409         | Exclusão de cadastro com vínculo ativo; sugere inativar                       | T-03         |
+| `TRANSICAO_INVALIDA`         | 409         | Mudança de status não prevista na máquina de estados                          | P-01         |
+| `VERSAO_DESATUALIZADA`       | 409         | Bloqueio otimista; corpo traz o estado atual                                  | —            |
+| `FILA_BLOQUEADA`             | 409         | Chamada em fila sem supervisor disponível                                     | RN-10        |
+| `FILA_VAZIA`                 | 409         | "Chamar próxima" sem senha aguardando                                         | UC-09        |
+| `SEM_FILA_CONFIGURADA`       | 409         | Emissão de senha para especialidade sem fila ativa                            | UC-06        |
+| `JUSTIFICATIVA_OBRIGATORIA`  | 422         | Reclassificação sem justificativa                                             | RN-01        |
+| `RECURSO_INDISPONIVEL`       | 409         | Recurso deixou de estar disponível entre a sugestão e a confirmação           | RN-05, RN-09 |
+| `LIMITE_SUPERVISAO_ATINGIDO` | 409         | Supervisor no limite de estudantes simultâneos                                | RN-08        |
+| `SUPERVISOR_INDISPONIVEL`    | 409         | Nenhum supervisor habilitado; dispara bloqueio da fila                        | RN-07, RN-10 |
+| `DESFECHO_OBRIGATORIO`       | 422         | Encerramento sem desfecho                                                     | UC-13        |
+| `ESPECIALIDADE_INATIVA`      | 409         | Encaminhamento interno para especialidade inativa                             | UC-14        |
+| `PACIENTE_COM_RESTRICAO`     | 200 + aviso | Reincidência de ausências; **não bloqueia**, apenas avisa                     | RN-13        |
 
 `PACIENTE_COM_RESTRICAO` não é erro: vem como `avisos[]` na resposta de busca de paciente, porque
 a triagem é permitida (W-06).
+
+### Códigos técnicos
+
+Valem para qualquer endpoint. A lista completa de códigos fica em `CodigoErro`
+(`packages/contracts/src/erros.ts`); código novo entra lá e nesta seção no mesmo PR de contrato.
+
+| Código                | HTTP | Quando                                                                               |
+| --------------------- | ---- | ------------------------------------------------------------------------------------ |
+| `CORPO_INVALIDO`      | 400  | Corpo que não é JSON válido (erro de sintaxe, antes de qualquer validação)           |
+| `NAO_AUTENTICADO`     | 401  | Sem token, token inválido ou expirado                                                |
+| `CREDENCIAL_INVALIDA` | 401  | Login recusado; mesma resposta para usuário inexistente e senha incorreta (§2)       |
+| `BLOQUEIO_TEMPORARIO` | 401  | Login durante o bloqueio por tentativas (§2)                                         |
+| `SEM_PERMISSAO`       | 403  | Falta de permissão, inclusive sobre recurso inexistente (§3)                         |
+| `NAO_ENCONTRADO`      | 404  | Rota inexistente                                                                     |
+| `BANCO_INDISPONIVEL`  | 503  | Readiness com o banco fora (§9)                                                      |
+| `ERRO_INTERNO`        | 500  | Falha inesperada; o corpo não traz detalhe técnico, só o `X-Request-Id` no cabeçalho |
 
 ## 5. Paginação, filtro e ordenação
 
@@ -146,12 +165,12 @@ a triagem é permitida (W-06).
 GET /pacientes?pagina=1&tamanho=20&busca=silva&vinculo=ALUNO&ordenar=nome&direcao=asc
 ```
 
-| Parâmetro | Padrão | Limite |
-| --- | --- | --- |
-| `pagina` | 1 | — |
-| `tamanho` | 20 | 100 |
-| `ordenar` | por endpoint | — |
-| `direcao` | `asc` | — |
+| Parâmetro | Padrão       | Limite |
+| --------- | ------------ | ------ |
+| `pagina`  | 1            | —      |
+| `tamanho` | 20           | 100    |
+| `ordenar` | por endpoint | —      |
+| `direcao` | `asc`        | —      |
 
 Resposta:
 
@@ -163,6 +182,8 @@ Resposta:
 ```
 
 Toda listagem é paginada, sem exceção (RNF-03).
+`tamanho` acima de 100, `pagina` menor que 1 ou valor não inteiro retornam `422 VALIDACAO`
+com o parâmetro em `campos`; o servidor não corta o valor em silêncio.
 
 ## 6. Idempotência e concorrência
 
@@ -180,30 +201,30 @@ Socket.IO em três namespaces. A conexão autenticada envia o access token no `a
 
 ### `/filas` — autenticado, sala `especialidade:{id}`
 
-| Evento | Corpo | Origem |
-| --- | --- | --- |
-| `senha.criada` | `SenhaResumo` | UC-06 |
-| `senha.chamada` | `{ senha: SenhaResumo, chamada: Chamada }` | UC-09 |
-| `senha.status_alterado` | `{ senhaId, statusAnterior, status, versao }` | P-01 |
-| `senha.reclassificada` | `{ senhaId, prioridade, novaPosicao }` | UC-07 |
-| `fila.bloqueada` | `{ filaId, especialidade, motivo, desde }` | RN-10 |
-| `fila.desbloqueada` | `{ filaId, especialidade, em }` | RN-10 |
-| `fila.metricas` | `{ filaId, aguardando, emAtendimento, tempoMedioEsperaMinutos }` | W-08 |
+| Evento                  | Corpo                                                            | Origem |
+| ----------------------- | ---------------------------------------------------------------- | ------ |
+| `senha.criada`          | `SenhaResumo`                                                    | UC-06  |
+| `senha.chamada`         | `{ senha: SenhaResumo, chamada: Chamada }`                       | UC-09  |
+| `senha.status_alterado` | `{ senhaId, statusAnterior, status, versao }`                    | P-01   |
+| `senha.reclassificada`  | `{ senhaId, prioridade, novaPosicao }`                           | UC-07  |
+| `fila.bloqueada`        | `{ filaId, especialidade, motivo, desde }`                       | RN-10  |
+| `fila.desbloqueada`     | `{ filaId, especialidade, em }`                                  | RN-10  |
+| `fila.metricas`         | `{ filaId, aguardando, emAtendimento, tempoMedioEsperaMinutos }` | W-08   |
 
 ### `/painel` — público, sala `unidade:{id}`
 
-| Evento | Corpo |
-| --- | --- |
-| `chamada.exibir` | `{ numero, especialidade, local, sequencia, em }` |
-| `painel.estado` | `{ atual, anteriores[] }` — enviado no connect, para reconexão |
+| Evento           | Corpo                                                          |
+| ---------------- | -------------------------------------------------------------- |
+| `chamada.exibir` | `{ numero, especialidade, local, sequencia, em }`              |
+| `painel.estado`  | `{ atual, anteriores[] }` — enviado no connect, para reconexão |
 
 Apenas esses campos. O namespace não conhece paciente, prioridade nem triagem (ADR-003).
 
 ### `/alertas` — autenticado com permissão `alertas:consultar`, sala `unidade:{id}`
 
-| Evento | Corpo |
-| --- | --- |
-| `sla.excedido` | `Alerta` |
+| Evento            | Corpo                         |
+| ----------------- | ----------------------------- |
+| `sla.excedido`    | `Alerta`                      |
 | `sla.normalizado` | `{ alertaId, normalizadoEm }` |
 
 ### Degradação
@@ -225,9 +246,9 @@ Requisições a endpoints marcados como sensíveis geram `CONSULTAR_SENSIVEL`. S
 
 ## 9. Saúde e observabilidade
 
-| Endpoint | Uso |
-| --- | --- |
-| `GET /health` | Liveness — responde sem tocar o banco |
+| Endpoint            | Uso                                              |
+| ------------------- | ------------------------------------------------ |
+| `GET /health`       | Liveness — responde sem tocar o banco            |
 | `GET /health/ready` | Readiness — verifica banco e migrações aplicadas |
 
 Toda resposta traz `X-Request-Id`, propagado para o log e para o `audit_log`, o que permite ligar
