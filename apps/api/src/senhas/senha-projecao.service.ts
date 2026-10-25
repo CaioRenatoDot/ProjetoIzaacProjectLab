@@ -30,6 +30,7 @@ export class SenhaProjecao {
         const { slaMinutos } = await this.parametros.vigentes(
           senha.fila.unidadeId,
           senha.fila.especialidadeId,
+          tx,
         );
         slaPorEspecialidade.set(chave, slaMinutos);
       }
@@ -67,14 +68,18 @@ export class SenhaProjecao {
   }
 
   /** 409 com a senha como está agora no banco (docs/04 §6). */
-  async versaoDesatualizada(senhaId: string, unidadeId: string): Promise<ErroDominio> {
-    const atual = (await this.repositorio.buscar(senhaId, unidadeId))!;
+  async versaoDesatualizada(
+    senhaId: string,
+    unidadeId: string,
+    tx?: Transacao,
+  ): Promise<ErroDominio> {
+    const atual = (await this.repositorio.buscar(senhaId, unidadeId, tx))!;
     return new ErroDominio(
       'VERSAO_DESATUALIZADA',
       409,
       'Senha alterada por outra pessoa',
       'A senha mudou desde que você abriu a tela. Confira o estado atual e tente de novo.',
-      { atual: await this.resumo(atual) },
+      { atual: await this.resumo(atual, tx) },
     );
   }
 }

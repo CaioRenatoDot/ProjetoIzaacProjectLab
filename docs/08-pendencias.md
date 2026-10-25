@@ -88,6 +88,11 @@ existe. Quem criar a tabela troca o valor e remove a linha:
 - Testes de integração rodam sem reset entre execuções na máquina de cada um: use nomes,
   documentos e datas únicos por teste (ver `apps/api/src/cadastros/pessoas.int-spec.ts`).
 - `gh pr checks --json` não existe em todas as versões do `gh`; use `statusCheckRollup`.
+- Dentro de `prisma.$transaction(async (tx) => ...)`, **toda** leitura usa o `tx` (inclusive
+  `ParametrosService.vigentes(..., tx)` e `SenhaProjecao`). Uma consulta pelo `PrismaService`
+  pede outra conexão do pool enquanto a transação segura a sua: com várias transações
+  simultâneas o pool esgota e tudo trava até o timeout. Para reproduzir, rode a integração com
+  `&connection_limit=2` na `DATABASE_URL_TEST`.
 
 ## 4. Decisões em aberto
 

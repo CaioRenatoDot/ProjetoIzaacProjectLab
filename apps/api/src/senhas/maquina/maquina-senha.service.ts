@@ -52,7 +52,7 @@ export class MaquinaSenha {
       );
     }
     if (senha.versao !== pedido.versao) {
-      throw await this.projecao.versaoDesatualizada(senha.id, pedido.unidadeId);
+      throw await this.projecao.versaoDesatualizada(senha.id, pedido.unidadeId, tx);
     }
     if (!transicaoPermitida(senha.status, pedido.para)) {
       throw new ErroDominio(
@@ -66,7 +66,7 @@ export class MaquinaSenha {
 
     const toleranciaMinutos =
       pedido.para === 'CHAMADA'
-        ? (await this.parametros.vigentes(pedido.unidadeId, senha.fila.especialidadeId))
+        ? (await this.parametros.vigentes(pedido.unidadeId, senha.fila.especialidadeId, tx))
             .toleranciaMinutos
         : 0;
     const { count } = await tx.senha.updateMany({
@@ -83,7 +83,7 @@ export class MaquinaSenha {
       },
     });
     if (count !== 1) {
-      throw await this.projecao.versaoDesatualizada(senha.id, pedido.unidadeId);
+      throw await this.projecao.versaoDesatualizada(senha.id, pedido.unidadeId, tx);
     }
     return {
       senhaId: senha.id,

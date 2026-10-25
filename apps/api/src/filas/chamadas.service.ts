@@ -139,6 +139,7 @@ export class ChamadasService {
       const { toleranciaMinutos } = await this.parametros.vigentes(
         usuario.unidadeId,
         fila.especialidadeId,
+        tx,
       );
       const renovou = await this.repositorio.renovarTolerancia(
         tx,
@@ -146,8 +147,9 @@ export class ChamadasService {
         vigente.senha.versao,
         new Date(Date.now() + toleranciaMinutos * 60_000),
       );
-      if (!renovou)
-        throw await this.projecao.versaoDesatualizada(vigente.senhaId, usuario.unidadeId);
+      if (!renovou) {
+        throw await this.projecao.versaoDesatualizada(vigente.senhaId, usuario.unidadeId, tx);
+      }
       const nova = await this.repositorio.criarChamada(tx, {
         senhaId: vigente.senhaId,
         usuarioId: usuario.id,
