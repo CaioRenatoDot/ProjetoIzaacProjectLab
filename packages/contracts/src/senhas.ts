@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { RecursoFaltante } from './alocacao';
 import { ItemReferencia } from './cadastros';
 import { Prioridade, StatusSenha, TipoAtendimento } from './enums';
 import { Aviso } from './erros';
@@ -28,6 +29,8 @@ export const SenhaResumo = z.object({
   tempoEsperaMinutos: z.number().int(),
   slaExcedido: z.boolean(),
   temAgendamentoPrevio: z.boolean(),
+  /** Registrado em "Manter aguardando" (W-11); nulo fora de AGUARDANDO_RECURSO. */
+  recursoFaltante: RecursoFaltante.nullable(),
   /** Chamada vigente, para "Rechamar" e "Cancelar chamada"; nula fora de CHAMADA. */
   chamadaId: z.string().nullable(),
   versao: z.number().int(),
