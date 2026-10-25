@@ -252,9 +252,10 @@ Não representam os parâmetros da unidade nem executam regras no servidor real.
   a política pode devolver a senha à fila. Transporte e payload real seguem dependentes de #24/#41.
 - **RN-13:** exibir `restricaoAplicada.tipo`, `descricao` e `ate`, inclusive no evento
   automático. Sem limites ou prazos de política fixos no código de produção.
-- **Divergência do OpenAPI:** a descrição da desistência também menciona CHAMADA e
-  AGUARDANDO_RECURSO. A UI e o mock seguem UC-17, docs/03 §5 e #47: só AGUARDANDO e
-  EM_ATENDIMENTO. O contrato não foi alterado.
+- **Divergência do OpenAPI (resolvida no #97):** a descrição da desistência ficou só com
+  AGUARDANDO e EM_ATENDIMENTO, como a UI já fazia.
+- **RN-12, evento (definido no #24):** o servidor emite `ausencia.registrada` (com
+  `automatica` e `restricaoAplicada`) e `senha.status_alterado`; o transporte é da #19.
 
 ### Verificações
 
