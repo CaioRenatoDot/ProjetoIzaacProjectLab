@@ -34,6 +34,8 @@ const senha = (dados: Partial<SenhaCompleta> = {}): SenhaCompleta => ({
   iniciadaEm: null,
   encerradaEm: null,
   senhaOrigemId: null,
+  recursoFaltante: null,
+  recursoFaltanteObservacao: null,
   versao: 1,
   criadoEm: new Date(),
   paciente: { nomeCompleto: 'Maria Aparecida da Silva' },

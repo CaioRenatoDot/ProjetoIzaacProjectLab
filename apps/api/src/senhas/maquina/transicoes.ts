@@ -27,6 +27,8 @@ export function transicaoPermitida(de: StatusSenha, para: StatusSenha): boolean 
 }
 
 export interface HorariosSenha {
+  recursoFaltante?: null;
+  recursoFaltanteObservacao?: null;
   chamadaEm?: Date | null;
   toleranciaAte?: Date | null;
   iniciadaEm?: Date;
@@ -38,6 +40,18 @@ export interface HorariosSenha {
  * `chegada_em` original: o paciente volta para a posição que tinha pela RN-04.
  */
 export function horariosDaTransicao(
+  de: StatusSenha,
+  para: StatusSenha,
+  agora: Date,
+  toleranciaMinutos: number,
+): HorariosSenha {
+  // O recurso faltante só vale enquanto a senha aguarda recurso (CHECK no banco).
+  const saiuDeRecurso: HorariosSenha =
+    de === 'AGUARDANDO_RECURSO' ? { recursoFaltante: null, recursoFaltanteObservacao: null } : {};
+  return { ...saiuDeRecurso, ...horariosDoDestino(de, para, agora, toleranciaMinutos) };
+}
+
+function horariosDoDestino(
   de: StatusSenha,
   para: StatusSenha,
   agora: Date,

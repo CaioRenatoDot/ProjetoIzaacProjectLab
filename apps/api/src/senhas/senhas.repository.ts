@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { type Prioridade, type Prisma, type TipoAtendimento } from '@prisma/client';
 
+import { ALOCACAO_COMPLETA, type AlocacaoCompleta } from '../alocacao/alocacao.projecao';
 import { PrismaService } from '../prisma/prisma.service';
 
 export const SENHA_COMPLETA = {
@@ -136,6 +137,13 @@ export class SenhasRepository {
     },
   ): Promise<unknown> {
     return tx.reclassificacaoPrioridade.create({ data: dados });
+  }
+
+  alocacaoVigente(senhaId: string): Promise<AlocacaoCompleta | null> {
+    return this.prisma.alocacao.findFirst({
+      where: { senhaId, liberadaEm: null },
+      include: ALOCACAO_COMPLETA,
+    });
   }
 
   reclassificacoes(senhaId: string) {

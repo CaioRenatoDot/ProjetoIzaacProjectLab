@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 
+import { AlocacaoModule } from './alocacao/alocacao.module';
 import { AuditoriaConsultaModule } from './auditoria/auditoria-consulta.module';
 import { AuthModule } from './auth/auth.module';
 import { CadastrosModule } from './cadastros/cadastros.module';
 import { AutorizacaoModule } from './common/autorizacao/autorizacao.module';
 import { EventosDominioModule } from './common/eventos/eventos-dominio';
 import { IdempotenciaModule } from './common/idempotencia/idempotencia.service';
+import { RelogioModule } from './common/relogio';
 import { opcoesLog } from './common/logging/opcoes-log';
 import { type Ambiente, validarAmbiente } from './config/ambiente';
 import { FilasModule } from './filas/filas.module';
@@ -46,6 +48,8 @@ import { TriagemModule } from './triagem/triagem.module';
     SenhasModule,
     IdempotenciaModule,
     FilasModule,
+    AlocacaoModule,
+    RelogioModule,
   ],
 })
 export class AppModule {}

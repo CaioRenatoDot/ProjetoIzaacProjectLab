@@ -87,6 +87,15 @@ describe('horários da transição', () => {
     });
   });
 
+  it('sair de AGUARDANDO_RECURSO zera o recurso faltante', () => {
+    expect(horariosDaTransicao('AGUARDANDO_RECURSO', 'EM_ATENDIMENTO', agora, 5)).toEqual({
+      recursoFaltante: null,
+      recursoFaltanteObservacao: null,
+      iniciadaEm: agora,
+      toleranciaAte: null,
+    });
+  });
+
   it('RN-11 pendente de validação ainda não encerra', () => {
     expect(horariosDaTransicao('EM_ATENDIMENTO', 'PENDENTE_VALIDACAO', agora, 5)).toEqual({});
   });

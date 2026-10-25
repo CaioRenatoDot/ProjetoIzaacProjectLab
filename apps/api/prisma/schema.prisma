@@ -76,6 +76,13 @@ enum StatusSenha {
   DESISTENCIA
 }
 
+/// O que faltou para alocar ("Manter aguardando" de W-11).
+enum RecursoFaltante {
+  ESTUDANTE
+  SUPERVISOR
+  SALA
+}
+
 enum Prioridade {
   NORMAL
   PREFERENCIAL
@@ -566,27 +573,30 @@ model Triagem {
 
 /// Agregado central: a passagem do paciente pela fila (Tabela 11).
 model Senha {
-  id                   String          @id @default(uuid(7)) @db.Uuid
+  id                        String           @id @default(uuid(7)) @db.Uuid
   /// Letra da fila + sequência do dia com 3 dígitos (F014), único por fila e dia (migração).
-  numero               String
-  filaId               String          @map("fila_id") @db.Uuid
-  triagemId            String          @map("triagem_id") @db.Uuid
-  pacienteId           String          @map("paciente_id") @db.Uuid
-  prioridade           Prioridade
-  tipoAtendimento      TipoAtendimento @map("tipo_atendimento")
-  status               StatusSenha     @default(AGUARDANDO)
+  numero                    String
+  filaId                    String           @map("fila_id") @db.Uuid
+  triagemId                 String           @map("triagem_id") @db.Uuid
+  pacienteId                String           @map("paciente_id") @db.Uuid
+  prioridade                Prioridade
+  tipoAtendimento           TipoAtendimento  @map("tipo_atendimento")
+  status                    StatusSenha      @default(AGUARDANDO)
   /// Terceiro critério de ordenação (RN-04).
-  temAgendamentoPrevio Boolean         @default(false) @map("tem_agendamento_previo")
-  chegadaEm            DateTime        @default(now()) @map("chegada_em") @db.Timestamptz(3)
-  chamadaEm            DateTime?       @map("chamada_em") @db.Timestamptz(3)
-  toleranciaAte        DateTime?       @map("tolerancia_ate") @db.Timestamptz(3)
-  iniciadaEm           DateTime?       @map("iniciada_em") @db.Timestamptz(3)
-  encerradaEm          DateTime?       @map("encerrada_em") @db.Timestamptz(3)
+  temAgendamentoPrevio      Boolean          @default(false) @map("tem_agendamento_previo")
+  chegadaEm                 DateTime         @default(now()) @map("chegada_em") @db.Timestamptz(3)
+  chamadaEm                 DateTime?        @map("chamada_em") @db.Timestamptz(3)
+  toleranciaAte             DateTime?        @map("tolerancia_ate") @db.Timestamptz(3)
+  iniciadaEm                DateTime?        @map("iniciada_em") @db.Timestamptz(3)
+  encerradaEm               DateTime?        @map("encerrada_em") @db.Timestamptz(3)
+  /// Registrado em AGUARDANDO_RECURSO; a máquina de estados zera ao sair dele.
+  recursoFaltante           RecursoFaltante? @map("recurso_faltante")
+  recursoFaltanteObservacao String?          @map("recurso_faltante_observacao")
   /// Senha que originou esta por encaminhamento interno (RF-08).
-  senhaOrigemId        String?         @map("senha_origem_id") @db.Uuid
+  senhaOrigemId             String?          @map("senha_origem_id") @db.Uuid
   /// Bloqueio otimista: 409 VERSAO_DESATUALIZADA (docs/04 §6).
-  versao               Int             @default(1)
-  criadoEm             DateTime        @default(now()) @map("criado_em") @db.Timestamptz(3)
+  versao                    Int              @default(1)
+  criadoEm                  DateTime         @default(now()) @map("criado_em") @db.Timestamptz(3)
 
   fila             Fila                        @relation(fields: [filaId], references: [id], onDelete: Restrict)
   triagem          Triagem                     @relation(fields: [triagemId], references: [id], onDelete: Restrict)
