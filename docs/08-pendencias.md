@@ -31,6 +31,7 @@ integração da API (PostgreSQL)").
 | #18         | Filas, quadro RN-04 com métricas, chamar próxima com `SKIP LOCKED` e `Idempotency-Key`, rechamada e cancelamento                            | #99      |
 | #21         | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
 | #23         | Atendimento: iniciar, pausar, retomar, encerrar (libera a alocação), validação RN-11 com recusa e reenvio, tempo efetivo                    | #103     |
+| #25         | Desistência (só AGUARDANDO e EM_ATENDIMENTO), libera recursos, nunca grava ausência                                                         | #105     |
 | #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                                   | #84      |
 | #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                             | —        |
 | #30 (parte) | Testes de integração no CI                                                                                                                  | —        |
@@ -42,15 +43,14 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue       | Dono           | Depende de    | Observação                                                                                                                      |
-| ----------- | -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| #19, #20    | Nathan         | —             | Socket.IO (assinar `EventosDominio`) e endpoints públicos; o bloqueio da fila grava `fila.bloqueada`, que a chamada já respeita |
-| #22         | Nathan         | —             | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                                            |
-| #26, #28    | Nathan         | —             | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                                      |
-| #24         | Rildo          | #17, #18      | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido             |
-| #25         | Rildo          | #17, #21      | Desistência                                                                                                                     |
-| #27         | Rildo          | #23, #24, #25 | Indicadores                                                                                                                     |
-| #30 (resto) | Rildo e Nathan | Etapas 5 a 8  | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                      |
+| Issue       | Dono           | Depende de   | Observação                                                                                                                      |
+| ----------- | -------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| #19, #20    | Nathan         | —            | Socket.IO (assinar `EventosDominio`) e endpoints públicos; o bloqueio da fila grava `fila.bloqueada`, que a chamada já respeita |
+| #22         | Nathan         | —            | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                                            |
+| #26, #28    | Nathan         | —            | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                                      |
+| #24         | Rildo          | #17, #18     | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido             |
+| #27         | Rildo          | #24          | Indicadores                                                                                                                     |
+| #30 (resto) | Rildo e Nathan | Etapas 5 a 8 | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                      |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
