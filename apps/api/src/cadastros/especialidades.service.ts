@@ -14,6 +14,7 @@ import { duplicado, naoEncontrado, recursosInexistentes, vinculoAtivo } from './
 const DETALHE = {
   recursosExigidos: { select: { recurso: { select: { id: true, nome: true } } } },
   parametros: { where: { chave: 'TOLERANCIA_MINUTOS' }, select: { valor: true } },
+  _count: { select: { filas: true } },
 } satisfies Prisma.EspecialidadeInclude;
 
 type EspecialidadeComDetalhe = Prisma.EspecialidadeGetPayload<{ include: typeof DETALHE }>;
@@ -27,8 +28,7 @@ function paraEspecialidade(especialidade: EspecialidadeComDetalhe): Especialidad
     exigeValidacaoEncerramento: especialidade.exigeValidacaoEncerramento,
     toleranciaMinutos: especialidade.parametros[0]?.valor ?? null,
     recursosExigidos: especialidade.recursosExigidos.map(({ recurso }) => recurso),
-    // A fila é da parte 2.2 (#7); até ela existir, nenhuma especialidade tem fila vinculada.
-    filasVinculadas: 0,
+    filasVinculadas: especialidade._count.filas,
     ativa: especialidade.ativo,
   };
 }
@@ -53,6 +53,8 @@ export class EspecialidadesService {
       ...(query.exigeSupervisao !== undefined
         ? { exigeSupervisaoDocente: query.exigeSupervisao }
         : {}),
+      ...(query.comFila === true ? { filas: { some: { ativa: true } } } : {}),
+      ...(query.comFila === false ? { filas: { none: { ativa: true } } } : {}),
     };
     const [dados, total] = await this.prisma.$transaction([
       this.prisma.especialidade.findMany({
@@ -136,15 +138,17 @@ export class EspecialidadesService {
   /** Recusa com o vínculo no detail; os parâmetros próprios da especialidade saem junto. */
   async excluir(id: string, unidadeId: string): Promise<void> {
     await this.buscar(id, unidadeId);
-    const [estudantes, supervisores] = await Promise.all([
+    const [estudantes, supervisores, filas] = await Promise.all([
       this.prisma.estudante.count({ where: { especialidadeId: id } }),
       this.prisma.supervisorEspecialidade.count({ where: { especialidadeId: id } }),
+      this.prisma.fila.count({ where: { especialidadeId: id } }),
     ]);
     const vinculos = [
+      filas ? `${filas} fila(s)` : '',
       estudantes ? `${estudantes} estudante(s)` : '',
       supervisores ? `${supervisores} supervisor(es)` : '',
     ].filter(Boolean);
-    if (vinculos.length) throw vinculoAtivo('A especialidade', vinculos.join(' e '));
+    if (vinculos.length) throw vinculoAtivo('A especialidade', vinculos.join(', '));
 
     try {
       await this.prisma.$transaction([
