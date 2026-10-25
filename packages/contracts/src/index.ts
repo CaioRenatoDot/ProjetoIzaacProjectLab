@@ -1,4 +1,5 @@
 export * from './alocacao';
+export * from './atendimentos';
 export * from './auditoria';
 export * from './cadastros';
 export * from './enums';

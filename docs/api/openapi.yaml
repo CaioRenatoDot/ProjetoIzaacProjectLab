@@ -1797,7 +1797,9 @@ paths:
       operationId: listarAtendimentos
       description: |
         Projeção de resumo, sem observações nem conteúdo de triagem (P-03).
-        Usado na home do estudante e do supervisor (W-02).
+        Usado na home do estudante e do supervisor (W-02). Exige `atendimento:consultar`.
+        `status` aceita repetição ou lista separada por vírgula. Ordem: início mais recente
+        primeiro.
       parameters:
         - { $ref: '#/components/parameters/Pagina' }
         - { $ref: '#/components/parameters/Tamanho' }
@@ -1852,6 +1854,13 @@ paths:
         UC-11, RF-07. Registra o horário de início e muda o status para EM_ATENDIMENTO.
         Recurso alocado que não esteja mais disponível impede o início e retorna
         RECURSO_INDISPONIVEL, devolvendo o fluxo para a alocação (T-13).
+
+        - Exige `atendimento:criar` e alocação vigente (sem ela, 409 TRANSICAO_INVALIDA)
+        - Indisponível: estudante, supervisor ou sala inativos, ou sala fora de DISPONIVEL;
+          especialidade que exige supervisão sem supervisor alocado (RN-07)
+        - Copia `exigeValidacao` da especialidade: mudar o cadastro depois não altera o
+          atendimento em curso (RN-11)
+        - `versao` em todos os endpoints de atendimento é a da senha (o status mora nela)
       requestBody:
         required: true
         content:
@@ -1878,7 +1887,9 @@ paths:
       operationId: pausarAtendimento
       description: |
         UC-12, RF-07. Motivo é obrigatório quando o protocolo do serviço exige; nesse caso,
-        motivo ausente retorna 422 (T-13).
+        motivo ausente retorna 422 (T-13). O modelo ainda não tem onde configurar esse
+        protocolo, então hoje o motivo é sempre opcional (pendência em docs/08). Cada pausa é
+        uma linha em `pausa_atendimento`. Exige `atendimento:editar`.
       requestBody:
         required: true
         content:
@@ -1906,7 +1917,8 @@ paths:
       operationId: retomarAtendimento
       description: |
         UC-12. Sala ou estudante indisponível na retomada retorna RECURSO_INDISPONIVEL e
-        solicita nova alocação (T-13).
+        solicita nova alocação (T-13). Fecha a pausa aberta (`retomadoEm`). Exige
+        `atendimento:editar`.
       requestBody:
         required: true
         content:
@@ -1937,7 +1949,14 @@ paths:
         notificado; caso contrário, o encerramento é imediato (ENCERRADO).
 
         Desfecho de encaminhamento encadeia diretamente para o registro do encaminhamento (T-14).
-      requestBody:
+
+        - Exige `atendimento:editar`. Desfecho ausente retorna 422 DESFECHO_OBRIGATORIO com o
+          campo em `campos`
+        - Só a partir de EM_ATENDIMENTO (pausado precisa retomar antes, para o tempo efetivo
+          ficar certo) ou, depois de uma recusa do supervisor, de PENDENTE_VALIDACAO: o reenvio
+          atualiza desfecho e observações sem mudar o status
+        - A validação exigida é a copiada no início (RN-11)
+        - Libera a alocação: estudante, supervisor e sala ficam livres para outra senha
         required: true
         content:
           application/json:
@@ -1975,6 +1994,12 @@ paths:
       description: |
         UC-13, RN-11. Exige perfil com `atendimento:validar`. Recusa mantém o status
         PENDENTE_VALIDACAO e registra o parecer para auditoria (W-13).
+
+        - Quem valida é quem tem a permissão, não necessariamente o supervisor da alocação
+          (permissão decidida pela lista, docs/04 §3)
+        - Só com a senha em PENDENTE_VALIDACAO; senão 409 TRANSICAO_INVALIDA
+        - Recusa sem parecer retorna 422 VALIDACAO no campo `parecer`
+        - Aprovação leva a ENCERRADO e grava `validadoPor` e `validadoEm`
       requestBody:
         required: true
         content:
@@ -3138,6 +3163,8 @@ components:
             triagem: { $ref: '#/components/schemas/TriagemDetalhe' }
             observacoes: { type: [string, 'null'] }
             parecerSupervisor: { type: [string, 'null'] }
+            validadoPor: { type: [string, 'null'], description: Nome de quem validou }
+            validadoEm: { type: [string, 'null'], format: date-time }
             pausas:
               type: array
               items:
