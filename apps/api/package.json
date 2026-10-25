@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:integracao": "dotenv -e ../../.env -- vitest run -c vitest.integracao.config.mts",
+    "test:cobertura-rn": "dotenv -e ../../.env -- node scripts/verificar-cobertura-rn.mjs",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "prisma": "dotenv -e ../../.env -- prisma",

@@ -102,3 +102,7 @@ jobs:
       - run: pnpm turbo run build --filter=@filas/contracts
 
       - run: pnpm --filter api test:integracao
+
+      # Toda RN-01 a RN-13 precisa aparecer no nome de um caso de teste (DAS §2.2).
+      - name: Verificar RN-01 a RN-13 nos nomes dos testes
+        run: pnpm --filter api test:cobertura-rn

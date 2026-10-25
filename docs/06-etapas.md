@@ -243,7 +243,7 @@ Objetivo: garantir que o sistema funciona e está pronto para a demonstração.
 
 | Parte | Descrição                                                                                           | Responsável |
 | ----- | --------------------------------------------------------------------------------------------------- | ----------- |
-| 10.1  | Testes de unidade das regras de negócio e teste que garante que listas não expõem dado sensível     | Todos       |
+| 10.1  | Testes de unidade das regras de negócio e teste que garante que listas não expõem dado sensível     | Todos ✅    |
 | 10.2  | Teste de ponta a ponta (Playwright) do fluxo triagem → encerramento + verificação de acessibilidade | Thalita     |
 | 10.3  | README final com o "como rodar" e ensaio da demonstração                                            | Todos       |
 

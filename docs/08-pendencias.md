@@ -14,29 +14,29 @@ ponto. Complementa dois documentos:
 Tudo na `develop`, com testes de unidade e de integração rodando no CI (job "Testes de
 integração da API (PostgreSQL)").
 
-| Issue       | Entrega                                                                                                                                     | Contrato |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| #31         | Erros RFC 7807, validação Zod (422), paginação, log JSON com `redact`, CORS                                                                 | #67      |
-| #6          | Schema de acesso, cadastros base e auditoria (22 tabelas)                                                                                   | —        |
-| #7          | Schema de triagem, fila, senha, alocação, atendimento, alertas e idempotência                                                               | —        |
-| #8          | Usuário `filas_app`, `REVOKE` no `audit_log`, parâmetros da unidade, CHECKs e únicos parciais (RN-01, RN-03, RN-05, RN-09, RF-04)           | —        |
-| #10         | Login, refresh rotativo com detecção de reuso, bloqueio por tentativas, `/auth/me`                                                          | #71      |
-| #11         | Guard global (`@Requer`, `@Publico`, `@Autenticado`) e auditoria implícita                                                                  | #73      |
-| #12         | Perfis, catálogo de permissões e usuários (inativar, desbloquear, redefinir senha)                                                          | #76      |
-| #13         | Salas, especialidades e cadastros de apoio                                                                                                  | #78      |
-| #14         | Pacientes, estudantes e supervisores                                                                                                        | #82      |
-| #15         | Triagem (RN-02, RN-03), lista sem campo clínico, detalhe auditado, `comFila` em especialidades                                              | #93      |
-| #16         | Emissão de senha (número por fila e dia sob concorrência, RN-04), reclassificação (RN-01), histórico, `GET /parametros`, eventos de domínio | #95      |
-| #17         | Máquina de estados da senha (matriz 9 × 9 testada), versão, horários e evento `senha.status_alterado`                                       | #97      |
-| #18         | Filas, quadro RN-04 com métricas, chamar próxima com `SKIP LOCKED` e `Idempotency-Key`, rechamada e cancelamento                            | #99      |
-| #21         | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
-| #23         | Atendimento: iniciar, pausar, retomar, encerrar (libera a alocação), validação RN-11 com recusa e reenvio, tempo efetivo                    | #103     |
-| #25         | Desistência (só AGUARDANDO e EM_ATENDIMENTO), libera recursos, nunca grava ausência                                                         | #105     |
-| #24         | Rotina de tolerância (RN-12: volta à fila uma vez, depois ausência), ausência manual, restrição por reincidência (RN-13)                    | #107     |
-| #27         | Indicadores (resumo, volume e exportação CSV), agregados no banco, sem dado de paciente                                                     | #109     |
-| #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                                   | #84      |
-| #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                             | —        |
-| #30 (parte) | Testes de integração no CI                                                                                                                  | —        |
+| Issue | Entrega                                                                                                                                     | Contrato |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| #31   | Erros RFC 7807, validação Zod (422), paginação, log JSON com `redact`, CORS                                                                 | #67      |
+| #6    | Schema de acesso, cadastros base e auditoria (22 tabelas)                                                                                   | —        |
+| #7    | Schema de triagem, fila, senha, alocação, atendimento, alertas e idempotência                                                               | —        |
+| #8    | Usuário `filas_app`, `REVOKE` no `audit_log`, parâmetros da unidade, CHECKs e únicos parciais (RN-01, RN-03, RN-05, RN-09, RF-04)           | —        |
+| #10   | Login, refresh rotativo com detecção de reuso, bloqueio por tentativas, `/auth/me`                                                          | #71      |
+| #11   | Guard global (`@Requer`, `@Publico`, `@Autenticado`) e auditoria implícita                                                                  | #73      |
+| #12   | Perfis, catálogo de permissões e usuários (inativar, desbloquear, redefinir senha)                                                          | #76      |
+| #13   | Salas, especialidades e cadastros de apoio                                                                                                  | #78      |
+| #14   | Pacientes, estudantes e supervisores                                                                                                        | #82      |
+| #15   | Triagem (RN-02, RN-03), lista sem campo clínico, detalhe auditado, `comFila` em especialidades                                              | #93      |
+| #16   | Emissão de senha (número por fila e dia sob concorrência, RN-04), reclassificação (RN-01), histórico, `GET /parametros`, eventos de domínio | #95      |
+| #17   | Máquina de estados da senha (matriz 9 × 9 testada), versão, horários e evento `senha.status_alterado`                                       | #97      |
+| #18   | Filas, quadro RN-04 com métricas, chamar próxima com `SKIP LOCKED` e `Idempotency-Key`, rechamada e cancelamento                            | #99      |
+| #21   | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
+| #23   | Atendimento: iniciar, pausar, retomar, encerrar (libera a alocação), validação RN-11 com recusa e reenvio, tempo efetivo                    | #103     |
+| #25   | Desistência (só AGUARDANDO e EM_ATENDIMENTO), libera recursos, nunca grava ausência                                                         | #105     |
+| #24   | Rotina de tolerância (RN-12: volta à fila uma vez, depois ausência), ausência manual, restrição por reincidência (RN-13)                    | #107     |
+| #27   | Indicadores (resumo, volume e exportação CSV), agregados no banco, sem dado de paciente                                                     | #109     |
+| #29   | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                                   | #84      |
+| #9    | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                             | —        |
+| #30   | Integração no CI, verificação de RN-01 a RN-13 nos nomes dos casos (`test:cobertura-rn`) e teste que reprova listagem com campo clínico     | —        |
 
 ## 2. Back-end que falta
 
@@ -45,12 +45,11 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue       | Dono           | Depende de   | Observação                                                                                                                      |
-| ----------- | -------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| #19, #20    | Nathan         | —            | Socket.IO (assinar `EventosDominio`) e endpoints públicos; o bloqueio da fila grava `fila.bloqueada`, que a chamada já respeita |
-| #22         | Nathan         | —            | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                                            |
-| #26, #28    | Nathan         | —            | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                                      |
-| #30 (resto) | Rildo e Nathan | Etapas 5 a 8 | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                      |
+| Issue    | Dono   | Depende de | Observação                                                                                                                      |
+| -------- | ------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| #19, #20 | Nathan | —          | Socket.IO (assinar `EventosDominio`) e endpoints públicos; o bloqueio da fila grava `fila.bloqueada`, que a chamada já respeita |
+| #22      | Nathan | —          | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                                            |
+| #26, #28 | Nathan | —          | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                                      |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
@@ -74,6 +73,15 @@ existe. Quem criar a tabela troca o valor e remove a linha:
 | Backup diário (RNF-09)                                 | Sem rotina                                                                                                        | Etapa 10                                                                              |
 | Proteção da `develop`                                  | Merge sem aprovação e sem CI obrigatório                                                                          | Configurar a proteção no GitHub (dono do repositório)                                 |
 | `audit_log` sem índice por módulo                      | Filtro por módulo pode ficar lento com volume                                                                     | Medir com dados reais antes de criar                                                  |
+
+### Garantias automáticas no CI
+
+- `pnpm --filter api test:cobertura-rn`: falha se alguma RN-01 a RN-13 não aparece no nome de um
+  caso de teste (lê os nomes pelo `vitest list`, não os arquivos). Teste novo de regra cita a RN.
+- `src/listagens-sem-dado-sensivel.int-spec.ts`: descobre as listagens pelos controllers, chama
+  cada uma e falha se aparecer `motivo`, `justificativaClinica`, `observacoes` ou `nomeCompleto`.
+  Exceções explícitas: `nomeCompleto` em `GET /pacientes` (#14) e `bloqueio.motivo` da fila (RN-10).
+- `src/senhas/maquina/status-so-na-maquina.spec.ts`: falha se outro arquivo gravar `status` em senha.
 
 ### Armadilhas já encontradas
 
