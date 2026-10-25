@@ -1417,7 +1417,9 @@ paths:
       tags: [Filas e chamadas]
       summary: Criar fila
       operationId: criarFila
-      description: RF-04. Uma fila ativa por especialidade e unidade.
+      description: |
+        RF-04. Uma fila ativa por especialidade e unidade: a segunda volta 409 DUPLICIDADE.
+        Especialidade inexistente ou inativa volta 422 no campo `especialidadeId`.
       requestBody:
         required: true
         content:
@@ -1468,7 +1470,9 @@ paths:
       tags: [Filas e chamadas]
       summary: Excluir fila
       operationId: excluirFila
-      description: Bloqueada quando há senha ativa vinculada.
+      description: |
+        Fila com qualquer senha (ativa ou histórica) não é excluída: 409 VINCULO_ATIVO com a
+        sugestão de inativar. Sem senha, sai junto com os contadores de número.
       responses:
         '204': { description: Excluída }
         '409': { $ref: '#/components/responses/Conflito' }
@@ -1483,6 +1487,8 @@ paths:
       description: |
         UC-08, RF-04. Ordenação fixa da RN-04 - prioridade, depois horário de chegada, depois
         existência de agendamento prévio. Sem conteúdo clínico e com nome parcial (P-03).
+        Sem `status`, traz AGUARDANDO, CHAMADA, AGUARDANDO_RECURSO, EM_ATENDIMENTO, PAUSADO e
+        PENDENTE_VALIDACAO. `status` aceita repetição ou lista separada por vírgula.
       parameters:
         - name: status
           in: query
@@ -1539,6 +1545,14 @@ paths:
         - Fila bloqueada por ausência de supervisor retorna 409 FILA_BLOQUEADA (RN-10)
         - Fila vazia retorna 409 FILA_VAZIA
         - Senha urgente vem com `furouFilaPorUrgencia: true`, para a confirmação de T-09 (RN-03)
+        - Cria a chamada com `sequencia` 1, leva a senha a CHAMADA pela máquina de estados e
+          grava `tolerancia_ate` pelo parâmetro `tolerancia_minutos`
+        - Sem `localExibicao`, o telão mostra o nome da fila
+        - `Idempotency-Key` (UUID): a mesma chave do mesmo usuário em até 10 minutos devolve a
+          resposta original sem chamar outra senha, inclusive em requisições simultâneas. Chave
+          já usada em outra operação ou com outro corpo volta 422 VALIDACAO no campo
+          `Idempotency-Key`
+        - Emite `senha.chamada` e `senha.status_alterado` depois de gravar
       parameters:
         - { $ref: '#/components/parameters/IdempotencyKey' }
       requestBody:
@@ -1588,7 +1602,11 @@ paths:
       tags: [Filas e chamadas]
       summary: Rechamar senha
       operationId: rechamarSenha
-      description: Repete o destaque e o sinal sonoro no telão, incrementando `sequencia` (T-11).
+      description: |
+        Repete o destaque e o sinal sonoro no telão, incrementando `sequencia` (T-11). Vale só para
+        a chamada vigente de senha em CHAMADA; senão 409 TRANSICAO_INVALIDA. Renova
+        `tolerancia_ate` a partir de agora (o paciente ganha nova janela) e incrementa a `versao`
+        da senha; `chamada_em` continua o da primeira chamada. Emite `senha.chamada`.
       responses:
         '201':
           description: Rechamada registrada
@@ -1607,6 +1625,8 @@ paths:
       description: |
         RF-05. Devolve a senha ao status AGUARDANDO mantendo o horário de chegada original,
         para não prejudicar a posição pela RN-04. Exige confirmação na UI (item 3.3).
+        Vale só para a chamada vigente de senha em CHAMADA; senão 409 TRANSICAO_INVALIDA.
+        O registro da chamada é mantido no histórico. Exige `fila:chamar`.
       responses:
         '200':
           description: Chamada cancelada
@@ -2890,6 +2910,10 @@ components:
         tempoEsperaMinutos: { type: integer }
         slaExcedido: { type: boolean, description: Cartão recebe borda de alerta (T-09) }
         temAgendamentoPrevio: { type: boolean }
+        chamadaId:
+          type: [string, 'null']
+          format: uuid
+          description: Chamada vigente, para rechamar e cancelar; nula fora de CHAMADA
         versao: { type: integer }
     SenhaDetalhe:
       allOf:
@@ -2946,9 +2970,10 @@ components:
         nome: { type: string }
         especialidadeId: { type: string, format: uuid }
         especialidade: { type: string }
+        letraSenha: { type: string, example: F, description: Letra do número da senha }
         ativa: { type: boolean }
-        slaMinutos: { type: integer }
-        toleranciaMinutos: { type: integer }
+        slaMinutos: { type: integer, description: Em vigor (da fila ou do parâmetro) }
+        toleranciaMinutos: { type: integer, description: Parâmetro em vigor da especialidade }
         bloqueio:
           type: object
           description: Fonte única do banner de P-04 e do botão desabilitado (RN-10)
@@ -2958,10 +2983,11 @@ components:
             desde: { type: [string, 'null'], format: date-time }
     FilaEntrada:
       type: object
-      required: [nome, especialidadeId]
+      required: [nome, especialidadeId, letraSenha]
       properties:
         nome: { type: string }
         especialidadeId: { type: string, format: uuid }
+        letraSenha: { type: string, pattern: '^[A-Za-z]$', description: Gravada em maiúscula }
         ativa: { type: boolean, default: true }
         slaMinutos: { type: integer, minimum: 1 }
     Chamada:

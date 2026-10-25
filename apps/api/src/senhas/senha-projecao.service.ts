@@ -41,6 +41,8 @@ export class SenhaProjecao {
       tempoEsperaMinutos,
       slaExcedido: tempoEsperaMinutos > sla,
       temAgendamentoPrevio: senha.temAgendamentoPrevio,
+      // A chamada vigente entra com a parte 6.2 (#18).
+      chamadaId: null,
       versao: senha.versao,
     };
   }
