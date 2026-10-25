@@ -14,20 +14,20 @@ ponto. Complementa dois documentos:
 Tudo na `develop`, com testes de unidade e de integração rodando no CI (job "Testes de
 integração da API (PostgreSQL)").
 
-| Issue       | Entrega                                                                            | Contrato |
-| ----------- | ---------------------------------------------------------------------------------- | -------- |
-| #31         | Erros RFC 7807, validação Zod (422), paginação, log JSON com `redact`, CORS        | #67      |
-| #6          | Schema de acesso, cadastros base e auditoria (22 tabelas)                          | —        |
-| #7          | Schema de triagem, fila, senha, alocação, atendimento, alertas e idempotência      | —        |
-| #8 (metade) | Usuário `filas_app` com `REVOKE` no `audit_log`, parâmetros da unidade, CHECKs     | —        |
-| #10         | Login, refresh rotativo com detecção de reuso, bloqueio por tentativas, `/auth/me` | #71      |
-| #11         | Guard global (`@Requer`, `@Publico`, `@Autenticado`) e auditoria implícita         | #73      |
-| #12         | Perfis, catálogo de permissões e usuários (inativar, desbloquear, redefinir senha) | #76      |
-| #13         | Salas, especialidades e cadastros de apoio                                         | #78      |
-| #14         | Pacientes, estudantes e supervisores                                               | #82      |
-| #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                          | #84      |
-| #9 (parte)  | Seed fictício de acesso e cadastros (usuários no README)                           | —        |
-| #30 (parte) | Testes de integração no CI                                                         | —        |
+| Issue       | Entrega                                                                                                                           | Contrato |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| #31         | Erros RFC 7807, validação Zod (422), paginação, log JSON com `redact`, CORS                                                       | #67      |
+| #6          | Schema de acesso, cadastros base e auditoria (22 tabelas)                                                                         | —        |
+| #7          | Schema de triagem, fila, senha, alocação, atendimento, alertas e idempotência                                                     | —        |
+| #8          | Usuário `filas_app`, `REVOKE` no `audit_log`, parâmetros da unidade, CHECKs e únicos parciais (RN-01, RN-03, RN-05, RN-09, RF-04) | —        |
+| #10         | Login, refresh rotativo com detecção de reuso, bloqueio por tentativas, `/auth/me`                                                | #71      |
+| #11         | Guard global (`@Requer`, `@Publico`, `@Autenticado`) e auditoria implícita                                                        | #73      |
+| #12         | Perfis, catálogo de permissões e usuários (inativar, desbloquear, redefinir senha)                                                | #76      |
+| #13         | Salas, especialidades e cadastros de apoio                                                                                        | #78      |
+| #14         | Pacientes, estudantes e supervisores                                                                                              | #82      |
+| #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                         | #84      |
+| #9 (parte)  | Seed fictício de acesso e cadastros (usuários no README)                                                                          | —        |
+| #30 (parte) | Testes de integração no CI                                                                                                        | —        |
 
 ## 2. Back-end que falta
 
@@ -36,18 +36,17 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue                   | Dono           | Depende de         | Observação                                                                                                                                            |
-| ----------------------- | -------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| #8 (metade)             | Rildo          | —                  | RN-01, RN-03, RN-05, RN-09, RF-04; migração com `DIRECT_URL`, testes como `filas_app`, tabela imutável nova com o próprio `REVOKE` (comentário na #8) |
-| #9 (filas)              | Rildo          | —                  | Uma fila ativa por especialidade com a letra da senha (F, P, N, O, A); ponto de extensão em `apps/api/prisma/seed/executar.ts`                        |
-| #15                     | Rildo          | —                  | Triagem (RN-02, RN-03); lacunas 1, 2, 4, 8 e 9 da triagem no `docs/07`                                                                                |
-| #16                     | Rildo          | #15                | Emissão e reclassificação de senha; inclui expor `justificativaMinCaracteres` (lacuna 1 da triagem)                                                   |
-| #17, #18, #21, #23      | Rildo          | —                  | Máquina de estados, fila e chamada, alocação, atendimento                                                                                             |
-| #19, #20, #22, #26, #28 | Nathan         | #17, #18, #21, #23 | Socket.IO, endpoints públicos, sugestão automática, encaminhamento, alertas                                                                           |
-| #24                     | Rildo          | #17, #18           | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido                                   |
-| #25                     | Rildo          | #17, #21           | Desistência                                                                                                                                           |
-| #27                     | Rildo          | #23, #24, #25      | Indicadores                                                                                                                                           |
-| #30 (resto)             | Rildo e Nathan | Etapas 5 a 8       | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                                            |
+| Issue                   | Dono           | Depende de         | Observação                                                                                                                     |
+| ----------------------- | -------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| #9 (filas)              | Rildo          | —                  | Uma fila ativa por especialidade com a letra da senha (F, P, N, O, A); ponto de extensão em `apps/api/prisma/seed/executar.ts` |
+| #15                     | Rildo          | —                  | Triagem (RN-02, RN-03); lacunas 1, 2, 4, 8 e 9 da triagem no `docs/07`                                                         |
+| #16                     | Rildo          | #15                | Emissão e reclassificação de senha; inclui expor `justificativaMinCaracteres` (lacuna 1 da triagem)                            |
+| #17, #18, #21, #23      | Rildo          | —                  | Máquina de estados, fila e chamada, alocação, atendimento                                                                      |
+| #19, #20, #22, #26, #28 | Nathan         | #17, #18, #21, #23 | Socket.IO, endpoints públicos, sugestão automática, encaminhamento, alertas                                                    |
+| #24                     | Rildo          | #17, #18           | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido            |
+| #25                     | Rildo          | #17, #21           | Desistência                                                                                                                    |
+| #27                     | Rildo          | #23, #24, #25      | Indicadores                                                                                                                    |
+| #30 (resto)             | Rildo e Nathan | Etapas 5 a 8       | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                     |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 

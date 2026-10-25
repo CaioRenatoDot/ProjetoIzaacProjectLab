@@ -11,7 +11,8 @@ import { type CodigoErro, type Problema } from '@filas/contracts';
 import { Prisma } from '@prisma/client';
 import { type Request, type Response } from 'express';
 
-import { ErroDominio } from './erro-dominio';
+import { ErroDominio, ErroValidacao } from './erro-dominio';
+import { campoDaRestricao } from './restricoes-banco';
 
 type CorpoProblema = Problema & Record<string, unknown>;
 
@@ -87,6 +88,14 @@ export class ProblemaFilter implements ExceptionFilter {
 
     if (excecao instanceof Prisma.PrismaClientKnownRequestError) {
       return { ...this.deErroPrisma(excecao), instance };
+    }
+
+    const campo =
+      excecao instanceof Prisma.PrismaClientUnknownRequestError
+        ? campoDaRestricao(excecao.message)
+        : undefined;
+    if (campo) {
+      return this.converter(new ErroValidacao([campo]), requisicao);
     }
 
     if (this.ehJsonMalformado(excecao)) {
