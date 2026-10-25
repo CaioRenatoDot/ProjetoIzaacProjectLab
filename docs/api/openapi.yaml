@@ -1677,6 +1677,28 @@ paths:
 
         Sem supervisor disponível: retorna SUPERVISOR_INDISPONIVEL, a senha vai para
         AGUARDANDO_RECURSO, a fila é bloqueada e a gestão é notificada (RN-10).
+
+        - Vale para senha em CHAMADA ou AGUARDANDO_RECURSO, sem alocação vigente (para trocar,
+          use o PUT); senão 409 TRANSICAO_INVALIDA. Alocar não muda o status da senha
+          (docs/03 §5) e incrementa a `versao`
+        - **422 VALIDACAO** quando a escolha não serve para a senha: estudante de outra
+          especialidade (RN-06), sala sem os recursos exigidos (RN-09), supervisor não habilitado
+          na especialidade (RN-07), supervisor ausente quando a especialidade exige ou enviado
+          quando não exige, registro inativo ou de outra unidade
+        - **409 RECURSO_INDISPONIVEL** quando serve mas não está livre agora: estudante fora do
+          turno ou com alocação vigente (RN-05), sala fora de DISPONIVEL ou ocupada (RN-09),
+          supervisor fora do turno
+        - **409 LIMITE_SUPERVISAO_ATINGIDO**: supervisor no limite de estudantes simultâneos
+          (próprio ou parâmetro `limite_estudantes_supervisor`), contado com a linha do
+          supervisor bloqueada (RN-08)
+        - **409 SUPERVISOR_INDISPONIVEL** quando nenhum supervisor habilitado da especialidade
+          está no turno e abaixo do limite: a senha CHAMADA vai a AGUARDANDO_RECURSO com
+          `recursoFaltante` SUPERVISOR e a fila é bloqueada (evento `fila.bloqueada`)
+        - Turnos no fuso da unidade (valor provisório, docs/03 §3.2): MANHA 07h00-11h59, TARDE
+          12h00-17h59, NOITE 18h00-21h59
+        - A RN-06 confere só a especialidade do estudante: nível, habilitações e procedimentos
+          exigidos pelo atendimento não têm fonte no modelo (pendência em docs/08)
+        - `Idempotency-Key` como na chamada (docs/04 §6)
       parameters:
         - { $ref: '#/components/parameters/IdempotencyKey' }
       requestBody:
@@ -1709,13 +1731,18 @@ paths:
       tags: [Alocação]
       summary: Trocar recurso de uma alocação
       operationId: trocarRecursoDeUmaAlocacao
-      description: Reavaliação da alocação a partir do painel de T-09.
+      description: |
+        Reavaliação da alocação a partir do painel de T-09, antes de o atendimento começar
+        (senha em CHAMADA ou AGUARDANDO_RECURSO com alocação vigente; senão 409
+        TRANSICAO_INVALIDA). Libera a alocação vigente e cria a nova na mesma transação, com as
+        mesmas verificações e erros do POST; o recurso mantido não conflita consigo mesmo.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required: [estudanteId, salaId, versao]
               properties:
                 estudanteId: { type: string, format: uuid }
                 supervisorId: { type: [string, 'null'], format: uuid }
@@ -1738,7 +1765,9 @@ paths:
       operationId: manterSenhaAguardandoRecurso
       description: |
         Ação "Manter aguardando" de W-11. Coloca a senha em AGUARDANDO_RECURSO com o recurso
-        faltante registrado, sem liberar a chamada.
+        faltante registrado, sem liberar a chamada. Só a partir de CHAMADA (máquina de estados);
+        senão 409 TRANSICAO_INVALIDA. O recurso faltante volta a nulo quando a senha sai de
+        AGUARDANDO_RECURSO. Exige `alocacao:criar`.
       requestBody:
         required: true
         content:
@@ -2910,6 +2939,11 @@ components:
         tempoEsperaMinutos: { type: integer }
         slaExcedido: { type: boolean, description: Cartão recebe borda de alerta (T-09) }
         temAgendamentoPrevio: { type: boolean }
+        recursoFaltante:
+          oneOf:
+            - { type: string, enum: [ESTUDANTE, SUPERVISOR, SALA] }
+            - type: 'null'
+          description: Registrado em "Manter aguardando"; nulo fora de AGUARDANDO_RECURSO
         chamadaId:
           type: [string, 'null']
           format: uuid

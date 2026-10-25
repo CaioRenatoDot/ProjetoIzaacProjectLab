@@ -61,6 +61,8 @@ export class SenhaProjecao {
         tempoEsperaMinutos,
         slaExcedido: tempoEsperaMinutos > sla,
         temAgendamentoPrevio: senha.temAgendamentoPrevio,
+        // O recurso faltante entra com a parte 7.1 (#21).
+        recursoFaltante: null,
         chamadaId: senha.status === 'CHAMADA' ? (senha.chamadas[0]?.id ?? null) : null,
         versao: senha.versao,
       };
