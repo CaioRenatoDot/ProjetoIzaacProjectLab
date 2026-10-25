@@ -44,9 +44,9 @@ E, conforme a sua frente:
 | 3   | Acesso, permissões e auditoria | ⬜     | Rildo (back), Caio Gabriel e Caio Renato (front)                                                    |
 | 4   | Cadastros base                 | ⬜     | Rildo (back), Caio Gabriel (front)                                                                  |
 | 5   | Triagem e emissão de senha     | ⬜     | Rildo (back), Caio Gabriel (front)                                                                  |
-| 6   | Fila, chamada e telão          | ⬜     | Nathan (back), Caio Renato e Thalita (front)                                                        |
-| 7   | Alocação e atendimento         | ⬜     | Nathan (back), Caio Renato (front)                                                                  |
-| 8   | Ausências e desistências       | ⬜     | Rildo e Nathan (back), Thalita (front)                                                              |
+| 6   | Fila, chamada e telão          | ⬜     | Rildo e Nathan (back), Caio Renato e Thalita (front)                                                |
+| 7   | Alocação e atendimento         | ⬜     | Rildo e Nathan (back), Caio Renato (front)                                                          |
+| 8   | Ausências e desistências       | ⬜     | Rildo (back), Thalita (front)                                                                       |
 | 9   | Funcionalidades extras         | ⭐     | conforme o tempo                                                                                    |
 | 10  | Qualidade e entrega            | ⬜     | Thalita (QA) e todos                                                                                |
 
@@ -135,12 +135,12 @@ entre os dois Caios.
 Objetivo: schema Prisma completo e dados fictícios para desenvolver.
 **Pronto quando:** `prisma migrate dev` cria todas as tabelas e o seed popula o banco.
 
-| Parte | Descrição                                                                                                         | Responsável   |
-| ----- | ----------------------------------------------------------------------------------------------------------------- | ------------- |
-| 2.1   | Schema de acesso, cadastros base e auditoria                                                                      | Rildo ✅      |
-| 2.2   | Schema de fila, senha, chamada, alocação, atendimento e encaminhamento                                            | Nathan        |
-| 2.3   | Restrições no banco (únicos parciais, CHECKs, `audit_log` somente leitura) e tabela de parâmetros da unidade      | Rildo, Nathan |
-| 2.4   | Seed: unidade, perfis, usuários de teste, 5 especialidades, salas, estudantes, supervisores e pacientes fictícios | Rildo 🔄      |
+| Parte | Descrição                                                                                                         | Responsável |
+| ----- | ----------------------------------------------------------------------------------------------------------------- | ----------- |
+| 2.1   | Schema de acesso, cadastros base e auditoria                                                                      | Rildo ✅    |
+| 2.2   | Schema de fila, senha, chamada, alocação, atendimento e encaminhamento                                            | Rildo ✅    |
+| 2.3   | Restrições no banco (únicos parciais, CHECKs, `audit_log` somente leitura) e tabela de parâmetros da unidade      | Rildo       |
+| 2.4   | Seed: unidade, perfis, usuários de teste, 5 especialidades, salas, estudantes, supervisores e pacientes fictícios | Rildo 🔄    |
 
 > Nenhum dado real de paciente em ambiente de desenvolvimento ou homologação.
 
@@ -190,8 +190,8 @@ Objetivo: equipe chama a próxima senha e o telão mostra a chamada em tempo rea
 
 | Parte | Descrição                                                                            | Responsável     |
 | ----- | ------------------------------------------------------------------------------------ | --------------- |
-| 6.1   | Máquina de estados da senha, com teste de cada transição                             | Nathan          |
-| 6.2   | Quadro da fila ordenado (RN-04) e "Chamar próxima" sem chamada duplicada             | Nathan          |
+| 6.1   | Máquina de estados da senha, com teste de cada transição                             | Rildo           |
+| 6.2   | Quadro da fila ordenado (RN-04) e "Chamar próxima" sem chamada duplicada             | Rildo           |
 | 6.3   | Bloqueio da fila por falta de supervisor (RN-10) e eventos em tempo real (Socket.IO) | Nathan          |
 | 6.4   | Tela W-08 · Painel de fila                                                           | Caio Gabriel ✅ |
 | 6.5   | Tela W-09 · Telão e W-10 · Consulta de senha pelo paciente                           | Thalita         |
@@ -203,8 +203,8 @@ Objetivo: conduzir o atendimento do início ao encerramento.
 
 | Parte  | Descrição                                                                                                      | Responsável         |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ------------------- |
-| 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Nathan              |
-| 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Nathan              |
+| 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Rildo               |
+| 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Rildo               |
 | 7.3    | Tela W-11 · Alocação                                                                                           | Caio Gabriel ✅     |
 | 7.4    | Telas W-12 · Atendimento e W-13 · Encerramento e validação                                                     | Caio Renato         |
 | ⭐ 7.5 | Sugestão automática de recursos, com o motivo de inaptidão                                                     | Nathan, Caio Renato |
@@ -214,11 +214,11 @@ Objetivo: conduzir o atendimento do início ao encerramento.
 Objetivo: tratar o paciente que não comparece e o que desiste.
 **Pronto quando:** a tolerância expira e marca ausência automaticamente, e a desistência fica registrada à parte.
 
-| Parte  | Descrição                                                                                      | Responsável   |
-| ------ | ---------------------------------------------------------------------------------------------- | ------------- |
-| 8.1    | Rotina de expiração da tolerância, ausência manual e restrição por reincidência (RN-12, RN-13) | Nathan, Rildo |
-| 8.2    | Registro de desistência, separado de ausência                                                  | Rildo         |
-| 🔄 8.3 | Telas W-15 · Ausências e W-16 · Desistência                                                    | Thalita       |
+| Parte  | Descrição                                                                                      | Responsável |
+| ------ | ---------------------------------------------------------------------------------------------- | ----------- |
+| 8.1    | Rotina de expiração da tolerância, ausência manual e restrição por reincidência (RN-12, RN-13) | Rildo       |
+| 8.2    | Registro de desistência, separado de ausência                                                  | Rildo       |
+| 🔄 8.3 | Telas W-15 · Ausências e W-16 · Desistência                                                    | Thalita     |
 
 **8.3 (#47):** front validado com API simulada, painel lateral e evidências em
 [entregas/GH-47-validacao.md](entregas/GH-47-validacao.md). Integração real com
@@ -251,10 +251,10 @@ Objetivo: garantir que o sistema funciona e está pronto para a demonstração.
 
 ## Partes por integrante
 
-| Integrante   | Partes                                                                  |
-| ------------ | ----------------------------------------------------------------------- |
-| Caio Renato  | 1.1–1.3 (1-A), 3.4, 7.4 · ⭐ 7.5, 9.1, 9.3, 9.4                         |
-| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4, 6.4, 7.3 · ⭐ 3.6 |
-| Thalita      | 6.5, 8.3, 10.2 · ⭐ 9.2, 9.5                                            |
-| Rildo        | 2.1, 2.3, 2.4, 3.1, 3.2, 4.1, 5.1, 5.2, 8.1, 8.2 · ⭐ 3.6, 9.2, 9.4     |
-| Nathan       | 2.2, 2.3, 6.1–6.3, 7.1, 7.2, 8.1 · ⭐ 7.5, 9.1, 9.3                     |
+| Integrante   | Partes                                                                            |
+| ------------ | --------------------------------------------------------------------------------- |
+| Caio Renato  | 1.1–1.3 (1-A), 3.4, 7.4 · ⭐ 7.5, 9.1, 9.3, 9.4                                   |
+| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4, 6.4, 7.3 · ⭐ 3.6           |
+| Thalita      | 6.5, 8.3, 10.2 · ⭐ 9.2, 9.5                                                      |
+| Rildo        | 2.1–2.4, 3.1, 3.2, 4.1, 5.1, 5.2, 6.1, 6.2, 7.1, 7.2, 8.1, 8.2 · ⭐ 3.6, 9.2, 9.4 |
+| Nathan       | 6.3 · ⭐ 7.5, 9.1, 9.3                                                            |

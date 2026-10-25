@@ -7,7 +7,7 @@ ponto. Complementa dois documentos:
 - [`07-pendencias-integracao.md`](07-pendencias-integracao.md): troca do MSW pela API, tela por
   tela, e lacunas do contrato.
 
-**Quem fechar um item daqui atualiza este arquivo no mesmo PR.** Situação em 24/10/2026.
+**Quem fechar um item daqui atualiza este arquivo no mesmo PR.** Situação em 25/10/2026.
 
 ## 1. Back-end pronto
 
@@ -18,6 +18,7 @@ integração da API (PostgreSQL)").
 | ----------- | ---------------------------------------------------------------------------------- | -------- |
 | #31         | Erros RFC 7807, validação Zod (422), paginação, log JSON com `redact`, CORS        | #67      |
 | #6          | Schema de acesso, cadastros base e auditoria (22 tabelas)                          | —        |
+| #7          | Schema de triagem, fila, senha, alocação, atendimento, alertas e idempotência      | —        |
 | #8 (metade) | Usuário `filas_app` com `REVOKE` no `audit_log`, parâmetros da unidade, CHECKs     | —        |
 | #10         | Login, refresh rotativo com detecção de reuso, bloqueio por tentativas, `/auth/me` | #71      |
 | #11         | Guard global (`@Requer`, `@Publico`, `@Autenticado`) e auditoria implícita         | #73      |
@@ -30,25 +31,25 @@ integração da API (PostgreSQL)").
 
 ## 2. Back-end que falta
 
-### Depende da parte 2.2 (#7, Nathan)
+### Depende do schema da parte 2.2 (#7, pronto) e das Etapas 6 e 7
 
-O schema de fila, senha, triagem, chamada, alocação e atendimento destrava quase tudo o que
-sobrou. Sem ele, ficam paradas:
+As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
+as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue               | Dono           | Depende de    | Observação                                                                                                                                                   |
-| ------------------- | -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| #7                  | Nathan         | —             | Inclui a tabela de `Idempotency-Key` (não está no `docs/03`; ver #18)                                                                                        |
-| #8 (metade)         | Nathan         | #7            | RN-01, RN-03, RN-05, RN-09, RF-04, RF-07; migração com `DIRECT_URL`, testes como `filas_app`, tabela imutável nova com o próprio `REVOKE` (comentário na #8) |
-| #9 (filas)          | Rildo          | #7            | Uma fila ativa por especialidade com a letra da senha (F, P, N, O, A); ponto de extensão em `apps/api/prisma/seed/executar.ts`                               |
-| #15                 | Rildo          | #7            | Triagem (RN-02, RN-03); lacunas 1, 2, 4, 8 e 9 da triagem no `docs/07`                                                                                       |
-| #16                 | Rildo          | #7, #15       | Emissão e reclassificação de senha; inclui expor `justificativaMinCaracteres` (lacuna 1 da triagem)                                                          |
-| #17 a #23, #26, #28 | Nathan         | #7            | Máquina de estados, fila e chamada, Socket.IO, endpoints públicos, alocação, atendimento, encaminhamento, alertas                                            |
-| #24                 | Rildo e Nathan | #17, #18      | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido                                          |
-| #25                 | Rildo          | #17, #21      | Desistência                                                                                                                                                  |
-| #27                 | Rildo          | #23, #24, #25 | Indicadores                                                                                                                                                  |
-| #30 (resto)         | Rildo e Nathan | Etapas 5 a 8  | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                                                   |
+| Issue                   | Dono           | Depende de         | Observação                                                                                                                                            |
+| ----------------------- | -------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #8 (metade)             | Rildo          | —                  | RN-01, RN-03, RN-05, RN-09, RF-04; migração com `DIRECT_URL`, testes como `filas_app`, tabela imutável nova com o próprio `REVOKE` (comentário na #8) |
+| #9 (filas)              | Rildo          | —                  | Uma fila ativa por especialidade com a letra da senha (F, P, N, O, A); ponto de extensão em `apps/api/prisma/seed/executar.ts`                        |
+| #15                     | Rildo          | —                  | Triagem (RN-02, RN-03); lacunas 1, 2, 4, 8 e 9 da triagem no `docs/07`                                                                                |
+| #16                     | Rildo          | #15                | Emissão e reclassificação de senha; inclui expor `justificativaMinCaracteres` (lacuna 1 da triagem)                                                   |
+| #17, #18, #21, #23      | Rildo          | —                  | Máquina de estados, fila e chamada, alocação, atendimento                                                                                             |
+| #19, #20, #22, #26, #28 | Nathan         | #17, #18, #21, #23 | Socket.IO, endpoints públicos, sugestão automática, encaminhamento, alertas                                                                           |
+| #24                     | Rildo          | #17, #18           | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido                                   |
+| #25                     | Rildo          | #17, #21           | Desistência                                                                                                                                           |
+| #27                     | Rildo          | #23, #24, #25      | Indicadores                                                                                                                                           |
+| #30 (resto)             | Rildo e Nathan | Etapas 5 a 8       | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                                            |
 
-### Valores provisórios que a #7 precisa substituir
+### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
 Campos que o contrato já devolve, mas que hoje saem fixos porque a tabela de origem ainda não
 existe. Quem criar a tabela troca o valor e remove a linha:
