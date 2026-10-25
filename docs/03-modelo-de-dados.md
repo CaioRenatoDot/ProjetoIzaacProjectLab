@@ -278,6 +278,19 @@ Transições não previstas retornam `409 Conflito` com `codigo: TRANSICAO_INVAL
 em um único módulo do back-end e tem teste de unidade cobrindo cada aresta e cada transição
 proibida.
 
+Implementação: `apps/api/src/senhas/maquina/` (`TRANSICOES` e `MaquinaSenha.transicionar`).
+Toda transição confere a `versao`, incrementa a versão e grava os horários na mesma transação de
+quem chama; o evento `senha.status_alterado` sai depois do commit. Um teste reprova qualquer outro
+arquivo que grave `status` em `senha`. Leitura do diagrama adotada:
+
+- **Alocar não muda o status.** A senha CHAMADA alocada continua CHAMADA até iniciar; a senha em
+  AGUARDANDO_RECURSO alocada vai direto para EM_ATENDIMENTO ao iniciar.
+- **Retorno à fila por tolerância** (CHAMADA → AGUARDANDO) limpa `chamada_em` e `tolerancia_ate`
+  e mantém a `chegada_em` original: o paciente volta à posição que tinha pela RN-04.
+- **Horários:** chamar grava `chamada_em` e `tolerancia_ate` (parâmetro `tolerancia_minutos`);
+  iniciar grava `iniciada_em` (retomar a pausa não); ENCERRADO, AUSENTE e DESISTENCIA gravam
+  `encerrada_em`. PENDENTE_VALIDACAO ainda não encerra.
+
 ## 6. Retenção e LGPD (RNF-07)
 
 | Dado                     | Retenção                         | Observação                                                                  |

@@ -11,11 +11,11 @@ import {
   type StatusSenha,
 } from '@filas/contracts';
 
-import { iniciais } from '../cadastros/pessoas.util';
 import { EventosDominio } from '../common/eventos/eventos-dominio';
 import { ErroDominio, ErroValidacao } from '../common/errors/erro-dominio';
 import { ParametrosService } from '../parametros/parametros.service';
 import { TriagemService } from '../triagem/triagem.service';
+import { SenhaProjecao } from './senha-projecao.service';
 import { type SenhaCompleta, SenhasRepository } from './senhas.repository';
 
 /** "Ainda não atendida" (UC-07, T-08): antes de o atendimento começar. */
@@ -42,6 +42,7 @@ const naoEncontrada = () =>
 export class SenhasService {
   constructor(
     private readonly repositorio: SenhasRepository,
+    private readonly projecao: SenhaProjecao,
     private readonly parametros: ParametrosService,
     private readonly triagens: TriagemService,
     private readonly eventos: EventosDominio,
@@ -87,7 +88,7 @@ export class SenhasService {
     });
 
     const senha = (await this.repositorio.buscar(id, unidadeId))!;
-    const resumo = await this.resumo(senha);
+    const resumo = await this.projecao.resumo(senha);
     this.eventos.emitir('senha.criada', resumo);
     const avisos: Aviso[] = senha.fila.bloqueada
       ? [
@@ -101,13 +102,13 @@ export class SenhasService {
   }
 
   async consultar(id: string, unidadeId: string): Promise<SenhaResumo> {
-    return this.resumo(await this.buscar(id, unidadeId));
+    return this.projecao.resumo(await this.buscar(id, unidadeId));
   }
 
   async consultarDetalhe(id: string, unidadeId: string): Promise<SenhaDetalhe> {
     const senha = await this.buscar(id, unidadeId);
     return {
-      ...(await this.resumo(senha)),
+      ...(await this.projecao.resumo(senha)),
       pacienteId: senha.pacienteId,
       pacienteNome: senha.paciente.nomeCompleto,
       triagem: await this.triagens.consultar(senha.triagemId, unidadeId),
@@ -131,7 +132,8 @@ export class SenhasService {
 
     await this.repositorio.transacao(async (tx) => {
       const senha = (await this.repositorio.buscar(id, unidadeId, tx))!;
-      if (senha.versao !== entrada.versao) throw await this.versaoDesatualizada(senha);
+      if (senha.versao !== entrada.versao)
+        throw await this.projecao.versaoDesatualizada(id, unidadeId);
       if (!RECLASSIFICAVEIS.includes(senha.status)) {
         throw new ErroDominio(
           'TRANSICAO_INVALIDA',
@@ -169,7 +171,7 @@ export class SenhasService {
         entrada.versao,
         entrada.prioridade,
       );
-      if (!alterou) throw await this.versaoDesatualizada(senha);
+      if (!alterou) throw await this.projecao.versaoDesatualizada(id, unidadeId);
       await this.repositorio.registrarReclassificacao(tx, {
         senhaId: id,
         dePrioridade: senha.prioridade,
@@ -179,7 +181,7 @@ export class SenhasService {
       });
     });
 
-    const resumo = await this.resumo(await this.buscar(id, unidadeId));
+    const resumo = await this.projecao.resumo(await this.buscar(id, unidadeId));
     this.eventos.emitir('senha.reclassificada', {
       senhaId: id,
       prioridade: resumo.prioridade,
@@ -205,47 +207,5 @@ export class SenhasService {
     const senha = await this.repositorio.buscar(id, unidadeId);
     if (!senha) throw naoEncontrada();
     return senha;
-  }
-
-  private async versaoDesatualizada(senha: SenhaCompleta): Promise<ErroDominio> {
-    const atual = await this.repositorio.buscar(senha.id, senha.fila.unidadeId);
-    return new ErroDominio(
-      'VERSAO_DESATUALIZADA',
-      409,
-      'Senha alterada por outra pessoa',
-      'A senha mudou desde que você abriu a tela. Confira o estado atual e tente de novo.',
-      { atual: await this.resumo(atual ?? senha) },
-    );
-  }
-
-  private async resumo(senha: SenhaCompleta): Promise<SenhaResumo> {
-    const { slaMinutos: slaDaUnidade } = await this.parametros.vigentes(
-      senha.fila.unidadeId,
-      senha.fila.especialidadeId,
-    );
-    const sla = senha.fila.slaMinutos ?? slaDaUnidade;
-    const fim = senha.chamadaEm ?? new Date();
-    const tempoEsperaMinutos = Math.max(
-      0,
-      Math.floor((fim.getTime() - senha.chegadaEm.getTime()) / 60_000),
-    );
-    return {
-      id: senha.id,
-      numero: senha.numero,
-      filaId: senha.filaId,
-      especialidade: senha.fila.especialidade.nome,
-      pacienteIniciais: iniciais(senha.paciente.nomeCompleto),
-      prioridade: senha.prioridade,
-      tipoAtendimento: senha.tipoAtendimento,
-      status: senha.status,
-      posicao: await this.repositorio.posicao(senha.id),
-      chegadaEm: senha.chegadaEm.toISOString(),
-      chamadaEm: senha.chamadaEm?.toISOString() ?? null,
-      toleranciaAte: senha.toleranciaAte?.toISOString() ?? null,
-      tempoEsperaMinutos,
-      slaExcedido: tempoEsperaMinutos > sla,
-      temAgendamentoPrevio: senha.temAgendamentoPrevio,
-      versao: senha.versao,
-    };
   }
 }

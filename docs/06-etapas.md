@@ -190,7 +190,7 @@ Objetivo: equipe chama a próxima senha e o telão mostra a chamada em tempo rea
 
 | Parte | Descrição                                                                            | Responsável     |
 | ----- | ------------------------------------------------------------------------------------ | --------------- |
-| 6.1   | Máquina de estados da senha, com teste de cada transição                             | Rildo           |
+| 6.1   | Máquina de estados da senha, com teste de cada transição                             | Rildo ✅        |
 | 6.2   | Quadro da fila ordenado (RN-04) e "Chamar próxima" sem chamada duplicada             | Rildo           |
 | 6.3   | Bloqueio da fila por falta de supervisor (RN-10) e eventos em tempo real (Socket.IO) | Nathan          |
 | 6.4   | Tela W-08 · Painel de fila                                                           | Caio Gabriel ✅ |

@@ -5,6 +5,7 @@ import { type EventosDominio } from '../common/eventos/eventos-dominio';
 import { ErroDominio } from '../common/errors/erro-dominio';
 import { type ParametrosService } from '../parametros/parametros.service';
 import { type TriagemService } from '../triagem/triagem.service';
+import { SenhaProjecao } from './senha-projecao.service';
 import { type SenhaCompleta, type SenhasRepository } from './senhas.repository';
 import { numeroDaSenha, SenhasService } from './senhas.service';
 
@@ -55,9 +56,14 @@ function montar(atual: SenhaCompleta) {
     posicao: vi.fn().mockResolvedValue(1),
   };
   const eventos = { emitir: vi.fn() };
+  const parametros = {
+    vigentes: vi.fn().mockResolvedValue(PARAMETROS),
+  } as unknown as ParametrosService;
+  const repositorioTipado = repositorio as unknown as SenhasRepository;
   const servico = new SenhasService(
-    repositorio as unknown as SenhasRepository,
-    { vigentes: vi.fn().mockResolvedValue(PARAMETROS) } as unknown as ParametrosService,
+    repositorioTipado,
+    new SenhaProjecao(repositorioTipado, parametros),
+    parametros,
     {} as TriagemService,
     eventos as unknown as EventosDominio,
   );
