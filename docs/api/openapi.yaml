@@ -2093,6 +2093,14 @@ paths:
 
         Volume baixo no período vem com `amostraPequena: true`, para a nota de que a média
         pode não ser representativa.
+
+        - Exige `indicadores:consultar`. Período em dias inteiros no fuso da unidade, pela
+          chegada da senha; `turno` filtra pela hora de chegada (turnos provisórios, docs/03)
+        - Espera: chegada até a primeira chamada. Atendimento: início ao encerramento, menos as
+          pausas. Atendidos: atendimentos com desfecho. Taxa de ausência: senhas ausentes sobre
+          senhas chamadas
+        - `amostraPequena` com menos de 10 atendimentos concluídos (valor provisório)
+        - Agregado no banco; período sem senha devolve zeros, médias nulas e `semDados: true`
       parameters:
         - { name: de, in: query, required: true, schema: { type: string, format: date } }
         - { name: ate, in: query, required: true, schema: { type: string, format: date } }
@@ -2113,7 +2121,8 @@ paths:
       operationId: volumeDeAtendimentosPorEspecialidade
       description: |
         Alimenta o gráfico de W-17 e a tabela equivalente acessível exigida pelo RNF-06 -
-        a mesma resposta serve às duas visualizações.
+        a mesma resposta serve às duas visualizações. Exige `indicadores:consultar`; mesmo
+        período do resumo. Só especialidades com movimento no período.
       parameters:
         - { name: de, in: query, required: true, schema: { type: string, format: date } }
         - { name: ate, in: query, required: true, schema: { type: string, format: date } }
@@ -2144,12 +2153,15 @@ paths:
       tags: [Indicadores]
       summary: Exportar indicadores
       operationId: exportarIndicadores
-      description: A exportação é registrada como evento de auditoria (RNF-05, T-18).
+      description: |
+        A exportação é registrada como evento de auditoria (RNF-05, T-18). Exige
+        `indicadores:exportar`. Uma linha por especialidade com os indicadores do resumo; grava
+        EXPORTAR com os filtros. Só em csv por enquanto (xlsx exigiria biblioteca nova).
       parameters:
         - { name: de, in: query, required: true, schema: { type: string, format: date } }
         - { name: ate, in: query, required: true, schema: { type: string, format: date } }
         - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
-        - { name: formato, in: query, schema: { type: string, enum: [csv, xlsx], default: csv } }
+        - { name: formato, in: query, schema: { type: string, enum: [csv], default: csv } }
       responses:
         '200':
           description: Arquivo
@@ -3290,6 +3302,7 @@ components:
           items:
             type: object
             properties:
+              especialidadeId: { type: string, format: uuid }
               especialidade: { type: string }
               total: { type: integer }
         semDados:
