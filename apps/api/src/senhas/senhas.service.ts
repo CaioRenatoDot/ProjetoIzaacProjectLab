@@ -133,7 +133,7 @@ export class SenhasService {
     await this.repositorio.transacao(async (tx) => {
       const senha = (await this.repositorio.buscar(id, unidadeId, tx))!;
       if (senha.versao !== entrada.versao)
-        throw await this.projecao.versaoDesatualizada(id, unidadeId);
+        throw await this.projecao.versaoDesatualizada(id, unidadeId, tx);
       if (!RECLASSIFICAVEIS.includes(senha.status)) {
         throw new ErroDominio(
           'TRANSICAO_INVALIDA',
@@ -171,7 +171,7 @@ export class SenhasService {
         entrada.versao,
         entrada.prioridade,
       );
-      if (!alterou) throw await this.projecao.versaoDesatualizada(id, unidadeId);
+      if (!alterou) throw await this.projecao.versaoDesatualizada(id, unidadeId, tx);
       await this.repositorio.registrarReclassificacao(tx, {
         senhaId: id,
         dePrioridade: senha.prioridade,

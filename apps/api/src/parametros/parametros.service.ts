@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { type ParametrosVigentes } from '@filas/contracts';
-import { type ChaveParametro } from '@prisma/client';
+import { type ChaveParametro, type Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -21,8 +21,13 @@ const CAMPO_POR_CHAVE: Record<ChaveParametro, keyof ParametrosVigentes> = {
 export class ParametrosService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async vigentes(unidadeId: string, especialidadeId?: string | null): Promise<ParametrosVigentes> {
-    const linhas = await this.prisma.parametroUnidade.findMany({
+  /** Dentro de transação, passe o `tx`: outra conexão do pool pode não estar livre. */
+  async vigentes(
+    unidadeId: string,
+    especialidadeId?: string | null,
+    tx?: Prisma.TransactionClient,
+  ): Promise<ParametrosVigentes> {
+    const linhas = await (tx ?? this.prisma).parametroUnidade.findMany({
       where: {
         unidadeId,
         OR: [{ especialidadeId: null }, ...(especialidadeId ? [{ especialidadeId }] : [])],

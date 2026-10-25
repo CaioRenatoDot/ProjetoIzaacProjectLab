@@ -14,6 +14,7 @@ export const SENHA_COMPLETA = {
       especialidade: { select: { nome: true } },
     },
   },
+  chamadas: { orderBy: { sequencia: 'desc' }, take: 1, select: { id: true } },
 } satisfies Prisma.SenhaInclude;
 
 export type SenhaCompleta = Prisma.SenhaGetPayload<{ include: typeof SENHA_COMPLETA }>;
@@ -146,25 +147,23 @@ export class SenhasRepository {
   }
 
   /**
-   * Posição pela RN-04 entre as senhas AGUARDANDO da fila: prioridade, chegada e agendamento
-   * prévio, nessa precedência (o enum Prioridade está em ordem crescente). O id desempata.
+   * Posição pela RN-04 entre as senhas AGUARDANDO de cada fila: prioridade, chegada e
+   * agendamento prévio, nessa precedência (o enum Prioridade está em ordem crescente). O id
+   * desempata. Uma consulta para todas as filas pedidas.
    */
-  async posicao(senhaId: string): Promise<number | null> {
-    const [linha] = await this.prisma.$queryRaw<{ posicao: bigint }[]>`
-      SELECT 1 + count(o.id) AS posicao
-        FROM senha s
-        LEFT JOIN senha o
-          ON o.fila_id = s.fila_id
-         AND o.status = 'AGUARDANDO'
-         AND o.id <> s.id
-         AND (o.prioridade > s.prioridade
-              OR (o.prioridade = s.prioridade AND o.chegada_em < s.chegada_em)
-              OR (o.prioridade = s.prioridade AND o.chegada_em = s.chegada_em
-                  AND o.tem_agendamento_previo > s.tem_agendamento_previo)
-              OR (o.prioridade = s.prioridade AND o.chegada_em = s.chegada_em
-                  AND o.tem_agendamento_previo = s.tem_agendamento_previo AND o.id < s.id))
-       WHERE s.id = ${senhaId}::uuid AND s.status = 'AGUARDANDO'
-       GROUP BY s.id`;
-    return linha ? Number(linha.posicao) : null;
+  async posicoes(filaIds: string[], tx?: Transacao): Promise<Map<string, number>> {
+    if (!filaIds.length) return new Map();
+    const linhas = await (tx ?? this.prisma).$queryRaw<{ id: string; posicao: bigint }[]>`
+      SELECT id, ROW_NUMBER() OVER (
+               PARTITION BY fila_id
+               ORDER BY prioridade DESC, chegada_em ASC, tem_agendamento_previo DESC, id ASC
+             ) AS posicao
+        FROM senha
+       WHERE fila_id = ANY(${filaIds}::uuid[]) AND status = 'AGUARDANDO'`;
+    return new Map(linhas.map((linha) => [linha.id, Number(linha.posicao)]));
+  }
+
+  async posicao(senhaId: string, filaId: string, tx?: Transacao): Promise<number | null> {
+    return (await this.posicoes([filaId], tx)).get(senhaId) ?? null;
   }
 }

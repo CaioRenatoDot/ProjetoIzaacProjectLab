@@ -180,13 +180,16 @@ describe('triagem (#15)', () => {
   });
 
   it('especialidades com fila: filtro comFila e filasVinculadas reais', async () => {
-    const resposta = await comToken(
-      api().get('/api/v1/especialidades?comFila=true&tamanho=100'),
-    ).expect(200);
+    const idsComFila = async (id: string) => {
+      const { nome } = await contexto.prisma.especialidade.findUniqueOrThrow({ where: { id } });
+      const resposta = await comToken(
+        api().get(`/api/v1/especialidades?comFila=true&busca=${encodeURIComponent(nome)}`),
+      ).expect(200);
+      return corpo<RespostaPaginada<Especialidade>>(resposta).dados.map((e) => e.id);
+    };
 
-    const ids = corpo<RespostaPaginada<Especialidade>>(resposta).dados.map((e) => e.id);
-    expect(ids).toContain(especialidadeId);
-    expect(ids).not.toContain(semFilaId);
+    expect(await idsComFila(especialidadeId)).toEqual([especialidadeId]);
+    expect(await idsComFila(semFilaId)).toEqual([]);
     const detalhe = corpo<Especialidade>(
       await comToken(api().get(`/api/v1/especialidades/${especialidadeId}`)).expect(200),
     );
