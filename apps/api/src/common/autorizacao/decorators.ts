@@ -1,6 +1,7 @@
 import { SetMetadata } from '@nestjs/common';
 import { type Permissao } from '@filas/contracts';
 import { type OperacaoAuditoria } from '@prisma/client';
+import { type Request } from 'express';
 
 export const CHAVE_REQUER = 'autorizacao:requer';
 export const CHAVE_PUBLICO = 'autorizacao:publico';
@@ -17,8 +18,15 @@ export const Publico = () => SetMetadata(CHAVE_PUBLICO, true);
 /** Exige só a sessão, sem permissão própria (ex.: `GET /auth/me`). */
 export const Autenticado = () => SetMetadata(CHAVE_AUTENTICADO, true);
 
-/** Leitura de dado de saúde: grava `CONSULTAR_SENSIVEL` antes de responder (ADR-003, RNF-07). */
-export const LeituraSensivel = () => SetMetadata(CHAVE_LEITURA_SENSIVEL, true);
+/** Decide pela requisição se a leitura é sensível (ex.: `?incluirTriagem=true`). */
+export type CondicaoSensivel = (requisicao: Request) => boolean;
+
+/**
+ * Leitura de dado de saúde: grava `CONSULTAR_SENSIVEL` antes de responder (ADR-003, RNF-07).
+ * Com `quando`, só a requisição que traz o dado clínico é registrada.
+ */
+export const LeituraSensivel = (quando?: CondicaoSensivel) =>
+  SetMetadata(CHAVE_LEITURA_SENSIVEL, quando ?? true);
 
 export interface OpcoesAuditoria {
   /** Padrão: o módulo da permissão exigida. */

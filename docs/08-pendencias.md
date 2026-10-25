@@ -14,21 +14,22 @@ ponto. Complementa dois documentos:
 Tudo na `develop`, com testes de unidade e de integração rodando no CI (job "Testes de
 integração da API (PostgreSQL)").
 
-| Issue       | Entrega                                                                                                                           | Contrato |
-| ----------- | --------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| #31         | Erros RFC 7807, validação Zod (422), paginação, log JSON com `redact`, CORS                                                       | #67      |
-| #6          | Schema de acesso, cadastros base e auditoria (22 tabelas)                                                                         | —        |
-| #7          | Schema de triagem, fila, senha, alocação, atendimento, alertas e idempotência                                                     | —        |
-| #8          | Usuário `filas_app`, `REVOKE` no `audit_log`, parâmetros da unidade, CHECKs e únicos parciais (RN-01, RN-03, RN-05, RN-09, RF-04) | —        |
-| #10         | Login, refresh rotativo com detecção de reuso, bloqueio por tentativas, `/auth/me`                                                | #71      |
-| #11         | Guard global (`@Requer`, `@Publico`, `@Autenticado`) e auditoria implícita                                                        | #73      |
-| #12         | Perfis, catálogo de permissões e usuários (inativar, desbloquear, redefinir senha)                                                | #76      |
-| #13         | Salas, especialidades e cadastros de apoio                                                                                        | #78      |
-| #14         | Pacientes, estudantes e supervisores                                                                                              | #82      |
-| #15         | Triagem (RN-02, RN-03), lista sem campo clínico, detalhe auditado, `comFila` em especialidades                                    | #93      |
-| #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                         | #84      |
-| #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                   | —        |
-| #30 (parte) | Testes de integração no CI                                                                                                        | —        |
+| Issue       | Entrega                                                                                                                                     | Contrato |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| #31         | Erros RFC 7807, validação Zod (422), paginação, log JSON com `redact`, CORS                                                                 | #67      |
+| #6          | Schema de acesso, cadastros base e auditoria (22 tabelas)                                                                                   | —        |
+| #7          | Schema de triagem, fila, senha, alocação, atendimento, alertas e idempotência                                                               | —        |
+| #8          | Usuário `filas_app`, `REVOKE` no `audit_log`, parâmetros da unidade, CHECKs e únicos parciais (RN-01, RN-03, RN-05, RN-09, RF-04)           | —        |
+| #10         | Login, refresh rotativo com detecção de reuso, bloqueio por tentativas, `/auth/me`                                                          | #71      |
+| #11         | Guard global (`@Requer`, `@Publico`, `@Autenticado`) e auditoria implícita                                                                  | #73      |
+| #12         | Perfis, catálogo de permissões e usuários (inativar, desbloquear, redefinir senha)                                                          | #76      |
+| #13         | Salas, especialidades e cadastros de apoio                                                                                                  | #78      |
+| #14         | Pacientes, estudantes e supervisores                                                                                                        | #82      |
+| #15         | Triagem (RN-02, RN-03), lista sem campo clínico, detalhe auditado, `comFila` em especialidades                                              | #93      |
+| #16         | Emissão de senha (número por fila e dia sob concorrência, RN-04), reclassificação (RN-01), histórico, `GET /parametros`, eventos de domínio | #95      |
+| #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                                   | #84      |
+| #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                             | —        |
+| #30 (parte) | Testes de integração no CI                                                                                                                  | —        |
 
 ## 2. Back-end que falta
 
@@ -39,7 +40,6 @@ as que não bloqueiam ninguém seguem com o Nathan:
 
 | Issue                   | Dono           | Depende de         | Observação                                                                                                          |
 | ----------------------- | -------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| #16                     | Rildo          | —                  | Emissão e reclassificação de senha; inclui expor `justificativaMinCaracteres` (lacuna 1 da triagem)                 |
 | #17, #18, #21, #23      | Rildo          | —                  | Máquina de estados, fila e chamada, alocação, atendimento                                                           |
 | #19, #20, #22, #26, #28 | Nathan         | #17, #18, #21, #23 | Socket.IO, endpoints públicos, sugestão automática, encaminhamento, alertas                                         |
 | #24                     | Rildo          | #17, #18           | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido |
@@ -110,9 +110,10 @@ trocar agora (🔧 lá):
 | Cadastros (W-03, W-04)     | Trocar o MSW; importar os schemas de `@filas/contracts` (`cadastros.ts`, `pessoas.ts`); inativar com `PATCH`; listas de apoio pelos endpoints novos | #13, #14 |
 | Trilha de auditoria (W-18) | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                             | #29      |
 | Triagem (W-06)             | Cliente HTTP para `TriagemApi`; importar `TriagemEntrada` e `prioridadeEfetiva` de `@filas/contracts`; especialidades por `?comFila=true`           | #15      |
+| Senha (W-07)               | `POST /senhas`, `PATCH /senhas/{id}/prioridade` (ler `senha.prioridade` e `senha.versao`), histórico; mínimo da justificativa por `GET /parametros` | #16      |
 | Testes de ponta a ponta    | Entrar com os usuários do seed (`<perfil>@clinica.invalid`, senha `senha-dev`, README)                                                              | #10, #9  |
 
-Ainda dependem do back: emissão e reclassificação de senha (W-07: #16), painel de fila e telão (W-08 a
+Ainda dependem do back: painel de fila e telão (W-08 a
 W-10: #17 a #20), alocação e atendimento (W-11 a W-13: #21 a #23), ausências (W-15, W-16: #24,
 #25), indicadores (W-17: #27), alertas (W-18: #28) e o estado real da conexão Socket.IO.
 

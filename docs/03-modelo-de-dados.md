@@ -202,6 +202,11 @@ indicadores (RF-10).
 **escalonamento** — `id`, `alerta_id`, `acao` (`REFORCO_ATENDENTE` | `VAGA_EXTRA`),
 `observacao?`, `acionado_por`, `acionado_em`. Registra autor e horário, como exige T-17.
 
+**contador_senha** — `fila_id`, `dia` (data no fuso da unidade), `ultimo`. Chave primária
+(`fila_id`, `dia`). A emissão faz `INSERT ... ON CONFLICT DO UPDATE ... RETURNING` na mesma
+transação que cria a senha, o que serializa emissões simultâneas na mesma fila. A partir da
+milésima senha do dia o número segue com quatro dígitos (F1000).
+
 ### 3.6 Idempotência
 
 **chave_idempotencia** — `usuario_id`, `chave` (UUID do header `Idempotency-Key`), `operacao`
@@ -224,6 +229,7 @@ por restrição:
 | Limite de estudantes por supervisor        | verificado no service, dentro da transação de alocação                                                                                               | RN-08  |
 | Auditoria imutável                         | `REVOKE UPDATE, DELETE ON audit_log`                                                                                                                 | RNF-05 |
 | Uma fila ativa por especialidade           | índice único parcial `WHERE ativa`                                                                                                                   | RF-04  |
+| Número da senha único por fila e dia       | índice único `(fila_id, numero, (chegada_em AT TIME ZONE 'America/Sao_Paulo')::date)`                                                                | UC-06  |
 
 O limite de supervisor (RN-08) e o tamanho mínimo da justificativa (RN-01) não viram restrição
 declarativa, porque dependem de contagem ou de parâmetro editável da unidade. O limite fica dentro da

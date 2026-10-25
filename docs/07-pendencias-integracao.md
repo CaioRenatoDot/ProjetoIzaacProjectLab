@@ -134,10 +134,10 @@ decisão do tech lead e do back-end dono do módulo.
 | ⏳     | `GET /pacientes?busca=`             | Lê `id`, `nomeCompleto` (só para a busca, nunca exibido), `documento`, `vinculo`, `restricaoAtiva`, `restricaoAte`. Exibe iniciais e documento mascarado                 | #38      |
 | ⏳     | `GET /especialidades?ativa=true`    | Lê `id`, `nome`, `ativa`, `filasVinculadas`. A ficha só oferece as que têm `ativa` e `filasVinculadas > 0`                                                               | #38      |
 | 🔧     | `POST /triagens`                    | Envia `TriagemEntrada` completo. Lê `id`, `pacienteIniciais`, `especialidade`, `tipoAtendimento`, `prioridade`, `enquadramentoLegal`                                     | #15      |
-| ⏳     | `POST /senhas`                      | Envia `{ triagemId, tipoAtendimento }`. Lê `id`, `numero`, `especialidade`, `pacienteIniciais`, `prioridade`, `tipoAtendimento`, `posicaoEstimada`, `versao`, `avisos[]` | #16      |
+| 🔧     | `POST /senhas`                      | Envia `{ triagemId, tipoAtendimento }`. Lê `id`, `numero`, `especialidade`, `pacienteIniciais`, `prioridade`, `tipoAtendimento`, `posicaoEstimada`, `versao`, `avisos[]` | #16      |
 | ⏳     | `GET /senhas/{id}`                  | Só `prioridade`, `versao`, `posicao`, para recarregar após `VERSAO_DESATUALIZADA`                                                                                        | #16      |
 | ⏳     | `GET /senhas/{id}/reclassificacoes` | Lê a lista; vazia deve vir como `[]`, não 404                                                                                                                            | #16      |
-| ⏳     | `PATCH /senhas/{id}/prioridade`     | Envia `{ prioridade, justificativa, versao }`. Lê `senha.prioridade`, `senha.versao`, `novaPosicao`                                                                      | #16      |
+| 🔧     | `PATCH /senhas/{id}/prioridade`     | Envia `{ prioridade, justificativa, versao }`. Lê `senha.prioridade`, `senha.versao`, `novaPosicao`                                                                      | #16      |
 
 ### Lacunas do contrato (decisão necessária antes de integrar)
 

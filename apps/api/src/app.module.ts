@@ -6,11 +6,14 @@ import { AuditoriaConsultaModule } from './auditoria/auditoria-consulta.module';
 import { AuthModule } from './auth/auth.module';
 import { CadastrosModule } from './cadastros/cadastros.module';
 import { AutorizacaoModule } from './common/autorizacao/autorizacao.module';
+import { EventosDominioModule } from './common/eventos/eventos-dominio';
 import { opcoesLog } from './common/logging/opcoes-log';
 import { type Ambiente, validarAmbiente } from './config/ambiente';
 import { HealthModule } from './health/health.module';
+import { ParametrosModule } from './parametros/parametros.module';
 import { PerfisModule } from './perfis/perfis.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { SenhasModule } from './senhas/senhas.module';
 import { TriagemModule } from './triagem/triagem.module';
 
 @Module({
@@ -36,6 +39,9 @@ import { TriagemModule } from './triagem/triagem.module';
     CadastrosModule,
     AuditoriaConsultaModule,
     TriagemModule,
+    EventosDominioModule,
+    ParametrosModule,
+    SenhasModule,
   ],
 })
 export class AppModule {}
