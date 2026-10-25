@@ -143,6 +143,9 @@ execução e exigem o `docker compose up -d`):
 pnpm --filter api test:integracao
 ```
 
+No CI, o job "Testes de integração da API (PostgreSQL)" roda a mesma suíte em todo PR, com um
+PostgreSQL 16 próprio.
+
 Os commits passam pelo Commitlint (Conventional Commits, escopos de `docs/05-fluxo-github.md` §3) e
 pelo lint-staged, que aplica ESLint e Prettier só nos arquivos alterados.
 
