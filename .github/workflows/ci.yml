@@ -53,3 +53,52 @@ jobs:
 
       - name: Validar contrato da API (docs/api/openapi.yaml)
         run: pnpm contract:lint
+
+  integracao:
+    name: Testes de integração da API (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: filas
+          POSTGRES_PASSWORD: filas
+          POSTGRES_DB: filas_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U filas -d filas_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Mesmo arranjo do docker compose: migrações com o administrador, testes com o filas_app.
+      DATABASE_URL_TEST: postgresql://filas_app:filas_app@localhost:5432/filas_test?schema=public
+      DIRECT_URL_TEST: postgresql://filas:filas@localhost:5432/filas_test?schema=public
+      DATABASE_URL: postgresql://filas_app:filas_app@localhost:5432/filas_test?schema=public
+      DIRECT_URL: postgresql://filas:filas@localhost:5432/filas_test?schema=public
+      JWT_SEGREDO: segredo-ficticio-do-ci-com-mais-de-32-caracteres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # O serviço do Actions não roda docker/postgres/init/; o usuário da aplicação é criado aqui.
+      - name: Criar o usuário da aplicação (filas_app)
+        env:
+          PGPASSWORD: filas
+        run: |
+          psql -h localhost -U filas -d filas_test -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE filas_app LOGIN PASSWORD 'filas_app'" \
+            -c "GRANT CONNECT ON DATABASE filas_test TO filas_app"
+
+      - run: pnpm turbo run build --filter=@filas/contracts
+
+      - run: pnpm --filter api test:integracao
