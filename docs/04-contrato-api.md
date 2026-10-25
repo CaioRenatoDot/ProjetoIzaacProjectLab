@@ -237,7 +237,7 @@ repassa para a sala.
 | ----------------------- | ---------------------------------------------------------------- | ------ |
 | `senha.criada`          | `SenhaResumo`                                                    | UC-06  |
 | `senha.chamada`         | `{ senha: SenhaResumo, chamada: Chamada }`                       | UC-09  |
-| `senha.status_alterado` | `{ senhaId, statusAnterior, status, versao }`                    | P-01   |
+| `senha.status_alterado` | `{ senhaId, filaId, statusAnterior, status, versao }`            | P-01   |
 | `senha.reclassificada`  | `{ senhaId, prioridade, novaPosicao }`                           | UC-07  |
 | `fila.bloqueada`        | `{ filaId, especialidade, motivo, desde }`                       | RN-10  |
 | `fila.desbloqueada`     | `{ filaId, especialidade, em }`                                  | RN-10  |

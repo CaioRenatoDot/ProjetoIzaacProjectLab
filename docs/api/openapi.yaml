@@ -1362,9 +1362,7 @@ paths:
       description: |
         UC-17, RF-09. Distinta de ausência para efeito de indicadores (W-16).
         Permitida apenas com a senha em AGUARDANDO ou EM_ATENDIMENTO (pré-condição do UC-17);
-        em outro status retorna 409 TRANSICAO_INVALIDA.
-        Permitida em AGUARDANDO, CHAMADA, AGUARDANDO_RECURSO e EM_ATENDIMENTO.
-        Motivo é opcional.
+        em outro status retorna 409 TRANSICAO_INVALIDA (docs/03 §5). Motivo é opcional.
       requestBody:
         required: true
         content:
