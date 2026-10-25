@@ -1,7 +1,8 @@
 // Modelo de dados: docs/03-modelo-de-dados.md. Tabelas e colunas em snake_case (@@map/@map),
 // campos do domínio em português e identificadores UUID v7.
 // Parte 2.1 (#6): acesso e configuração, cadastros base e auditoria.
-// Fila, senha, triagem, alocação e atendimento entram na parte 2.2 (#7).
+// Parte 2.2 (#7): triagem, fila, senha, alocação, atendimento, ausência, desistência e alertas.
+// Campos marcados "Sensível" são dado de saúde (Tabela 23): só saem em SenhaDetalhe (ADR-003).
 
 generator client {
   provider = "prisma-client-js"
@@ -62,6 +63,73 @@ enum MotivoRevogacao {
   SENHA_REDEFINIDA
 }
 
+/// Os nove status da senha (Tabela 11, ID07); transições na Etapa 6 (docs/03 §5).
+enum StatusSenha {
+  AGUARDANDO
+  CHAMADA
+  AGUARDANDO_RECURSO
+  EM_ATENDIMENTO
+  PAUSADO
+  PENDENTE_VALIDACAO
+  ENCERRADO
+  AUSENTE
+  DESISTENCIA
+}
+
+enum Prioridade {
+  NORMAL
+  PREFERENCIAL
+  URGENTE
+}
+
+enum TipoAtendimento {
+  PRIMEIRA_CONSULTA
+  RETORNO
+  ENCAIXE
+}
+
+/// Valor único (Tabela 9, ID07); preenchido torna a prioridade PREFERENCIAL (RN-02).
+enum EnquadramentoLegal {
+  IDOSO
+  GESTANTE
+  LACTANTE
+  PCD
+  OUTRO_PREVISTO_EM_NORMA
+}
+
+enum Desfecho {
+  ALTA
+  RETORNO_AGENDADO
+  ENCAMINHAMENTO_INTERNO
+  ENCAMINHAMENTO_EXTERNO
+}
+
+enum TipoEncaminhamento {
+  INTERNO
+  EXTERNO
+}
+
+enum OrigemDesistencia {
+  PACIENTE
+  EQUIPE
+}
+
+enum TipoAlerta {
+  SLA_EXCEDIDO
+  FILA_BLOQUEADA
+}
+
+enum StatusAlerta {
+  ATIVO
+  RECONHECIDO
+  NORMALIZADO
+}
+
+enum AcaoEscalonamento {
+  REFORCO_ATENDENTE
+  VAGA_EXTRA
+}
+
 /// Chaves de parametro_unidade (docs/03 §3.1, Tabela 8).
 enum ChaveParametro {
   TOLERANCIA_MINUTOS           @map("tolerancia_minutos")
@@ -84,6 +152,8 @@ model Unidade {
   pacientes      Paciente[]
   salas          Sala[]
   especialidades Especialidade[]
+  filas          Fila[]
+  alertas        Alerta[]
 
   @@map("unidade")
 }
@@ -120,11 +190,23 @@ model Usuario {
   bloqueadoAte     DateTime? @map("bloqueado_ate") @db.Timestamptz(3)
   ultimoLoginEm    DateTime? @map("ultimo_login_em") @db.Timestamptz(3)
 
-  perfil                Perfil             @relation(fields: [perfilId], references: [id], onDelete: Restrict)
-  unidade               Unidade            @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  perfil                Perfil                      @relation(fields: [perfilId], references: [id], onDelete: Restrict)
+  unidade               Unidade                     @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
   registrosAuditoria    AuditLog[]
   parametrosAtualizados ParametroUnidade[]
   sessoes               Sessao[]
+  triagens              Triagem[]
+  reclassificacoes      ReclassificacaoPrioridade[]
+  chamadas              Chamada[]
+  alocacoesConfirmadas  Alocacao[]
+  atendimentosValidados Atendimento[]
+  pausas                PausaAtendimento[]
+  encaminhamentos       Encaminhamento[]
+  ausencias             Ausencia[]
+  desistencias          Desistencia[]
+  alertasReconhecidos   Alerta[]
+  escalonamentos        Escalonamento[]
+  chavesIdempotencia    ChaveIdempotencia[]
 
   @@map("usuario")
 }
@@ -219,7 +301,9 @@ model Paciente {
   restricaoAte    DateTime?       @map("restricao_ate") @db.Date
   ativo           Boolean         @default(true)
 
-  unidade Unidade @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  unidade  Unidade   @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  triagens Triagem[]
+  senhas   Senha[]
 
   @@index([nomeCompleto, dataNascimento])
   @@map("paciente")
@@ -236,6 +320,7 @@ model Estudante {
   habilitacoes     EstudanteHabilitacao[]
   procedimentos    EstudanteProcedimento[]
   disponibilidades EstudanteDisponibilidade[]
+  alocacoes        Alocacao[]
 
   @@map("estudante")
 }
@@ -283,6 +368,7 @@ model Supervisor {
   especialidades   SupervisorEspecialidade[]
   procedimentos    SupervisorProcedimento[]
   disponibilidades SupervisorDisponibilidade[]
+  alocacoes        Alocacao[]
 
   @@map("supervisor")
 }
@@ -328,8 +414,9 @@ model Sala {
   situacao        SituacaoSala @default(DISPONIVEL)
   ativo           Boolean      @default(true)
 
-  unidade  Unidade       @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
-  recursos SalaRecurso[]
+  unidade   Unidade       @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  recursos  SalaRecurso[]
+  alocacoes Alocacao[]
 
   @@map("sala")
 }
@@ -359,6 +446,9 @@ model Especialidade {
   estudantes       Estudante[]
   supervisores     SupervisorEspecialidade[]
   parametros       ParametroUnidade[]
+  filas            Fila[]
+  triagens         Triagem[]
+  encaminhamentos  Encaminhamento[]
 
   @@map("especialidade")
 }
@@ -404,4 +494,322 @@ model Recurso {
   especialidades EspecialidadeProcedimentoRequisito[]
 
   @@map("recurso")
+}
+
+// ── Fila e senha (docs/03 §3.3) ──
+
+/// Uma fila ativa por especialidade e unidade: índice único parcial na parte 2.3 (#8).
+model Fila {
+  id              String    @id @default(uuid(7)) @db.Uuid
+  especialidadeId String    @map("especialidade_id") @db.Uuid
+  unidadeId       String    @map("unidade_id") @db.Uuid
+  nome            String
+  /// Letra do número da senha (F014); o número é gerado no service (Etapa 5).
+  letraSenha      String    @map("letra_senha") @db.Char(1)
+  ativa           Boolean   @default(true)
+  /// RN-10: falta de supervisor disponível na especialidade.
+  bloqueada       Boolean   @default(false)
+  bloqueadaMotivo String?   @map("bloqueada_motivo")
+  bloqueadaDesde  DateTime? @map("bloqueada_desde") @db.Timestamptz(3)
+  /// Sobrepõe o parâmetro sla_minutos da unidade.
+  slaMinutos      Int?      @map("sla_minutos")
+
+  especialidade Especialidade @relation(fields: [especialidadeId], references: [id], onDelete: Restrict)
+  unidade       Unidade       @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  senhas        Senha[]
+  alertas       Alerta[]
+
+  @@index([especialidadeId])
+  @@map("fila")
+}
+
+model Triagem {
+  id                     String              @id @default(uuid(7)) @db.Uuid
+  pacienteId             String              @map("paciente_id") @db.Uuid
+  profissionalId         String              @map("profissional_id") @db.Uuid
+  especialidadeDestinoId String              @map("especialidade_destino_id") @db.Uuid
+  tipoAtendimento        TipoAtendimento     @map("tipo_atendimento")
+  prioridade             Prioridade
+  /// Sensível.
+  motivo                 String
+  enquadramentoLegal     EnquadramentoLegal? @map("enquadramento_legal")
+  /// Sensível. Obrigatória com prioridade URGENTE (RN-03).
+  justificativaClinica   String?             @map("justificativa_clinica")
+  /// Sensível.
+  observacoes            String?
+  concluidaEm            DateTime            @default(now()) @map("concluida_em") @db.Timestamptz(3)
+  criadoEm               DateTime            @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  paciente             Paciente      @relation(fields: [pacienteId], references: [id], onDelete: Restrict)
+  profissional         Usuario       @relation(fields: [profissionalId], references: [id], onDelete: Restrict)
+  especialidadeDestino Especialidade @relation(fields: [especialidadeDestinoId], references: [id], onDelete: Restrict)
+  senhas               Senha[]
+
+  @@index([pacienteId])
+  @@map("triagem")
+}
+
+/// Agregado central: a passagem do paciente pela fila (Tabela 11).
+model Senha {
+  id                   String          @id @default(uuid(7)) @db.Uuid
+  /// Letra da fila + 3 dígitos, único por dia e especialidade (parte 2.3 e Etapa 5).
+  numero               String
+  filaId               String          @map("fila_id") @db.Uuid
+  triagemId            String          @map("triagem_id") @db.Uuid
+  pacienteId           String          @map("paciente_id") @db.Uuid
+  prioridade           Prioridade
+  tipoAtendimento      TipoAtendimento @map("tipo_atendimento")
+  status               StatusSenha     @default(AGUARDANDO)
+  /// Terceiro critério de ordenação (RN-04).
+  temAgendamentoPrevio Boolean         @default(false) @map("tem_agendamento_previo")
+  chegadaEm            DateTime        @default(now()) @map("chegada_em") @db.Timestamptz(3)
+  chamadaEm            DateTime?       @map("chamada_em") @db.Timestamptz(3)
+  toleranciaAte        DateTime?       @map("tolerancia_ate") @db.Timestamptz(3)
+  iniciadaEm           DateTime?       @map("iniciada_em") @db.Timestamptz(3)
+  encerradaEm          DateTime?       @map("encerrada_em") @db.Timestamptz(3)
+  /// Senha que originou esta por encaminhamento interno (RF-08).
+  senhaOrigemId        String?         @map("senha_origem_id") @db.Uuid
+  /// Bloqueio otimista: 409 VERSAO_DESATUALIZADA (docs/04 §6).
+  versao               Int             @default(1)
+  criadoEm             DateTime        @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  fila             Fila                        @relation(fields: [filaId], references: [id], onDelete: Restrict)
+  triagem          Triagem                     @relation(fields: [triagemId], references: [id], onDelete: Restrict)
+  paciente         Paciente                    @relation(fields: [pacienteId], references: [id], onDelete: Restrict)
+  senhaOrigem      Senha?                      @relation("SenhaOrigem", fields: [senhaOrigemId], references: [id], onDelete: Restrict)
+  senhasDerivadas  Senha[]                     @relation("SenhaOrigem")
+  reclassificacoes ReclassificacaoPrioridade[]
+  chamadas         Chamada[]
+  alocacoes        Alocacao[]
+  atendimento      Atendimento?
+  encaminhamentoDe Encaminhamento?             @relation("EncaminhamentoSenhaGerada")
+  ausencias        Ausencia[]
+  desistencia      Desistencia?
+
+  /// Índice de ordenação da RN-04: o enum Prioridade está em ordem crescente de precedência.
+  @@index([filaId, status, prioridade(sort: Desc), chegadaEm, temAgendamentoPrevio(sort: Desc)], map: "idx_senha_ordem")
+  @@index([pacienteId])
+  @@map("senha")
+}
+
+model ReclassificacaoPrioridade {
+  id             String     @id @default(uuid(7)) @db.Uuid
+  senhaId        String     @map("senha_id") @db.Uuid
+  dePrioridade   Prioridade @map("de_prioridade")
+  paraPrioridade Prioridade @map("para_prioridade")
+  /// Obrigatória (RN-01); tamanho mínimo pelo parâmetro justificativa_min_caracteres.
+  justificativa  String
+  usuarioId      String     @map("usuario_id") @db.Uuid
+  ocorridoEm     DateTime   @default(now()) @map("ocorrido_em") @db.Timestamptz(3)
+
+  senha   Senha   @relation(fields: [senhaId], references: [id], onDelete: Restrict)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@index([senhaId])
+  @@map("reclassificacao_prioridade")
+}
+
+model Chamada {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  senhaId       String   @map("senha_id") @db.Uuid
+  usuarioId     String   @map("usuario_id") @db.Uuid
+  /// Local exibido no telão (W-09).
+  localExibicao String   @map("local_exibicao")
+  /// 1 = primeira chamada, 2+ = rechamadas.
+  sequencia     Int      @default(1)
+  chamadoEm     DateTime @default(now()) @map("chamado_em") @db.Timestamptz(3)
+
+  senha   Senha   @relation(fields: [senhaId], references: [id], onDelete: Restrict)
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@unique([senhaId, sequencia])
+  @@index([chamadoEm])
+  @@map("chamada")
+}
+
+// ── Alocação e atendimento (docs/03 §3.4) ──
+
+/// Estudante, supervisor e sala sem duas alocações não liberadas: índices parciais na parte 2.3 (RN-05, RN-09).
+model Alocacao {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  senhaId       String    @map("senha_id") @db.Uuid
+  estudanteId   String    @map("estudante_id") @db.Uuid
+  /// Nulo só quando a especialidade não exige supervisão docente (RN-07).
+  supervisorId  String?   @map("supervisor_id") @db.Uuid
+  salaId        String    @map("sala_id") @db.Uuid
+  confirmadaPor String    @map("confirmada_por") @db.Uuid
+  confirmadaEm  DateTime  @default(now()) @map("confirmada_em") @db.Timestamptz(3)
+  liberadaEm    DateTime? @map("liberada_em") @db.Timestamptz(3)
+
+  senha        Senha         @relation(fields: [senhaId], references: [id], onDelete: Restrict)
+  estudante    Estudante     @relation(fields: [estudanteId], references: [id], onDelete: Restrict)
+  supervisor   Supervisor?   @relation(fields: [supervisorId], references: [id], onDelete: Restrict)
+  sala         Sala          @relation(fields: [salaId], references: [id], onDelete: Restrict)
+  autor        Usuario       @relation(fields: [confirmadaPor], references: [id], onDelete: Restrict)
+  atendimentos Atendimento[]
+
+  @@index([senhaId])
+  @@map("alocacao")
+}
+
+model Atendimento {
+  id                String    @id @default(uuid(7)) @db.Uuid
+  /// Um atendimento por senha (RF-07).
+  senhaId           String    @unique @map("senha_id") @db.Uuid
+  alocacaoId        String    @map("alocacao_id") @db.Uuid
+  iniciadoEm        DateTime  @default(now()) @map("iniciado_em") @db.Timestamptz(3)
+  encerradoEm       DateTime? @map("encerrado_em") @db.Timestamptz(3)
+  desfecho          Desfecho?
+  /// Sensível.
+  observacoes       String?
+  /// Copiado da especialidade no início: mudar o cadastro não altera atendimento em curso (RN-11).
+  validacaoExigida  Boolean   @map("validacao_exigida")
+  validadoPor       String?   @map("validado_por") @db.Uuid
+  validadoEm        DateTime? @map("validado_em") @db.Timestamptz(3)
+  /// Sensível.
+  parecerSupervisor String?   @map("parecer_supervisor")
+  versao            Int       @default(1)
+
+  senha           Senha              @relation(fields: [senhaId], references: [id], onDelete: Restrict)
+  alocacao        Alocacao           @relation(fields: [alocacaoId], references: [id], onDelete: Restrict)
+  validador       Usuario?           @relation(fields: [validadoPor], references: [id], onDelete: Restrict)
+  pausas          PausaAtendimento[]
+  encaminhamentos Encaminhamento[]
+
+  @@map("atendimento")
+}
+
+/// Uma linha por pausa; o tempo efetivo desconta a soma das pausas (RF-10).
+model PausaAtendimento {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  atendimentoId String    @map("atendimento_id") @db.Uuid
+  motivo        String?
+  pausadoPor    String    @map("pausado_por") @db.Uuid
+  pausadoEm     DateTime  @default(now()) @map("pausado_em") @db.Timestamptz(3)
+  retomadoEm    DateTime? @map("retomado_em") @db.Timestamptz(3)
+
+  atendimento Atendimento @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  autor       Usuario     @relation(fields: [pausadoPor], references: [id], onDelete: Restrict)
+
+  @@index([atendimentoId])
+  @@map("pausa_atendimento")
+}
+
+model Encaminhamento {
+  id                     String             @id @default(uuid(7)) @db.Uuid
+  atendimentoId          String             @map("atendimento_id") @db.Uuid
+  tipo                   TipoEncaminhamento
+  /// Encaminhamento interno.
+  especialidadeDestinoId String?            @map("especialidade_destino_id") @db.Uuid
+  /// Encaminhamento externo.
+  instituicaoDestino     String?            @map("instituicao_destino")
+  motivo                 String
+  prioridadeSugerida     Prioridade?        @map("prioridade_sugerida")
+  /// O interno gera nova entrada de fila (RF-08).
+  senhaGeradaId          String?            @unique @map("senha_gerada_id") @db.Uuid
+  observacoes            String?
+  criadoPor              String             @map("criado_por") @db.Uuid
+  criadoEm               DateTime           @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  atendimento          Atendimento    @relation(fields: [atendimentoId], references: [id], onDelete: Restrict)
+  especialidadeDestino Especialidade? @relation(fields: [especialidadeDestinoId], references: [id], onDelete: Restrict)
+  senhaGerada          Senha?         @relation("EncaminhamentoSenhaGerada", fields: [senhaGeradaId], references: [id], onDelete: Restrict)
+  autor                Usuario        @relation(fields: [criadoPor], references: [id], onDelete: Restrict)
+
+  @@index([atendimentoId])
+  @@map("encaminhamento")
+}
+
+// ── Ausência, desistência e alertas (docs/03 §3.5) ──
+
+model Ausencia {
+  id            String   @id @default(uuid(7)) @db.Uuid
+  senhaId       String   @map("senha_id") @db.Uuid
+  /// Expiração da tolerância (RN-12); manual quando falso.
+  automatica    Boolean
+  observacao    String?
+  /// Nulo quando registrada pela rotina agendada.
+  registradoPor String?  @map("registrado_por") @db.Uuid
+  registradoEm  DateTime @default(now()) @map("registrado_em") @db.Timestamptz(3)
+
+  senha Senha    @relation(fields: [senhaId], references: [id], onDelete: Restrict)
+  autor Usuario? @relation(fields: [registradoPor], references: [id], onDelete: Restrict)
+
+  @@index([senhaId])
+  @@index([registradoEm])
+  @@map("ausencia")
+}
+
+/// Separada de ausencia: alimentam indicadores distintos (W-16, RF-10).
+model Desistencia {
+  id            String            @id @default(uuid(7)) @db.Uuid
+  senhaId       String            @unique @map("senha_id") @db.Uuid
+  origem        OrigemDesistencia
+  motivo        String?
+  registradoPor String            @map("registrado_por") @db.Uuid
+  registradoEm  DateTime          @default(now()) @map("registrado_em") @db.Timestamptz(3)
+
+  senha Senha   @relation(fields: [senhaId], references: [id], onDelete: Restrict)
+  autor Usuario @relation(fields: [registradoPor], references: [id], onDelete: Restrict)
+
+  @@index([registradoEm])
+  @@map("desistencia")
+}
+
+model Alerta {
+  id                 String       @id @default(uuid(7)) @db.Uuid
+  tipo               TipoAlerta
+  filaId             String       @map("fila_id") @db.Uuid
+  unidadeId          String       @map("unidade_id") @db.Uuid
+  status             StatusAlerta @default(ATIVO)
+  tempoEsperaMinutos Int?         @map("tempo_espera_minutos")
+  limiteMinutos      Int?         @map("limite_minutos")
+  senhasAfetadas     Int?         @map("senhas_afetadas")
+  disparadoEm        DateTime     @default(now()) @map("disparado_em") @db.Timestamptz(3)
+  reconhecidoPor     String?      @map("reconhecido_por") @db.Uuid
+  reconhecidoEm      DateTime?    @map("reconhecido_em") @db.Timestamptz(3)
+  normalizadoEm      DateTime?    @map("normalizado_em") @db.Timestamptz(3)
+
+  fila           Fila            @relation(fields: [filaId], references: [id], onDelete: Restrict)
+  unidade        Unidade         @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  reconhecedor   Usuario?        @relation(fields: [reconhecidoPor], references: [id], onDelete: Restrict)
+  escalonamentos Escalonamento[]
+
+  @@index([filaId, status])
+  @@map("alerta")
+}
+
+/// Autor e horário de cada ação de escalonamento (T-17).
+model Escalonamento {
+  id          String            @id @default(uuid(7)) @db.Uuid
+  alertaId    String            @map("alerta_id") @db.Uuid
+  acao        AcaoEscalonamento
+  observacao  String?
+  acionadoPor String            @map("acionado_por") @db.Uuid
+  acionadoEm  DateTime          @default(now()) @map("acionado_em") @db.Timestamptz(3)
+
+  alerta Alerta  @relation(fields: [alertaId], references: [id], onDelete: Restrict)
+  autor  Usuario @relation(fields: [acionadoPor], references: [id], onDelete: Restrict)
+
+  @@index([alertaId])
+  @@map("escalonamento")
+}
+
+// ── Idempotência (docs/04 §6) ──
+
+/// Resposta guardada por 10 minutos para `Idempotency-Key` repetida na chamada e na alocação.
+model ChaveIdempotencia {
+  usuarioId  String   @map("usuario_id") @db.Uuid
+  chave      String   @db.Uuid
+  /// Método e rota, para a mesma chave não valer em outra operação.
+  operacao   String
+  statusHttp Int      @map("status_http")
+  resposta   Json
+  criadoEm   DateTime @default(now()) @map("criado_em") @db.Timestamptz(3)
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Restrict)
+
+  @@id([usuarioId, chave])
+  @@index([criadoEm])
+  @@map("chave_idempotencia")
 }

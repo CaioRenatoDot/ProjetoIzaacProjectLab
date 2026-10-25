@@ -133,7 +133,8 @@ impossível de fazer com confiança.
 
 ### 3.3 Fila e senha
 
-**fila** — `id`, `especialidade_id`, `unidade_id`, `nome`, `ativa`, `bloqueada` (boolean, RN-10),
+**fila** — `id`, `especialidade_id`, `unidade_id`, `nome`, `letra_senha` (letra do número da
+senha, ex.: F de F014), `ativa`, `bloqueada` (boolean, RN-10),
 `bloqueada_motivo?`, `bloqueada_desde?`, `sla_minutos?` (sobrepõe o parâmetro da unidade).
 Uma fila ativa por especialidade e unidade — restrição única parcial.
 
@@ -200,6 +201,13 @@ indicadores (RF-10).
 
 **escalonamento** — `id`, `alerta_id`, `acao` (`REFORCO_ATENDENTE` | `VAGA_EXTRA`),
 `observacao?`, `acionado_por`, `acionado_em`. Registra autor e horário, como exige T-17.
+
+### 3.6 Idempotência
+
+**chave_idempotencia** — `usuario_id`, `chave` (UUID do header `Idempotency-Key`), `operacao`
+(método e rota), `status_http`, `resposta` (JSON), `criado_em`. Chave primária
+(`usuario_id`, `chave`). Guarda a resposta original por 10 minutos para a chamada e a alocação
+(`docs/04` §6); linhas mais antigas podem ser apagadas por rotina.
 
 ## 4. Invariantes garantidas no banco
 
