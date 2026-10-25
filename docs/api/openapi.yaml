@@ -1140,6 +1140,25 @@ paths:
         '403': { $ref: '#/components/responses/SemPermissao' }
 
   # ──────────────────────────────── Senhas ────────────────────────────────────
+  /parametros:
+    get:
+      tags: [Senhas]
+      summary: Parâmetros da unidade em vigor
+      operationId: consultarParametrosVigentes
+      description: |
+        Valores da Tabela 8 em vigor para a unidade do usuário. Com `especialidadeId`, o valor
+        da especialidade sobrepõe o geral (docs/01 §4.7). Usado, por exemplo, pelo modal de
+        reclassificação para orientar o mínimo da justificativa (RN-01). Exige só a sessão.
+      parameters:
+        - { name: especialidadeId, in: query, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Parâmetros em vigor
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ParametrosVigentes' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
+
   /senhas:
     post:
       tags: [Senhas]
@@ -1149,9 +1168,15 @@ paths:
         UC-06, RF-04. Gera a senha vinculada à especialidade e à prioridade definida na triagem
         e a posiciona na fila conforme RN-04.
 
-        - Especialidade sem fila ativa retorna 409 SEM_FILA_CONFIGURADA
+        - Especialidade sem fila ativa retorna 409 SEM_FILA_CONFIGURADA, com causa e próximo
+          passo no `detail` (T-07)
         - Especialidade com bloqueio ativo por ausência de supervisor **permite** a emissão,
-          mas a resposta traz aviso de que a chamada está suspensa (RN-10, T-07)
+          mas a resposta traz o aviso `FILA_BLOQUEADA` de que a chamada está suspensa (RN-10, T-07)
+        - Triagem que já gerou senha retorna 409 DUPLICIDADE com `recursoExistenteId`
+        - `numero` é a letra da fila seguida da sequência do dia (fuso da unidade) com três
+          dígitos (F001 a F999); a partir da milésima senha do dia a sequência segue com quatro
+          dígitos (F1000), sem recusar a emissão
+        - Emite o evento `senha.criada` depois de gravar
       requestBody:
         required: true
         content:
@@ -1188,8 +1213,9 @@ paths:
       summary: Consultar senha
       operationId: consultarSenha
       description: |
-        Com `incluirTriagem=true` a resposta traz o conteúdo clínico, exige
-        `triagem:consultar_sensivel` e gera evento de auditoria (ADR-003).
+        Exige `senha:consultar` e devolve `SenhaResumo`. Com `incluirTriagem=true` devolve
+        `SenhaDetalhe` com o conteúdo clínico: exige também `triagem:consultar_sensivel` (403
+        sem ela) e grava CONSULTAR_SENSIVEL antes de responder (ADR-003).
       parameters:
         - name: incluirTriagem
           in: query
@@ -1214,8 +1240,16 @@ paths:
       operationId: reclassificarPrioridade
       description: |
         UC-07, RF-03. Implementa RN-01 - justificativa obrigatória, registrada na auditoria.
-        Só é permitido para senha ainda não atendida; senha em outro status retorna
-        TRANSICAO_INVALIDA (T-08). A resposta traz a nova posição na fila para o toast.
+        Só é permitido para senha ainda não atendida (AGUARDANDO, CHAMADA ou
+        AGUARDANDO_RECURSO); senha em outro status retorna 409 TRANSICAO_INVALIDA (T-08).
+        A resposta traz a nova posição na fila para o toast e o evento `senha.reclassificada`
+        é emitido depois de gravar.
+
+        - Justificativa vazia ou abaixo de `justificativaMinCaracteres` retorna 422
+          JUSTIFICATIVA_OBRIGATORIA, com o campo em `campos` e o mínimo em `minimo`
+        - Prioridade igual à atual retorna 422 VALIDACAO no campo `prioridade`
+        - `versao` diferente da atual retorna 409 VERSAO_DESATUALIZADA com a senha atual em
+          `atual` (SenhaResumo)
       requestBody:
         required: true
         content:
@@ -1229,7 +1263,6 @@ paths:
                   description: Deve ser diferente da atual
                 justificativa:
                   type: string
-                  minLength: 1
                   description: |
                     Tamanho mínimo validado no servidor pelo parâmetro da unidade
                     justificativaMinCaracteres (valor provisório 20; Tabela 8, ID06). Abaixo do
@@ -1250,7 +1283,20 @@ paths:
           description: Justificativa ausente ou curta demais
           content:
             application/problem+json:
-              schema: { $ref: '#/components/schemas/ProblemaValidacao' }
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ProblemaValidacao'
+                  - type: object
+                    properties:
+                      minimo: { type: integer, description: Valor de justificativaMinCaracteres }
+              example:
+                title: Justificativa obrigatória
+                status: 422
+                codigo: JUSTIFICATIVA_OBRIGATORIA
+                minimo: 20
+                campos:
+                  - campo: justificativa
+                    mensagem: A justificativa precisa ter pelo menos 20 caracteres.
 
   /senhas/{id}/reclassificacoes:
     parameters:
@@ -1259,7 +1305,10 @@ paths:
       tags: [Senhas]
       summary: Histórico de reclassificações da senha
       operationId: historicoDeReclassificacoesDaSenha
-      description: Exibido no modal de W-07. Vazio retorna lista vazia, não 404.
+      description: |
+        Exibido no modal de W-07, em ordem cronológica decrescente. Vazio retorna lista vazia,
+        não 404. Exige `senha:consultar`. A justificativa é texto operacional da reclassificação,
+        não conteúdo da triagem.
       responses:
         '200':
           description: Histórico
@@ -2852,7 +2901,11 @@ components:
             pacienteId: { type: string, format: uuid }
             pacienteNome: { type: string }
             triagem: { $ref: '#/components/schemas/TriagemDetalhe' }
-            alocacao: { $ref: '#/components/schemas/Alocacao' }
+            alocacao:
+              oneOf:
+                - $ref: '#/components/schemas/Alocacao'
+                - type: 'null'
+              description: Alocação vigente; nula antes da alocação (UC-10)
             senhaOrigemId:
               type: [string, 'null']
               format: uuid
@@ -2867,6 +2920,16 @@ components:
               type: array
               items: { $ref: '#/components/schemas/Aviso' }
               description: Traz aviso de chamada suspensa quando a fila está bloqueada (RN-10)
+    ParametrosVigentes:
+      type: object
+      description: Tabela 8 em vigor (docs/01 §4.7)
+      properties:
+        toleranciaMinutos: { type: integer }
+        slaMinutos: { type: integer }
+        reincidenciasRestricao: { type: integer }
+        janelaReincidenciaDias: { type: integer }
+        limiteEstudantesSupervisor: { type: integer }
+        justificativaMinCaracteres: { type: integer }
     Reclassificacao:
       type: object
       properties:
