@@ -43,6 +43,12 @@ export const Desfecho = z.enum(
 );
 export type Desfecho = z.infer<typeof Desfecho>;
 
+/** Quem tomou a iniciativa da desistência (UC-17); quem registra é sempre o usuário logado. */
+export const OrigemDesistencia = z.enum(['PACIENTE', 'EQUIPE'], {
+  error: 'Escolha paciente ou equipe.',
+});
+export type OrigemDesistencia = z.infer<typeof OrigemDesistencia>;
+
 export const VinculoPaciente = z.enum(['EXTERNO', 'ALUNO', 'SERVIDOR']);
 export type VinculoPaciente = z.infer<typeof VinculoPaciente>;
 

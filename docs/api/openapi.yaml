@@ -1363,6 +1363,12 @@ paths:
         UC-17, RF-09. Distinta de ausência para efeito de indicadores (W-16).
         Permitida apenas com a senha em AGUARDANDO ou EM_ATENDIMENTO (pré-condição do UC-17);
         em outro status retorna 409 TRANSICAO_INVALIDA (docs/03 §5). Motivo é opcional.
+        Exige `ausencia:criar` (o catálogo não tem módulo próprio de desistência).
+
+        - `origem` diz quem desistiu (paciente ou equipe); quem registra é o usuário logado
+        - Grava em `desistencia`, nunca em `ausencia` (indicadores distintos, W-16)
+        - Em EM_ATENDIMENTO, fecha a pausa aberta, encerra o atendimento sem desfecho e libera
+          a alocação (`recursosLiberados: true`)
       requestBody:
         required: true
         content:

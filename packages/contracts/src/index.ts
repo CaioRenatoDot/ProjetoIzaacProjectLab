@@ -2,6 +2,7 @@ export * from './alocacao';
 export * from './atendimentos';
 export * from './auditoria';
 export * from './cadastros';
+export * from './desistencias';
 export * from './enums';
 export * from './erros';
 export * from './eventos';
