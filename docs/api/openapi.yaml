@@ -1333,6 +1333,20 @@ paths:
 
         Quando o paciente atinge o número de reincidências da política, a resposta traz
         `restricaoAplicada` com a descrição do efeito (RN-13).
+
+        - Exige `ausencia:criar`. Só para senha em CHAMADA (máquina de estados); senão 409
+          TRANSICAO_INVALIDA. Antes de `toleranciaAte`, sem `confirmadoAntesDaTolerancia: true`,
+          retorna 422 VALIDACAO no campo `confirmadoAntesDaTolerancia`
+        - Política de reincidência (RN-13): ao atingir `reincidencias_restricao` ausências em
+          `janela_reincidencia_dias` (parâmetros da especialidade ou da unidade), o paciente fica
+          com RESTRICAO_TEMPORARIA até hoje + `janela_reincidencia_dias`. A restrição só gera
+          aviso na triagem; não bloqueia (#14)
+        - Emite `ausencia.registrada` e `senha.status_alterado`
+
+        **Rotina de tolerância (RN-12)**, a cada minuto: senha CHAMADA com `toleranciaAte`
+        vencida volta à fila (AGUARDANDO, com a chegada original) na primeira expiração e vira
+        ausência automática na segunda. Nos dois casos libera a alocação vigente. A ausência
+        automática segue a mesma política de reincidência e emite os mesmos eventos.
       requestBody:
         required: true
         content:

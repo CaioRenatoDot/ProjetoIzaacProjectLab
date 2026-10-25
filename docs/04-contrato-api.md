@@ -239,6 +239,7 @@ repassa para a sala.
 | `senha.chamada`         | `{ senha: SenhaResumo, chamada: Chamada }` (também na rechamada) | UC-09  |
 | `senha.status_alterado` | `{ senhaId, filaId, statusAnterior, status, versao }`            | P-01   |
 | `senha.reclassificada`  | `{ senhaId, prioridade, novaPosicao }`                           | UC-07  |
+| `ausencia.registrada`   | `{ senha: SenhaResumo, automatica, restricaoAplicada }`          | UC-16  |
 | `fila.bloqueada`        | `{ filaId, especialidade, motivo, desde }` (emitido na alocação) | RN-10  |
 | `fila.desbloqueada`     | `{ filaId, especialidade, em }`                                  | RN-10  |
 | `fila.metricas`         | `{ filaId, aguardando, emAtendimento, tempoMedioEsperaMinutos }` | W-08   |

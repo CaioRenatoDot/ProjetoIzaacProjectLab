@@ -1,6 +1,7 @@
 export * from './alocacao';
 export * from './atendimentos';
 export * from './auditoria';
+export * from './ausencias';
 export * from './cadastros';
 export * from './desistencias';
 export * from './enums';
