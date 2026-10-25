@@ -47,8 +47,12 @@
     "eslint": "9.39.5",
     "prisma": "6.19.3",
     "supertest": "7.3.1",
+    "tsx": "4.23.15",
     "typescript": "5.9.3",
     "unplugin-swc": "1.6.0",
     "vitest": "4.1.12"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   }
 }
