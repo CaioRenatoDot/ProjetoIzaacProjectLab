@@ -7,8 +7,10 @@ import { AuthModule } from './auth/auth.module';
 import { CadastrosModule } from './cadastros/cadastros.module';
 import { AutorizacaoModule } from './common/autorizacao/autorizacao.module';
 import { EventosDominioModule } from './common/eventos/eventos-dominio';
+import { IdempotenciaModule } from './common/idempotencia/idempotencia.service';
 import { opcoesLog } from './common/logging/opcoes-log';
 import { type Ambiente, validarAmbiente } from './config/ambiente';
+import { FilasModule } from './filas/filas.module';
 import { HealthModule } from './health/health.module';
 import { ParametrosModule } from './parametros/parametros.module';
 import { PerfisModule } from './perfis/perfis.module';
@@ -42,6 +44,8 @@ import { TriagemModule } from './triagem/triagem.module';
     EventosDominioModule,
     ParametrosModule,
     SenhasModule,
+    IdempotenciaModule,
+    FilasModule,
   ],
 })
 export class AppModule {}

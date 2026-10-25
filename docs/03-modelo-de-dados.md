@@ -163,6 +163,8 @@ CREATE INDEX idx_senha_ordem ON senha (fila_id, status, prioridade DESC, chegada
 
 **chamada** — `id`, `senha_id`, `usuario_id`, `local_exibicao`, `sequencia` (1 = primeira,
 2+ = rechamadas), `chamado_em`. Alimenta o telão (W-09) e a lista de tolerância (W-15).
+A sequência é contada por senha: uma senha que volta à fila (cancelamento ou tolerância) e é
+chamada de novo continua a contagem. A rechamada renova `tolerancia_ate` da senha.
 
 ### 3.4 Alocação e atendimento
 

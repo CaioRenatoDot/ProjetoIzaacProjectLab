@@ -37,6 +37,7 @@ const senha = (dados: Partial<SenhaCompleta> = {}): SenhaCompleta => ({
   versao: 1,
   criadoEm: new Date(),
   paciente: { nomeCompleto: 'Maria Aparecida da Silva' },
+  chamadas: [],
   fila: {
     unidadeId: 'un1',
     especialidadeId: 'e1',
@@ -53,7 +54,7 @@ function montar(atual: SenhaCompleta) {
     buscar: vi.fn().mockResolvedValue(atual),
     reclassificar: vi.fn().mockResolvedValue(true),
     registrarReclassificacao: vi.fn().mockResolvedValue(undefined),
-    posicao: vi.fn().mockResolvedValue(1),
+    posicoes: vi.fn().mockResolvedValue(new Map([['s1', 1]])),
   };
   const eventos = { emitir: vi.fn() };
   const parametros = {
