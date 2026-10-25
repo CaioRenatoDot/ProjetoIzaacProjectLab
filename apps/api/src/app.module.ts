@@ -17,6 +17,7 @@ import { opcoesLog } from './common/logging/opcoes-log';
 import { type Ambiente, validarAmbiente } from './config/ambiente';
 import { FilasModule } from './filas/filas.module';
 import { HealthModule } from './health/health.module';
+import { IndicadoresModule } from './indicadores/indicadores.module';
 import { ParametrosModule } from './parametros/parametros.module';
 import { PerfisModule } from './perfis/perfis.module';
 import { PrismaModule } from './prisma/prisma.module';
@@ -56,6 +57,7 @@ import { TriagemModule } from './triagem/triagem.module';
     RelogioModule,
     AtendimentosModule,
     AusenciasModule,
+    IndicadoresModule,
   ],
 })
 export class AppModule {}

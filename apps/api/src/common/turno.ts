@@ -1,6 +1,13 @@
 import { type DiaSemana, type Turno } from '@prisma/client';
 
 const FUSO = 'America/Sao_Paulo';
+
+/** Hora inicial (inclusiva) e final (exclusiva) de cada turno provisório, no fuso da unidade. */
+export const HORAS_DO_TURNO: Record<Turno, [number, number]> = {
+  MANHA: [7, 12],
+  TARDE: [12, 18],
+  NOITE: [18, 22],
+};
 const DIAS: DiaSemana[] = ['DOMINGO', 'SEGUNDA', 'TERCA', 'QUARTA', 'QUINTA', 'SEXTA', 'SABADO'];
 
 /**
