@@ -3,6 +3,7 @@ export * from './cadastros';
 export * from './enums';
 export * from './erros';
 export * from './eventos';
+export * from './filas';
 export * from './paginacao';
 export * from './parametros';
 export * from './perfis';

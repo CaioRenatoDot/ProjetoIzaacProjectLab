@@ -28,6 +28,8 @@ export const SenhaResumo = z.object({
   tempoEsperaMinutos: z.number().int(),
   slaExcedido: z.boolean(),
   temAgendamentoPrevio: z.boolean(),
+  /** Chamada vigente, para "Rechamar" e "Cancelar chamada"; nula fora de CHAMADA. */
+  chamadaId: z.string().nullable(),
   versao: z.number().int(),
 });
 export type SenhaResumo = z.infer<typeof SenhaResumo>;
