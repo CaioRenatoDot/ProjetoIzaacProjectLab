@@ -109,6 +109,8 @@ export const ListarEspecialidadesQuery = ParametrosPaginacao.extend({
   busca: z.string().trim().optional(),
   ativa: booleanoDaQuery.optional(),
   exigeSupervisao: booleanoDaQuery.optional(),
+  /** Só as que têm fila ativa: destino possível da triagem (Tabela 9, ID03). */
+  comFila: booleanoDaQuery.optional(),
   ordenar: z.enum(['nome'], { error: 'Ordene por nome.' }).default('nome'),
   direcao,
 });

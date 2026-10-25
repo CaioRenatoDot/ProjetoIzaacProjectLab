@@ -868,6 +868,10 @@ paths:
         - { $ref: '#/components/parameters/Direcao' }
         - { name: ativa, in: query, schema: { type: boolean } }
         - { name: exigeSupervisao, in: query, schema: { type: boolean } }
+        - name: comFila
+          in: query
+          description: Só especialidades com fila ativa, destino possível da triagem (Tabela 9, ID03)
+          schema: { type: boolean }
       responses:
         '200':
           description: Lista paginada
@@ -1059,6 +1063,10 @@ paths:
 
         - Enquadramento legal preenchido sinaliza automaticamente prioridade PREFERENCIAL (RN-02)
         - Prioridade URGENTE sem `justificativaClinica` retorna 422 (RN-03)
+        - Urgente com enquadramento legal continua Urgente (RN-02 nunca rebaixa)
+        - Paciente inexistente ou inativo, e especialidade inativa ou sem fila ativa, retornam 422
+          apontando `pacienteId` ou `especialidadeDestinoId`
+        - `campos[].campo` usa os nomes de `TriagemEntrada`
         - `motivo`, `justificativaClinica` e `observacoes` são dados sensíveis e não aparecem
           em nenhuma resposta de listagem (ADR-003)
       requestBody:
@@ -2770,9 +2778,12 @@ components:
       properties:
         id: { type: string, format: uuid }
         pacienteIniciais: { type: string }
+        especialidadeId: { type: string, format: uuid }
         especialidade: { type: string }
         tipoAtendimento: { $ref: '#/components/schemas/TipoAtendimento' }
-        prioridade: { $ref: '#/components/schemas/Prioridade' }
+        prioridade:
+          $ref: '#/components/schemas/Prioridade'
+          description: Prioridade efetiva, já com a RN-02 aplicada
         concluidaEm: { type: string, format: date-time }
         senhaEmitida: { type: boolean }
     TriagemDetalhe:
