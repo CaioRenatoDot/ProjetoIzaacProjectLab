@@ -4,5 +4,12 @@
     "outDir": "dist",
     "types": ["node"]
   },
-  "include": ["src", "prisma", "test", "vitest.config.mts", "vitest.integracao.config.mts"]
+  "include": [
+    "src",
+    "prisma",
+    "test",
+    "vitest.config.mts",
+    "vitest.integracao.config.mts",
+    "vitest.cobertura.config.mts"
+  ]
 }
