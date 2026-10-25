@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AlocacaoModule } from './alocacao/alocacao.module';
@@ -37,6 +38,7 @@ import { TriagemModule } from './triagem/triagem.module';
         pinoHttp: opcoesLog(config.get('LOG_LEVEL', { infer: true })),
       }),
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     HealthModule,
     AuthModule,

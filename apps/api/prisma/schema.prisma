@@ -589,6 +589,8 @@ model Senha {
   toleranciaAte             DateTime?        @map("tolerancia_ate") @db.Timestamptz(3)
   iniciadaEm                DateTime?        @map("iniciada_em") @db.Timestamptz(3)
   encerradaEm               DateTime?        @map("encerrada_em") @db.Timestamptz(3)
+  /// Vezes que voltou à fila por tolerância expirada; na segunda expiração vira ausência (RN-12).
+  retornosTolerancia        Int              @default(0) @map("retornos_tolerancia")
   /// Registrado em AGUARDANDO_RECURSO; a máquina de estados zera ao sair dele.
   recursoFaltante           RecursoFaltante? @map("recurso_faltante")
   recursoFaltanteObservacao String?          @map("recurso_faltante_observacao")
