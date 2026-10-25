@@ -16,6 +16,7 @@ Sistema de Gestão de Filas para Atendimento em Clínicas-Escola: triagem, emiss
 | 4     | `docs/05-fluxo-github.md` §2 a §4                      | Branch, commit, PR e Definition of Done                                                                             |
 | 5     | `docs/07-pendencias-integracao.md`                     | O que no front ainda é provisório (mock, sessão fixa) e qual issue do back destrava cada item                       |
 | 6     | `docs/.ref/`                                           | RN, RF e UC por módulo (`MODULOS/`) e índices por camada (`SPECS/backend`, `SPECS/frontend`, `SPECS/database`)      |
+| 7     | `docs/08-pendencias.md`                                | O que falta, limitações conhecidas e armadilhas já encontradas                                                      |
 
 Por frente:
 

@@ -34,6 +34,7 @@ Partes, responsáveis e critérios de pronto em **[docs/06-etapas.md](docs/06-et
 | [docs/api/openapi.yaml](docs/api/openapi.yaml)                               | Contrato formal da API (OpenAPI 3.1)                                                   |
 | [docs/05-fluxo-github.md](docs/05-fluxo-github.md)                           | Branches, commits, PRs, labels, milestones, Definition of Done                         |
 | [docs/06-etapas.md](docs/06-etapas.md)                                       | Etapas do MVP: o que está feito, o que falta e quem faz                                |
+| [docs/08-pendencias.md](docs/08-pendencias.md)                               | O que falta de back e de front, limitações conhecidas e decisões em aberto             |
 | [docs/adr/](docs/adr/)                                                       | Registros de decisão de arquitetura                                                    |
 | [especificacao/](especificacao/)                                             | Documentos originais entregues pelo cliente (requisitos, casos de uso, UI, wireframes) |
 

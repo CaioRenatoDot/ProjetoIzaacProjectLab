@@ -22,6 +22,7 @@ Antes de pegar **qualquer** issue, leia:
 | 2     | `README.md`                                            | Visão geral, stack, portas e comandos                   |
 | 3     | `docs/06-etapas.md` (este arquivo)                     | Onde a sua parte se encaixa e o que vem depois          |
 | 4     | `docs/05-fluxo-github.md` §2 a §4                      | Branch, padrão de commit e PR                           |
+| 5     | `docs/08-pendencias.md`                                | O que já está pronto, o que falta e de quem depende     |
 
 E, conforme a sua frente:
 
