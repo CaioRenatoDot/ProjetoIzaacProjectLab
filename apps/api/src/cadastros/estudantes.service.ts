@@ -25,7 +25,14 @@ const DETALHE = {
   habilitacoes: { select: { habilitacao: { select: { id: true, nome: true } } } },
   procedimentos: { select: { procedimento: { select: { id: true, nome: true } } } },
   disponibilidades: { select: { diaSemana: true, turno: true } },
+  _count: { select: { alocacoes: { where: { liberadaEm: null } } } },
 } satisfies Prisma.EstudanteInclude;
+
+/** Ativo e sem alocação vigente (RN-05; o turno é conferido na alocação). */
+const LIVRE = {
+  ativo: true,
+  alocacoes: { none: { liberadaEm: null } },
+} satisfies Prisma.EstudanteWhereInput;
 
 type EstudanteComDetalhe = Prisma.EstudanteGetPayload<{ include: typeof DETALHE }>;
 
@@ -39,8 +46,7 @@ function paraEstudante(estudante: EstudanteComDetalhe): Estudante {
     habilitacoes: estudante.habilitacoes.map(({ habilitacao }) => habilitacao),
     procedimentosAutorizados: estudante.procedimentos.map(({ procedimento }) => procedimento),
     disponibilidade: estudante.disponibilidades.map(doBanco),
-    // Atendimento ativo depende da alocação (parte 2.2, #7); até lá, ninguém está ocupado.
-    ocupado: false,
+    ocupado: estudante._count.alocacoes > 0,
     ativo: estudante.ativo,
   };
 }
@@ -66,7 +72,8 @@ export class EstudantesService {
         ? { nivelFormacao: { equals: query.nivelFormacao, mode: 'insensitive' } }
         : {}),
       ...(query.turno ? { disponibilidades: { some: { turno: query.turno } } } : {}),
-      ...(query.disponivel !== undefined ? { ativo: query.disponivel } : {}),
+      ...(query.disponivel === true ? LIVRE : {}),
+      ...(query.disponivel === false ? { NOT: LIVRE } : {}),
     };
     const [dados, total] = await this.prisma.$transaction([
       this.prisma.estudante.findMany({

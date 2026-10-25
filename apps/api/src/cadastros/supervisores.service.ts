@@ -22,6 +22,7 @@ const DETALHE = {
   especialidades: { select: { especialidade: { select: { id: true, nome: true } } } },
   procedimentos: { select: { procedimento: { select: { id: true, nome: true } } } },
   disponibilidades: { select: { diaSemana: true, turno: true } },
+  _count: { select: { alocacoes: { where: { liberadaEm: null } } } },
 } satisfies Prisma.SupervisorInclude;
 
 type SupervisorComDetalhe = Prisma.SupervisorGetPayload<{ include: typeof DETALHE }>;
@@ -34,8 +35,7 @@ function paraSupervisor(supervisor: SupervisorComDetalhe): Supervisor {
     procedimentos: supervisor.procedimentos.map(({ procedimento }) => procedimento),
     disponibilidade: supervisor.disponibilidades.map(doBanco),
     limiteEstudantesSimultaneos: supervisor.limiteEstudantesSimultaneos ?? 0,
-    // A ocupação vem das alocações não liberadas (parte 2.2, #7); até lá, zero.
-    ocupacaoAtual: 0,
+    ocupacaoAtual: supervisor._count.alocacoes,
     ativo: supervisor.ativo,
   };
 }

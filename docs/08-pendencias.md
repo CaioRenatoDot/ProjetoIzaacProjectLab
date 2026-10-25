@@ -29,6 +29,7 @@ integração da API (PostgreSQL)").
 | #16         | Emissão de senha (número por fila e dia sob concorrência, RN-04), reclassificação (RN-01), histórico, `GET /parametros`, eventos de domínio | #95      |
 | #17         | Máquina de estados da senha (matriz 9 × 9 testada), versão, horários e evento `senha.status_alterado`                                       | #97      |
 | #18         | Filas, quadro RN-04 com métricas, chamar próxima com `SKIP LOCKED` e `Idempotency-Key`, rechamada e cancelamento                            | #99      |
+| #21         | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
 | #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                                   | #84      |
 | #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                             | —        |
 | #30 (parte) | Testes de integração no CI                                                                                                                  | —        |
@@ -40,28 +41,26 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue         | Dono           | Depende de    | Observação                                                                                                                      |
-| ------------- | -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| #21, #23      | Rildo          | —             | Alocação e atendimento; toda mudança de status pela `MaquinaSenha` (#17)                                                        |
-| #19, #20      | Nathan         | —             | Socket.IO (assinar `EventosDominio`) e endpoints públicos; o bloqueio da fila grava `fila.bloqueada`, que a chamada já respeita |
-| #22, #26, #28 | Nathan         | #21, #23      | Sugestão automática, encaminhamento, alertas                                                                                    |
-| #24           | Rildo          | #17, #18      | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido             |
-| #25           | Rildo          | #17, #21      | Desistência                                                                                                                     |
-| #27           | Rildo          | #23, #24, #25 | Indicadores                                                                                                                     |
-| #30 (resto)   | Rildo e Nathan | Etapas 5 a 8  | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                      |
+| Issue       | Dono           | Depende de    | Observação                                                                                                                      |
+| ----------- | -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| #23         | Rildo          | —             | Atendimento; toda mudança de status pela `MaquinaSenha` (#17); liberar a alocação no encerramento                               |
+| #19, #20    | Nathan         | —             | Socket.IO (assinar `EventosDominio`) e endpoints públicos; o bloqueio da fila grava `fila.bloqueada`, que a chamada já respeita |
+| #22         | Nathan         | —             | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                                            |
+| #26, #28    | Nathan         | #23           | Encaminhamento, alertas                                                                                                         |
+| #24         | Rildo          | #17, #18      | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido             |
+| #25         | Rildo          | #17, #21      | Desistência                                                                                                                     |
+| #27         | Rildo          | #23, #24, #25 | Indicadores                                                                                                                     |
+| #30 (resto) | Rildo e Nathan | Etapas 5 a 8  | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                      |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
 Campos que o contrato já devolve, mas que hoje saem fixos porque a tabela de origem ainda não
 existe. Quem criar a tabela troca o valor e remove a linha:
 
-| Campo                                             | Onde                                      | Valor hoje | Vem de                        |
-| ------------------------------------------------- | ----------------------------------------- | ---------- | ----------------------------- |
-| `Sala.ocupada`                                    | `apps/api/src/cadastros/salas.service.ts` | `false`    | alocação não liberada (#21)   |
-| `Estudante.ocupado`                               | `cadastros/estudantes.service.ts`         | `false`    | atendimento ativo (#23)       |
-| `Supervisor.ocupacaoAtual`                        | `cadastros/supervisores.service.ts`       | `0`        | alocações não liberadas (#21) |
-| `PacienteDetalhe.ausenciasUltimos90Dias`          | `cadastros/pacientes.service.ts`          | `0`        | ausência (#24)                |
-| Filtros `disponivel` de estudantes e supervisores | mesmos arquivos                           | só `ativo` | ocupação acima                |
+| Campo                                    | Onde                                | Valor hoje | Vem de                                                              |
+| ---------------------------------------- | ----------------------------------- | ---------- | ------------------------------------------------------------------- |
+| `PacienteDetalhe.ausenciasUltimos90Dias` | `cadastros/pacientes.service.ts`    | `0`        | ausência (#24)                                                      |
+| Filtro `disponivel` de supervisores      | `cadastros/supervisores.service.ts` | só `ativo` | comparar a ocupação com o limite de cada um (a alocação já confere) |
 
 ## 3. Limitações conhecidas e dívidas técnicas
 
@@ -94,16 +93,25 @@ existe. Quem criar a tabela troca o valor e remove a linha:
   simultâneas o pool esgota e tudo trava até o timeout. Para reproduzir, rode a integração com
   `&connection_limit=2` na `DATABASE_URL_TEST`.
 
+### RN-06 incompleta
+
+A RN-06 pede compatibilidade de "especialidade, nível de formação, habilitações e procedimentos
+autorizados". O modelo guarda o que o **estudante** tem, mas nada guarda o que o **atendimento**
+exige: a alocação confere só a especialidade (combinado no #101). Falta decidir de onde vêm as
+exigências (por exemplo, listas de habilitações e procedimentos na especialidade ou na triagem).
+
 ## 4. Decisões em aberto
 
-| Decisão                                                 | Onde           | Valor em uso                                     |
-| ------------------------------------------------------- | -------------- | ------------------------------------------------ |
-| Aviso de impacto ao editar cadastro em uso              | #79            | O formulário avisa sozinho (W-04)                |
-| Critério de duplicidade do estudante                    | #81            | Nome + especialidade, sem diferenciar maiúsculas |
-| Política da RN-12 (devolver à fila ou marcar ausência)  | #24            | A definir antes da rotina de tolerância          |
-| Confirmação do modelo de navegação                      | ADR-002        | Modelo A, painel lateral só na fila              |
-| Valores definitivos dos parâmetros da unidade           | `docs/01` §4.7 | 5, 25, 3, 90, 3 e 20 (Tabela 8)                  |
-| Base legal e prazo de retenção de triagem e atendimento | `docs/03` §6   | Sem rotina de retenção                           |
+| Decisão                                                  | Onde           | Valor em uso                                     |
+| -------------------------------------------------------- | -------------- | ------------------------------------------------ |
+| Aviso de impacto ao editar cadastro em uso               | #79            | O formulário avisa sozinho (W-04)                |
+| Critério de duplicidade do estudante                     | #81            | Nome + especialidade, sem diferenciar maiúsculas |
+| Política da RN-12 (devolver à fila ou marcar ausência)   | #24            | A definir antes da rotina de tolerância          |
+| Confirmação do modelo de navegação                       | ADR-002        | Modelo A, painel lateral só na fila              |
+| Exigências da RN-06 (nível, habilitações, procedimentos) | §2 acima       | Só a especialidade                               |
+| Horário dos turnos (RN-05, RN-07)                        | `docs/03` §3.2 | 07-12, 12-18, 18-22 (provisório)                 |
+| Valores definitivos dos parâmetros da unidade            | `docs/01` §4.7 | 5, 25, 3, 90, 3 e 20 (Tabela 8)                  |
+| Base legal e prazo de retenção de triagem e atendimento  | `docs/03` §6   | Sem rotina de retenção                           |
 
 ## 5. Front-end: o que fazer ao integrar com a API real
 

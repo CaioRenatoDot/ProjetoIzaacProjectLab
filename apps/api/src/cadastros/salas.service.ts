@@ -13,7 +13,15 @@ import { naoEncontrado, recursosInexistentes, vinculoAtivo } from './erros';
 
 const COM_RECURSOS = {
   recursos: { select: { recurso: { select: { id: true, nome: true } } } },
+  _count: { select: { alocacoes: { where: { liberadaEm: null } } } },
 } satisfies Prisma.SalaInclude;
+
+/** Pronta para alocar: disponível, ativa e sem alocação vigente (RN-09). */
+const LIVRE = {
+  situacao: 'DISPONIVEL',
+  ativo: true,
+  alocacoes: { none: { liberadaEm: null } },
+} satisfies Prisma.SalaWhereInput;
 
 type SalaComRecursos = Prisma.SalaGetPayload<{ include: typeof COM_RECURSOS }>;
 
@@ -24,8 +32,7 @@ function paraSala(sala: SalaComRecursos): Sala {
     caracteristicas: sala.caracteristicas ?? '',
     recursos: sala.recursos.map(({ recurso }) => recurso),
     situacao: sala.situacao,
-    // Ocupação depende da alocação (parte 2.2, #7); até ela existir, nenhuma sala está ocupada.
-    ocupada: false,
+    ocupada: sala._count.alocacoes > 0,
     ativo: sala.ativo,
   };
 }
@@ -40,8 +47,8 @@ export class SalasService {
       unidadeId,
       ...(query.busca ? { identificacao: { contains: query.busca, mode: 'insensitive' } } : {}),
       ...(query.recursoId ? { recursos: { some: { recursoId: query.recursoId } } } : {}),
-      ...(query.disponivel === true ? { situacao: 'DISPONIVEL', ativo: true } : {}),
-      ...(query.disponivel === false ? { NOT: { situacao: 'DISPONIVEL', ativo: true } } : {}),
+      ...(query.disponivel === true ? LIVRE : {}),
+      ...(query.disponivel === false ? { NOT: LIVRE } : {}),
     };
     const [dados, total] = await this.prisma.$transaction([
       this.prisma.sala.findMany({

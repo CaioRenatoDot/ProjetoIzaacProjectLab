@@ -117,6 +117,11 @@ composta. O catálogo de permissões é constante no código e exposto por `GET 
 - **supervisor_procedimento** — `supervisor_id`, `procedimento_id`
 - **supervisor_disponibilidade** — `supervisor_id`, `dia_semana`, `turno` (RN-07)
 
+> **Turnos (valor provisório, combinado no #101):** nenhum documento do grupo define o horário de
+> cada turno. A alocação usa, no fuso da unidade: MANHA 07h00-11h59, TARDE 12h00-17h59, NOITE
+> 18h00-21h59 (`apps/api/src/common/turno.ts`). Fora deles, ninguém está no turno. Confirmar com o
+> grupo.
+
 **sala** — `id`, `identificacao`, `unidade_id`, `caracteristicas`, `situacao`, `ativo`.
 
 - **sala_recurso** — `sala_id`, `recurso_id` (RN-09)
@@ -145,7 +150,8 @@ Uma fila ativa por especialidade e unidade — restrição única parcial.
 **`observacoes?`** (sensível), `concluida_em`, `criado_em`.
 Os três campos em negrito só saem da API em `SenhaDetalhe` (ADR-003).
 
-**senha** — agregado central.
+**senha** — agregado central. `recurso_faltante?` e `recurso_faltante_observacao?` registram
+o "Manter aguardando" de W-11 e só valem em AGUARDANDO_RECURSO (CHECK).
 `id`, `numero` (ex.: F014, único por dia/especialidade), `fila_id`, `triagem_id`, `paciente_id`,
 `prioridade`, `tipo_atendimento`, `status` (StatusSenha), `tem_agendamento_previo` (boolean,
 terceiro critério de RN-04), `chegada_em`, `chamada_em?`, `tolerancia_ate?`, `iniciada_em?`,

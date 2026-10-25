@@ -15,6 +15,7 @@ import { EventosDominio } from '../common/eventos/eventos-dominio';
 import { ErroDominio, ErroValidacao } from '../common/errors/erro-dominio';
 import { ParametrosService } from '../parametros/parametros.service';
 import { TriagemService } from '../triagem/triagem.service';
+import { paraAlocacao } from '../alocacao/alocacao.projecao';
 import { SenhaProjecao } from './senha-projecao.service';
 import { type SenhaCompleta, SenhasRepository } from './senhas.repository';
 
@@ -107,13 +108,13 @@ export class SenhasService {
 
   async consultarDetalhe(id: string, unidadeId: string): Promise<SenhaDetalhe> {
     const senha = await this.buscar(id, unidadeId);
+    const alocacao = await this.repositorio.alocacaoVigente(id);
     return {
       ...(await this.projecao.resumo(senha)),
       pacienteId: senha.pacienteId,
       pacienteNome: senha.paciente.nomeCompleto,
       triagem: await this.triagens.consultar(senha.triagemId, unidadeId),
-      // A alocação entra com a parte 7.1 (#21).
-      alocacao: null,
+      alocacao: alocacao ? paraAlocacao(alocacao) : null,
       senhaOrigemId: senha.senhaOrigemId,
     };
   }
