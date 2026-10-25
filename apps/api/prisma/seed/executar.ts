@@ -5,6 +5,7 @@ import { gerarHashSenha } from '../../src/auth/senha';
 import {
   ESPECIALIDADES,
   ESTUDANTES,
+  FILAS,
   HABILITACOES,
   PACIENTES,
   PERFIS,
@@ -113,6 +114,22 @@ export async function executarSeed(prisma: PrismaClient, senhaUsuarios: string):
           create: real(especialidade.recursos).map((recursoId) => ({ recursoId })),
         },
       },
+    });
+  }
+
+  for (const fila of FILAS) {
+    const especialidadeId = idReal.get(fila.especialidadeId) ?? fila.especialidadeId;
+    const ativa = await prisma.fila.findFirst({
+      where: { especialidadeId, unidadeId: UNIDADE, ativa: true },
+      select: { id: true },
+    });
+    if (ativa) {
+      continue;
+    }
+    await prisma.fila.upsert({
+      where: { id: fila.id },
+      create: { ...fila, especialidadeId, unidadeId: UNIDADE },
+      update: {},
     });
   }
 

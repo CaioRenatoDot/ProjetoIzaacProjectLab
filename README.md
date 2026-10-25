@@ -135,7 +135,8 @@ Usuários de teste (senha `senha-dev`, ou o valor de `SEED_SENHA_USUARIOS` no `.
 | `inativo@clinica.invalid`    | Conta inativa (o login responde como credencial inválida) |
 
 O seed cria também 5 especialidades, salas, estudantes, supervisores, cadastros de apoio e 24
-pacientes fictícios (o segundo com restrição por reincidência). As filas entram com a parte 2.2 (#7).
+pacientes fictícios (o segundo com restrição por reincidência). Cada especialidade tem uma fila ativa, com a letra da senha: Fisioterapia F, Psicologia P,
+Nutrição N, Odontologia O e Fonoaudiologia A.
 
 Testes de integração (banco real, só no `filas_test`; recriam o banco de teste do zero a cada
 execução e exigem o `docker compose up -d`):
