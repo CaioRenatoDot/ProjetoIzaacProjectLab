@@ -9,6 +9,8 @@ const prisma = new PrismaClient({
 });
 
 const UNIDADE = '01900000-0000-7000-8000-000000000001';
+let seq = 0;
+const unico = (base: string) => `${base} ${Date.now()}-${++seq}`;
 
 const erroDe = async (operacao: Promise<unknown>): Promise<string> => {
   try {
@@ -77,7 +79,7 @@ describe('restrições do banco e parâmetros da unidade (parte 2.3)', () => {
 
     it('aceita um valor por especialidade, que sobrepõe o geral', async () => {
       const especialidade = await prisma.especialidade.create({
-        data: { nome: 'Especialidade com SLA proprio', unidadeId: UNIDADE },
+        data: { nome: unico('Especialidade com SLA proprio'), unidadeId: UNIDADE },
       });
 
       await expect(
@@ -105,7 +107,7 @@ describe('restrições do banco e parâmetros da unidade (parte 2.3)', () => {
 
   describe('restrições das tabelas de acesso e cadastro', () => {
     it('recusa permissão fora do formato modulo:operacao', async () => {
-      const perfil = await prisma.perfil.create({ data: { nome: 'Perfil formato' } });
+      const perfil = await prisma.perfil.create({ data: { nome: unico('Perfil formato') } });
 
       expect(
         await erroDe(

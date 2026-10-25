@@ -7,6 +7,9 @@ const prisma = new PrismaClient({
   datasourceUrl: garantirBancoDeTeste(process.env.DATABASE_URL_TEST),
 });
 
+let seq = 0;
+const unico = (base: string) => `${base} ${Date.now()}-${++seq}`;
+
 const codigoDoErro = async (operacao: Promise<unknown>): Promise<string | undefined> => {
   try {
     await operacao;
@@ -19,10 +22,14 @@ const codigoDoErro = async (operacao: Promise<unknown>): Promise<string | undefi
 describe('schema de acesso, cadastros base e auditoria (parte 2.1)', () => {
   let unidadeId: string;
   let perfilId: string;
+  let nomePerfil: string;
+  let identificacao: string;
 
   beforeAll(async () => {
+    nomePerfil = unico('Perfil de teste');
+    identificacao = `${unico('usuario').replace(/\W/g, '')}@clinica.invalid`;
     unidadeId = (await prisma.unidade.create({ data: { nome: 'Unidade de teste' } })).id;
-    perfilId = (await prisma.perfil.create({ data: { nome: 'Perfil de teste' } })).id;
+    perfilId = (await prisma.perfil.create({ data: { nome: nomePerfil } })).id;
   });
 
   afterAll(async () => {
@@ -30,15 +37,15 @@ describe('schema de acesso, cadastros base e auditoria (parte 2.1)', () => {
   });
 
   it('gera identificadores UUID v7', async () => {
-    const { id } = await prisma.recurso.create({ data: { nome: 'Maca' } });
+    const { id } = await prisma.recurso.create({ data: { nome: unico('Maca') } });
 
     expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   });
 
   it('recusa paciente com documento repetido', async () => {
     const paciente = {
-      nomeCompleto: 'Paciente Ficticio Um',
-      documento: '00000000001',
+      nomeCompleto: unico('Paciente Ficticio Um'),
+      documento: `${Date.now()}${++seq}`.slice(-11),
       dataNascimento: new Date('1990-01-01'),
       vinculo: 'EXTERNO' as const,
       unidadeId,
@@ -53,16 +60,14 @@ describe('schema de acesso, cadastros base e auditoria (parte 2.1)', () => {
   });
 
   it('recusa perfil com nome repetido', async () => {
-    expect(await codigoDoErro(prisma.perfil.create({ data: { nome: 'Perfil de teste' } }))).toBe(
-      'P2002',
-    );
+    expect(await codigoDoErro(prisma.perfil.create({ data: { nome: nomePerfil } }))).toBe('P2002');
   });
 
   it('não exclui perfil com usuário vinculado', async () => {
     await prisma.usuario.create({
       data: {
         nome: 'Usuario Ficticio',
-        identificacao: 'usuario@clinica.invalid',
+        identificacao,
         senhaHash: 'hash-ficticio',
         perfilId,
         unidadeId,
@@ -75,7 +80,7 @@ describe('schema de acesso, cadastros base e auditoria (parte 2.1)', () => {
   it('remove as permissões junto com o perfil', async () => {
     const perfil = await prisma.perfil.create({
       data: {
-        nome: 'Perfil sem usuario',
+        nome: unico('Perfil sem usuario'),
         permissoes: { create: [{ permissao: 'fila:consultar' }] },
       },
     });
@@ -87,7 +92,7 @@ describe('schema de acesso, cadastros base e auditoria (parte 2.1)', () => {
 
   it('não exclui usuário referenciado pela auditoria', async () => {
     const usuario = await prisma.usuario.findUniqueOrThrow({
-      where: { identificacao: 'usuario@clinica.invalid' },
+      where: { identificacao },
     });
     await prisma.auditLog.create({
       data: { usuarioId: usuario.id, operacao: 'LOGIN', modulo: 'auth', entidade: 'usuario' },
@@ -97,7 +102,7 @@ describe('schema de acesso, cadastros base e auditoria (parte 2.1)', () => {
   });
 
   it('não exclui recurso usado por sala', async () => {
-    const recurso = await prisma.recurso.create({ data: { nome: 'Cadeira odontologica' } });
+    const recurso = await prisma.recurso.create({ data: { nome: unico('Cadeira odontologica') } });
     await prisma.sala.create({
       data: {
         identificacao: 'Sala 1',
