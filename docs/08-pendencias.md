@@ -27,6 +27,7 @@ integração da API (PostgreSQL)").
 | #14         | Pacientes, estudantes e supervisores                                                                                                        | #82      |
 | #15         | Triagem (RN-02, RN-03), lista sem campo clínico, detalhe auditado, `comFila` em especialidades                                              | #93      |
 | #16         | Emissão de senha (número por fila e dia sob concorrência, RN-04), reclassificação (RN-01), histórico, `GET /parametros`, eventos de domínio | #95      |
+| #17         | Máquina de estados da senha (matriz 9 × 9 testada), versão, horários e evento `senha.status_alterado`                                       | #97      |
 | #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                                   | #84      |
 | #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                             | —        |
 | #30 (parte) | Testes de integração no CI                                                                                                                  | —        |
@@ -38,14 +39,14 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue                   | Dono           | Depende de         | Observação                                                                                                          |
-| ----------------------- | -------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| #17, #18, #21, #23      | Rildo          | —                  | Máquina de estados, fila e chamada, alocação, atendimento                                                           |
-| #19, #20, #22, #26, #28 | Nathan         | #17, #18, #21, #23 | Socket.IO, endpoints públicos, sugestão automática, encaminhamento, alertas                                         |
-| #24                     | Rildo          | #17, #18           | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido |
-| #25                     | Rildo          | #17, #21           | Desistência                                                                                                         |
-| #27                     | Rildo          | #23, #24, #25      | Indicadores                                                                                                         |
-| #30 (resto)             | Rildo e Nathan | Etapas 5 a 8       | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico          |
+| Issue                   | Dono           | Depende de    | Observação                                                                                                          |
+| ----------------------- | -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------- |
+| #18, #21, #23           | Rildo          | —             | Fila e chamada, alocação, atendimento; toda mudança de status pela `MaquinaSenha` (#17)                             |
+| #19, #20, #22, #26, #28 | Nathan         | #18, #21, #23 | Socket.IO, endpoints públicos, sugestão automática, encaminhamento, alertas                                         |
+| #24                     | Rildo          | #17, #18      | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido |
+| #25                     | Rildo          | #17, #21      | Desistência                                                                                                         |
+| #27                     | Rildo          | #23, #24, #25 | Indicadores                                                                                                         |
+| #30 (resto)             | Rildo e Nathan | Etapas 5 a 8  | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico          |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
