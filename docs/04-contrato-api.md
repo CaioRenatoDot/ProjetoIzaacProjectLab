@@ -229,6 +229,10 @@ Socket.IO em três namespaces. A conexão autenticada envia o access token no `a
 
 ### `/filas` — autenticado, sala `especialidade:{id}`
 
+O serviço emite os eventos de domínio pelo `EventosDominio` (`apps/api/src/common/eventos`)
+depois do commit; os tipos estão em `EventosFila` de `@filas/contracts`. O gateway assina e
+repassa para a sala.
+
 | Evento                  | Corpo                                                            | Origem |
 | ----------------------- | ---------------------------------------------------------------- | ------ |
 | `senha.criada`          | `SenhaResumo`                                                    | UC-06  |

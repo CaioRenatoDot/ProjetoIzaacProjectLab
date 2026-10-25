@@ -7,5 +7,6 @@ import { TriagemService } from './triagem.service';
 @Module({
   controllers: [TriagemController],
   providers: [TriagemService, TriagemRepository],
+  exports: [TriagemService],
 })
 export class TriagemModule {}

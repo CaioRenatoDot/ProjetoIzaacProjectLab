@@ -179,7 +179,7 @@ Objetivo: paciente triado recebe senha posicionada na fila.
 | Parte | Descrição                                                                                          | Responsável    |
 | ----- | -------------------------------------------------------------------------------------------------- | -------------- |
 | 5.1   | API de triagem: prioridade legal automática (RN-02), justificativa obrigatória em urgência (RN-03) | Rildo ✅       |
-| 5.2   | Emissão de senha (ex.: F014) e reclassificação com justificativa (RN-01, RN-04)                    | Rildo          |
+| 5.2   | Emissão de senha (ex.: F014) e reclassificação com justificativa (RN-01, RN-04)                    | Rildo ✅       |
 | 5.3   | Tela W-06 · Busca de paciente e ficha de triagem                                                   | Caio Renato ✅ |
 | 5.4   | Tela W-07 · Senha emitida e modal de reclassificação                                               | Caio Renato ✅ |
 

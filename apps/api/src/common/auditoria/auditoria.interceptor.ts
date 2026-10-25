@@ -13,6 +13,7 @@ import {
   CHAVE_AUDITAR,
   CHAVE_LEITURA_SENSIVEL,
   CHAVE_REQUER,
+  type CondicaoSensivel,
   type OpcoesAuditoria,
 } from '../autorizacao/decorators';
 import { AuditoriaService } from './auditoria.service';
@@ -43,9 +44,11 @@ export class AuditoriaInterceptor implements NestInterceptor {
       CHAVE_AUDITAR,
       contexto.getHandler(),
     );
-    const sensivel =
-      this.reflector.get<boolean | undefined>(CHAVE_LEITURA_SENSIVEL, contexto.getHandler()) ??
-      false;
+    const marca = this.reflector.get<boolean | CondicaoSensivel | undefined>(
+      CHAVE_LEITURA_SENSIVEL,
+      contexto.getHandler(),
+    );
+    const sensivel = typeof marca === 'function' ? marca(requisicao) : (marca ?? false);
     const operacao: OperacaoAuditoria | undefined =
       opcoes?.operacao ??
       (sensivel ? 'CONSULTAR_SENSIVEL' : OPERACAO_POR_METODO[requisicao.method]);

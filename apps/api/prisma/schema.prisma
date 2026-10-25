@@ -514,13 +514,28 @@ model Fila {
   /// Sobrepõe o parâmetro sla_minutos da unidade.
   slaMinutos      Int?      @map("sla_minutos")
 
-  especialidade Especialidade @relation(fields: [especialidadeId], references: [id], onDelete: Restrict)
-  unidade       Unidade       @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
+  especialidade Especialidade   @relation(fields: [especialidadeId], references: [id], onDelete: Restrict)
+  unidade       Unidade         @relation(fields: [unidadeId], references: [id], onDelete: Restrict)
   senhas        Senha[]
   alertas       Alerta[]
+  contadores    ContadorSenha[]
 
   @@index([especialidadeId])
   @@map("fila")
+}
+
+/// Sequência do número da senha por fila e dia no fuso da unidade: o UPDATE ... RETURNING da
+/// emissão serializa emissões simultâneas. O índice único (fila, número, dia) da senha fica na
+/// migração, por ser de expressão.
+model ContadorSenha {
+  filaId String   @map("fila_id") @db.Uuid
+  dia    DateTime @db.Date
+  ultimo Int
+
+  fila Fila @relation(fields: [filaId], references: [id], onDelete: Restrict)
+
+  @@id([filaId, dia])
+  @@map("contador_senha")
 }
 
 model Triagem {
@@ -552,7 +567,7 @@ model Triagem {
 /// Agregado central: a passagem do paciente pela fila (Tabela 11).
 model Senha {
   id                   String          @id @default(uuid(7)) @db.Uuid
-  /// Letra da fila + 3 dígitos, único por dia e especialidade (parte 2.3 e Etapa 5).
+  /// Letra da fila + sequência do dia com 3 dígitos (F014), único por fila e dia (migração).
   numero               String
   filaId               String          @map("fila_id") @db.Uuid
   triagemId            String          @map("triagem_id") @db.Uuid
