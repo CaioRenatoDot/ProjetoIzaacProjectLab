@@ -187,6 +187,7 @@ export const ESPECIALIDADES = [
   {
     id: id(6, 1),
     nome: 'Fisioterapia',
+    letraSenha: 'F',
     exigeSupervisaoDocente: true,
     exigeValidacaoEncerramento: true,
     recursos: [R['Maca']!],
@@ -194,6 +195,7 @@ export const ESPECIALIDADES = [
   {
     id: id(6, 2),
     nome: 'Psicologia',
+    letraSenha: 'P',
     exigeSupervisaoDocente: true,
     exigeValidacaoEncerramento: false,
     recursos: [R['Divã']!],
@@ -201,6 +203,7 @@ export const ESPECIALIDADES = [
   {
     id: id(6, 3),
     nome: 'Nutrição',
+    letraSenha: 'N',
     exigeSupervisaoDocente: false,
     exigeValidacaoEncerramento: false,
     recursos: [R['Balança antropométrica']!],
@@ -208,6 +211,7 @@ export const ESPECIALIDADES = [
   {
     id: id(6, 4),
     nome: 'Odontologia',
+    letraSenha: 'O',
     exigeSupervisaoDocente: true,
     exigeValidacaoEncerramento: true,
     recursos: [R['Cadeira odontológica']!],
@@ -215,6 +219,7 @@ export const ESPECIALIDADES = [
   {
     id: id(6, 5),
     nome: 'Fonoaudiologia',
+    letraSenha: 'A',
     exigeSupervisaoDocente: false,
     exigeValidacaoEncerramento: true,
     recursos: [R['Cabine acústica']!, R['Espelho terapêutico']!],
@@ -222,6 +227,14 @@ export const ESPECIALIDADES = [
 ];
 
 const E = Object.fromEntries(ESPECIALIDADES.map((e) => [e.nome, e.id]));
+
+/** Uma fila ativa por especialidade (RF-04), com a letra do número da senha. */
+export const FILAS = ESPECIALIDADES.map((especialidade, i) => ({
+  id: id(11, i + 1),
+  especialidadeId: especialidade.id,
+  nome: especialidade.nome,
+  letraSenha: especialidade.letraSenha,
+}));
 
 export const SALAS = [
   {
