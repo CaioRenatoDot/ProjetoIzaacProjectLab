@@ -25,6 +25,7 @@ integração da API (PostgreSQL)").
 | #12         | Perfis, catálogo de permissões e usuários (inativar, desbloquear, redefinir senha)                                                | #76      |
 | #13         | Salas, especialidades e cadastros de apoio                                                                                        | #78      |
 | #14         | Pacientes, estudantes e supervisores                                                                                              | #82      |
+| #15         | Triagem (RN-02, RN-03), lista sem campo clínico, detalhe auditado, `comFila` em especialidades                                    | #93      |
 | #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                         | #84      |
 | #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                   | —        |
 | #30 (parte) | Testes de integração no CI                                                                                                        | —        |
@@ -38,8 +39,7 @@ as que não bloqueiam ninguém seguem com o Nathan:
 
 | Issue                   | Dono           | Depende de         | Observação                                                                                                          |
 | ----------------------- | -------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------- |
-| #15                     | Rildo          | —                  | Triagem (RN-02, RN-03); lacunas 1, 2, 4, 8 e 9 da triagem no `docs/07`                                              |
-| #16                     | Rildo          | #15                | Emissão e reclassificação de senha; inclui expor `justificativaMinCaracteres` (lacuna 1 da triagem)                 |
+| #16                     | Rildo          | —                  | Emissão e reclassificação de senha; inclui expor `justificativaMinCaracteres` (lacuna 1 da triagem)                 |
 | #17, #18, #21, #23      | Rildo          | —                  | Máquina de estados, fila e chamada, alocação, atendimento                                                           |
 | #19, #20, #22, #26, #28 | Nathan         | #17, #18, #21, #23 | Socket.IO, endpoints públicos, sugestão automática, encaminhamento, alertas                                         |
 | #24                     | Rildo          | #17, #18           | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido |
@@ -55,7 +55,6 @@ existe. Quem criar a tabela troca o valor e remove a linha:
 | Campo                                             | Onde                                      | Valor hoje | Vem de                        |
 | ------------------------------------------------- | ----------------------------------------- | ---------- | ----------------------------- |
 | `Sala.ocupada`                                    | `apps/api/src/cadastros/salas.service.ts` | `false`    | alocação não liberada (#21)   |
-| `Especialidade.filasVinculadas`                   | `cadastros/especialidades.service.ts`     | `0`        | fila (#7, #18)                |
 | `Estudante.ocupado`                               | `cadastros/estudantes.service.ts`         | `false`    | atendimento ativo (#23)       |
 | `Supervisor.ocupacaoAtual`                        | `cadastros/supervisores.service.ts`       | `0`        | alocações não liberadas (#21) |
 | `PacienteDetalhe.ausenciasUltimos90Dias`          | `cadastros/pacientes.service.ts`          | `0`        | ausência (#24)                |
@@ -110,9 +109,10 @@ trocar agora (🔧 lá):
 | Perfis (W-05)              | Cliente HTTP para `PerfisApi`; usar `usuariosAfetados` e o aviso `PERFIL_SEM_CONSULTA`                                                              | #12      |
 | Cadastros (W-03, W-04)     | Trocar o MSW; importar os schemas de `@filas/contracts` (`cadastros.ts`, `pessoas.ts`); inativar com `PATCH`; listas de apoio pelos endpoints novos | #13, #14 |
 | Trilha de auditoria (W-18) | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                             | #29      |
+| Triagem (W-06)             | Cliente HTTP para `TriagemApi`; importar `TriagemEntrada` e `prioridadeEfetiva` de `@filas/contracts`; especialidades por `?comFila=true`           | #15      |
 | Testes de ponta a ponta    | Entrar com os usuários do seed (`<perfil>@clinica.invalid`, senha `senha-dev`, README)                                                              | #10, #9  |
 
-Ainda dependem do back: triagem e senha (W-06, W-07: #15, #16), painel de fila e telão (W-08 a
+Ainda dependem do back: emissão e reclassificação de senha (W-07: #16), painel de fila e telão (W-08 a
 W-10: #17 a #20), alocação e atendimento (W-11 a W-13: #21 a #23), ausências (W-15, W-16: #24,
 #25), indicadores (W-17: #27), alertas (W-18: #28) e o estado real da conexão Socket.IO.
 

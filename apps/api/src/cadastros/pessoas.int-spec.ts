@@ -230,9 +230,11 @@ describe('cadastros de paciente, estudante e supervisor (#14)', () => {
         .expect(200);
 
       const filtrados = corpo<RespostaPaginada<Estudante>>(
-        await comToken(api().get('/api/v1/estudantes?turno=NOITE&nivelFormacao=residência')).expect(
-          200,
-        ),
+        await comToken(
+          api().get(
+            `/api/v1/estudantes?turno=NOITE&nivelFormacao=residência&busca=${encodeURIComponent(estudante.nome)}`,
+          ),
+        ).expect(200),
       );
       expect(filtrados.dados.map((e) => e.id)).toContain(estudante.id);
     });
