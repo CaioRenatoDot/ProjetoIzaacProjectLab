@@ -123,15 +123,6 @@ export class AlocacaoRepository {
     return tx.alocacao.create({ data: dados, include: ALOCACAO_COMPLETA });
   }
 
-  /** Alocar não muda o status (docs/03 §5), mas muda a senha: a versão sobe. */
-  async incrementarVersao(tx: Transacao, senhaId: string, versao: number): Promise<boolean> {
-    const { count } = await tx.senha.updateMany({
-      where: { id: senhaId, versao },
-      data: { versao: { increment: 1 } },
-    });
-    return count === 1;
-  }
-
   registrarRecursoFaltante(
     tx: Transacao,
     senhaId: string,

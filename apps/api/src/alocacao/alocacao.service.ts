@@ -272,7 +272,8 @@ export class AlocacaoService {
       }
       throw erro;
     }
-    if (!(await this.repositorio.incrementarVersao(tx, senhaId, senha.versao))) {
+    // Alocar não muda o status (docs/03 §5), mas muda a senha: a versão sobe.
+    if (!(await this.senhas.incrementarVersao(tx, senhaId, senha.versao))) {
       throw await this.projecao.versaoDesatualizada(senhaId, usuario.unidadeId, tx);
     }
     return paraAlocacao(alocacao);
