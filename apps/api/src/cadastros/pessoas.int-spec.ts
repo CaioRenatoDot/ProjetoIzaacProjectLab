@@ -88,7 +88,7 @@ describe('cadastros de paciente, estudante e supervisor (#14)', () => {
     it('cadastra com documento só em dígitos e iniciais calculadas no servidor', async () => {
       const resposta = await novoPaciente({
         nomeCompleto: 'Maria Aparecida da Silva',
-        documento: `${documentoUnico().slice(0, 3)}.${documentoUnico().slice(-3)}-99`,
+        documento: documentoUnico().replace(/^(\d{3})(\d{3})(\d{3})/, '$1.$2.$3-'),
       }).expect(201);
 
       const paciente = corpo<Paciente>(resposta);

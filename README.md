@@ -114,6 +114,28 @@ pnpm contract:lint            # valida docs/api/openapi.yaml
 pnpm format                   # formata com Prettier
 ```
 
+Dados fictícios para desenvolver (idempotente: pode rodar de novo sem duplicar nem desfazer o que
+foi editado pela tela):
+
+```bash
+pnpm --filter api prisma db seed
+```
+
+Usuários de teste (senha `senha-dev`, ou o valor de `SEED_SENHA_USUARIOS` no `.env`):
+
+| Usuário                      | Perfil                                                    |
+| ---------------------------- | --------------------------------------------------------- |
+| `admin@clinica.invalid`      | Administrador (todas as permissões, perfil do sistema)    |
+| `recepcao@clinica.invalid`   | Recepção                                                  |
+| `triagem@clinica.invalid`    | Triagem                                                   |
+| `estudante@clinica.invalid`  | Estudante                                                 |
+| `supervisao@clinica.invalid` | Supervisão                                                |
+| `gestao@clinica.invalid`     | Gestão                                                    |
+| `inativo@clinica.invalid`    | Conta inativa (o login responde como credencial inválida) |
+
+O seed cria também 5 especialidades, salas, estudantes, supervisores, cadastros de apoio e 24
+pacientes fictícios (o segundo com restrição por reincidência). As filas entram com a parte 2.2 (#7).
+
 Testes de integração (banco real, só no `filas_test`; recriam o banco de teste do zero a cada
 execução e exigem o `docker compose up -d`):
 
