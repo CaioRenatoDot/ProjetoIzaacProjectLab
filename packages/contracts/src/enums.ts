@@ -36,6 +36,13 @@ export const EnquadramentoLegal = z.enum([
 ]);
 export type EnquadramentoLegal = z.infer<typeof EnquadramentoLegal>;
 
+/** Desfecho do atendimento (UC-13); encaminhamento encadeia para o registro (T-14). */
+export const Desfecho = z.enum(
+  ['ALTA', 'RETORNO_AGENDADO', 'ENCAMINHAMENTO_INTERNO', 'ENCAMINHAMENTO_EXTERNO'],
+  { error: 'Escolha o desfecho.' },
+);
+export type Desfecho = z.infer<typeof Desfecho>;
+
 export const VinculoPaciente = z.enum(['EXTERNO', 'ALUNO', 'SERVIDOR']);
 export type VinculoPaciente = z.infer<typeof VinculoPaciente>;
 
