@@ -32,6 +32,7 @@ integração da API (PostgreSQL)").
 | #21         | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
 | #23         | Atendimento: iniciar, pausar, retomar, encerrar (libera a alocação), validação RN-11 com recusa e reenvio, tempo efetivo                    | #103     |
 | #25         | Desistência (só AGUARDANDO e EM_ATENDIMENTO), libera recursos, nunca grava ausência                                                         | #105     |
+| #24         | Rotina de tolerância (RN-12: volta à fila uma vez, depois ausência), ausência manual, restrição por reincidência (RN-13)                    | #107     |
 | #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                                   | #84      |
 | #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                             | —        |
 | #30 (parte) | Testes de integração no CI                                                                                                                  | —        |
@@ -48,8 +49,7 @@ as que não bloqueiam ninguém seguem com o Nathan:
 | #19, #20    | Nathan         | —            | Socket.IO (assinar `EventosDominio`) e endpoints públicos; o bloqueio da fila grava `fila.bloqueada`, que a chamada já respeita |
 | #22         | Nathan         | —            | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                                            |
 | #26, #28    | Nathan         | —            | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                                      |
-| #24         | Rildo          | #17, #18     | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido             |
-| #27         | Rildo          | #24          | Indicadores                                                                                                                     |
+| #27         | Rildo          | —            | Indicadores                                                                                                                     |
 | #30 (resto) | Rildo e Nathan | Etapas 5 a 8 | Teste que exige RN-01 a RN-13 no nome dos casos e teste de contrato que reprova listagem com campo clínico                      |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
@@ -57,10 +57,9 @@ as que não bloqueiam ninguém seguem com o Nathan:
 Campos que o contrato já devolve, mas que hoje saem fixos porque a tabela de origem ainda não
 existe. Quem criar a tabela troca o valor e remove a linha:
 
-| Campo                                    | Onde                                | Valor hoje | Vem de                                                              |
-| ---------------------------------------- | ----------------------------------- | ---------- | ------------------------------------------------------------------- |
-| `PacienteDetalhe.ausenciasUltimos90Dias` | `cadastros/pacientes.service.ts`    | `0`        | ausência (#24)                                                      |
-| Filtro `disponivel` de supervisores      | `cadastros/supervisores.service.ts` | só `ativo` | comparar a ocupação com o limite de cada um (a alocação já confere) |
+| Campo                               | Onde                                | Valor hoje | Vem de                                                              |
+| ----------------------------------- | ----------------------------------- | ---------- | ------------------------------------------------------------------- |
+| Filtro `disponivel` de supervisores | `cadastros/supervisores.service.ts` | só `ativo` | comparar a ocupação com o limite de cada um (a alocação já confere) |
 
 ## 3. Limitações conhecidas e dívidas técnicas
 
@@ -107,17 +106,18 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 
 ## 4. Decisões em aberto
 
-| Decisão                                                  | Onde           | Valor em uso                                     |
-| -------------------------------------------------------- | -------------- | ------------------------------------------------ |
-| Aviso de impacto ao editar cadastro em uso               | #79            | O formulário avisa sozinho (W-04)                |
-| Critério de duplicidade do estudante                     | #81            | Nome + especialidade, sem diferenciar maiúsculas |
-| Política da RN-12 (devolver à fila ou marcar ausência)   | #24            | A definir antes da rotina de tolerância          |
-| Confirmação do modelo de navegação                       | ADR-002        | Modelo A, painel lateral só na fila              |
-| Exigências da RN-06 (nível, habilitações, procedimentos) | §2 acima       | Só a especialidade                               |
-| Horário dos turnos (RN-05, RN-07)                        | `docs/03` §3.2 | 07-12, 12-18, 18-22 (provisório)                 |
-| Quem valida o encerramento (RN-11)                       | #103           | Quem tem `atendimento:validar`                   |
-| Valores definitivos dos parâmetros da unidade            | `docs/01` §4.7 | 5, 25, 3, 90, 3 e 20 (Tabela 8)                  |
-| Base legal e prazo de retenção de triagem e atendimento  | `docs/03` §6   | Sem rotina de retenção                           |
+| Decisão                                                  | Onde           | Valor em uso                                               |
+| -------------------------------------------------------- | -------------- | ---------------------------------------------------------- |
+| Aviso de impacto ao editar cadastro em uso               | #79            | O formulário avisa sozinho (W-04)                          |
+| Critério de duplicidade do estudante                     | #81            | Nome + especialidade, sem diferenciar maiúsculas           |
+| Política da RN-12 (devolver à fila ou marcar ausência)   | #107           | Volta à fila uma vez; na segunda expiração, ausência       |
+| Confirmação do modelo de navegação                       | ADR-002        | Modelo A, painel lateral só na fila                        |
+| Exigências da RN-06 (nível, habilitações, procedimentos) | §2 acima       | Só a especialidade                                         |
+| Horário dos turnos (RN-05, RN-07)                        | `docs/03` §3.2 | 07-12, 12-18, 18-22 (provisório)                           |
+| Quem valida o encerramento (RN-11)                       | #103           | Quem tem `atendimento:validar`                             |
+| Efeito e prazo da restrição (RN-13)                      | #107           | Temporária até hoje + `janela_reincidencia_dias`; só aviso |
+| Valores definitivos dos parâmetros da unidade            | `docs/01` §4.7 | 5, 25, 3, 90, 3 e 20 (Tabela 8)                            |
+| Base legal e prazo de retenção de triagem e atendimento  | `docs/03` §6   | Sem rotina de retenção                                     |
 
 ## 5. Front-end: o que fazer ao integrar com a API real
 
@@ -135,10 +135,10 @@ trocar agora (🔧 lá):
 | Senha (W-07)                         | `POST /senhas`, `PATCH /senhas/{id}/prioridade` (ler `senha.prioridade` e `senha.versao`), histórico; mínimo da justificativa por `GET /parametros` | #16      |
 | Painel de fila (W-08)                | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                                          | #18      |
 | Alocação e atendimento (W-11 a W-13) | Trocar o MSW pelos endpoints de alocação e atendimento; `versao` é sempre a da senha; após `exigeEncaminhamento`, seguir para a W-14                | #21, #23 |
+| Ausências (W-15, W-16)               | Trocar o MSW por `POST /senhas/{id}/ausencia` e `/desistencia`; ligar `ausencia.registrada` (via #19) às ausências automáticas                      | #24, #25 |
 | Testes de ponta a ponta              | Entrar com os usuários do seed (`<perfil>@clinica.invalid`, senha `senha-dev`, README)                                                              | #10, #9  |
 
-Ainda dependem do back: tempo real do painel e telão (W-08 a W-10: #19, #20), ausências (W-15, W-16: #24,
-#25), indicadores (W-17: #27), alertas (W-18: #28) e o estado real da conexão Socket.IO.
+Ainda dependem do back: tempo real do painel e telão (W-08 a W-10: #19, #20), indicadores (W-17: #27), alertas (W-18: #28) e o estado real da conexão Socket.IO.
 
 Também ficam com o front: rota `/acesso` com tela própria, TanStack Query na tela de perfis,
 formulário de perfil com React Hook Form e o schema do contrato, layout de impressão da senha,

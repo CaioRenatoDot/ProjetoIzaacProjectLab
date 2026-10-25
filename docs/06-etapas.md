@@ -216,7 +216,7 @@ Objetivo: tratar o paciente que não comparece e o que desiste.
 
 | Parte  | Descrição                                                                                      | Responsável |
 | ------ | ---------------------------------------------------------------------------------------------- | ----------- |
-| 8.1    | Rotina de expiração da tolerância, ausência manual e restrição por reincidência (RN-12, RN-13) | Rildo       |
+| 8.1    | Rotina de expiração da tolerância, ausência manual e restrição por reincidência (RN-12, RN-13) | Rildo ✅    |
 | 8.2    | Registro de desistência, separado de ausência                                                  | Rildo ✅    |
 | 🔄 8.3 | Telas W-15 · Ausências e W-16 · Desistência                                                    | Thalita     |
 

@@ -98,8 +98,12 @@ export class PacientesService {
     const vigente = restricaoVigente(paciente);
     return {
       ...paraPaciente(paciente),
-      // O registro de ausência é da parte 2.2 (#7); até ele existir, a contagem é zero.
-      ausenciasUltimos90Dias: 0,
+      ausenciasUltimos90Dias: await this.prisma.ausencia.count({
+        where: {
+          senha: { pacienteId: id },
+          registradoEm: { gte: new Date(Date.now() - 90 * 86_400_000) },
+        },
+      }),
       avisos: vigente
         ? [
             {
