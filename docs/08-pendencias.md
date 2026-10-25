@@ -30,6 +30,7 @@ integração da API (PostgreSQL)").
 | #17         | Máquina de estados da senha (matriz 9 × 9 testada), versão, horários e evento `senha.status_alterado`                                       | #97      |
 | #18         | Filas, quadro RN-04 com métricas, chamar próxima com `SKIP LOCKED` e `Idempotency-Key`, rechamada e cancelamento                            | #99      |
 | #21         | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
+| #23         | Atendimento: iniciar, pausar, retomar, encerrar (libera a alocação), validação RN-11 com recusa e reenvio, tempo efetivo                    | #103     |
 | #29         | Consulta, detalhe e exportação CSV da trilha de auditoria                                                                                   | #84      |
 | #9          | Seed fictício de acesso, cadastros e filas (usuários no README)                                                                             | —        |
 | #30 (parte) | Testes de integração no CI                                                                                                                  | —        |
@@ -43,10 +44,9 @@ as que não bloqueiam ninguém seguem com o Nathan:
 
 | Issue       | Dono           | Depende de    | Observação                                                                                                                      |
 | ----------- | -------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| #23         | Rildo          | —             | Atendimento; toda mudança de status pela `MaquinaSenha` (#17); liberar a alocação no encerramento                               |
 | #19, #20    | Nathan         | —             | Socket.IO (assinar `EventosDominio`) e endpoints públicos; o bloqueio da fila grava `fila.bloqueada`, que a chamada já respeita |
 | #22         | Nathan         | —             | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                                            |
-| #26, #28    | Nathan         | #23           | Encaminhamento, alertas                                                                                                         |
+| #26, #28    | Nathan         | —             | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                                      |
 | #24         | Rildo          | #17, #18      | Ausência e restrição por reincidência; política "devolver à fila ou marcar ausência" (RN-12) sem parâmetro definido             |
 | #25         | Rildo          | #17, #21      | Desistência                                                                                                                     |
 | #27         | Rildo          | #23, #24, #25 | Indicadores                                                                                                                     |
@@ -100,6 +100,11 @@ autorizados". O modelo guarda o que o **estudante** tem, mas nada guarda o que o
 exige: a alocação confere só a especialidade (combinado no #101). Falta decidir de onde vêm as
 exigências (por exemplo, listas de habilitações e procedimentos na especialidade ou na triagem).
 
+### Motivo obrigatório da pausa
+
+O `openapi.yaml` diz que o motivo da pausa é obrigatório "quando o protocolo do serviço exige", mas
+o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcional.
+
 ## 4. Decisões em aberto
 
 | Decisão                                                  | Onde           | Valor em uso                                     |
@@ -110,6 +115,7 @@ exigências (por exemplo, listas de habilitações e procedimentos na especialid
 | Confirmação do modelo de navegação                       | ADR-002        | Modelo A, painel lateral só na fila              |
 | Exigências da RN-06 (nível, habilitações, procedimentos) | §2 acima       | Só a especialidade                               |
 | Horário dos turnos (RN-05, RN-07)                        | `docs/03` §3.2 | 07-12, 12-18, 18-22 (provisório)                 |
+| Quem valida o encerramento (RN-11)                       | #103           | Quem tem `atendimento:validar`                   |
 | Valores definitivos dos parâmetros da unidade            | `docs/01` §4.7 | 5, 25, 3, 90, 3 e 20 (Tabela 8)                  |
 | Base legal e prazo de retenção de triagem e atendimento  | `docs/03` §6   | Sem rotina de retenção                           |
 
@@ -118,19 +124,20 @@ exigências (por exemplo, listas de habilitações e procedimentos na especialid
 Detalhe por tela em [`07-pendencias-integracao.md`](07-pendencias-integracao.md). Pronto para
 trocar agora (🔧 lá):
 
-| Tela                       | Troca                                                                                                                                               | API      |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| Login e sessão (W-01)      | Rodar com `NEXT_PUBLIC_API_MOCK=false`; ler `minutosRestantes` do bloqueio; apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login)             | #10      |
-| Menu, home e telas         | Conferir as permissões contra `CATALOGO_PERMISSOES` de `@filas/contracts`                                                                           | #11      |
-| Perfis (W-05)              | Cliente HTTP para `PerfisApi`; usar `usuariosAfetados` e o aviso `PERFIL_SEM_CONSULTA`                                                              | #12      |
-| Cadastros (W-03, W-04)     | Trocar o MSW; importar os schemas de `@filas/contracts` (`cadastros.ts`, `pessoas.ts`); inativar com `PATCH`; listas de apoio pelos endpoints novos | #13, #14 |
-| Trilha de auditoria (W-18) | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                             | #29      |
-| Triagem (W-06)             | Cliente HTTP para `TriagemApi`; importar `TriagemEntrada` e `prioridadeEfetiva` de `@filas/contracts`; especialidades por `?comFila=true`           | #15      |
-| Senha (W-07)               | `POST /senhas`, `PATCH /senhas/{id}/prioridade` (ler `senha.prioridade` e `senha.versao`), histórico; mínimo da justificativa por `GET /parametros` | #16      |
-| Painel de fila (W-08)      | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                                          | #18      |
-| Testes de ponta a ponta    | Entrar com os usuários do seed (`<perfil>@clinica.invalid`, senha `senha-dev`, README)                                                              | #10, #9  |
+| Tela                                 | Troca                                                                                                                                               | API      |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Login e sessão (W-01)                | Rodar com `NEXT_PUBLIC_API_MOCK=false`; ler `minutosRestantes` do bloqueio; apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login)             | #10      |
+| Menu, home e telas                   | Conferir as permissões contra `CATALOGO_PERMISSOES` de `@filas/contracts`                                                                           | #11      |
+| Perfis (W-05)                        | Cliente HTTP para `PerfisApi`; usar `usuariosAfetados` e o aviso `PERFIL_SEM_CONSULTA`                                                              | #12      |
+| Cadastros (W-03, W-04)               | Trocar o MSW; importar os schemas de `@filas/contracts` (`cadastros.ts`, `pessoas.ts`); inativar com `PATCH`; listas de apoio pelos endpoints novos | #13, #14 |
+| Trilha de auditoria (W-18)           | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                             | #29      |
+| Triagem (W-06)                       | Cliente HTTP para `TriagemApi`; importar `TriagemEntrada` e `prioridadeEfetiva` de `@filas/contracts`; especialidades por `?comFila=true`           | #15      |
+| Senha (W-07)                         | `POST /senhas`, `PATCH /senhas/{id}/prioridade` (ler `senha.prioridade` e `senha.versao`), histórico; mínimo da justificativa por `GET /parametros` | #16      |
+| Painel de fila (W-08)                | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                                          | #18      |
+| Alocação e atendimento (W-11 a W-13) | Trocar o MSW pelos endpoints de alocação e atendimento; `versao` é sempre a da senha; após `exigeEncaminhamento`, seguir para a W-14                | #21, #23 |
+| Testes de ponta a ponta              | Entrar com os usuários do seed (`<perfil>@clinica.invalid`, senha `senha-dev`, README)                                                              | #10, #9  |
 
-Ainda dependem do back: tempo real do painel e telão (W-08 a W-10: #19, #20), alocação e atendimento (W-11 a W-13: #21 a #23), ausências (W-15, W-16: #24,
+Ainda dependem do back: tempo real do painel e telão (W-08 a W-10: #19, #20), ausências (W-15, W-16: #24,
 #25), indicadores (W-17: #27), alertas (W-18: #28) e o estado real da conexão Socket.IO.
 
 Também ficam com o front: rota `/acesso` com tela própria, TanStack Query na tela de perfis,

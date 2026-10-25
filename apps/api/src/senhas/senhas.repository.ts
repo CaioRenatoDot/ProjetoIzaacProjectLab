@@ -126,6 +126,15 @@ export class SenhasRepository {
     return count === 1;
   }
 
+  /** Mudança na senha que não é de status (alocação, reenvio de encerramento): só a versão sobe. */
+  async incrementarVersao(tx: Transacao, senhaId: string, versao: number): Promise<boolean> {
+    const { count } = await tx.senha.updateMany({
+      where: { id: senhaId, versao },
+      data: { versao: { increment: 1 } },
+    });
+    return count === 1;
+  }
+
   registrarReclassificacao(
     tx: Transacao,
     dados: {

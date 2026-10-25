@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AlocacaoModule } from './alocacao/alocacao.module';
+import { AtendimentosModule } from './atendimentos/atendimentos.module';
 import { AuditoriaConsultaModule } from './auditoria/auditoria-consulta.module';
 import { AuthModule } from './auth/auth.module';
 import { CadastrosModule } from './cadastros/cadastros.module';
@@ -50,6 +51,7 @@ import { TriagemModule } from './triagem/triagem.module';
     FilasModule,
     AlocacaoModule,
     RelogioModule,
+    AtendimentosModule,
   ],
 })
 export class AppModule {}
