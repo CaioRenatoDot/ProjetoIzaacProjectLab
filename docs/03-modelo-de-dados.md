@@ -168,9 +168,9 @@ CREATE INDEX idx_senha_ordem ON senha (fila_id, status, prioridade DESC, chegada
 
 **alocacao** — `id`, `senha_id`, `estudante_id`, `supervisor_id?`, `sala_id`, `confirmada_em`,
 `confirmada_por`, `liberada_em?`. Supervisor nulo apenas quando a especialidade não exige
-supervisão docente (RN-07). Restrição única parcial garante que estudante, supervisor e sala não
-tenham duas alocações não liberadas ao mesmo tempo — é a RN-05 no nível do banco, não só no
-service.
+supervisão docente (RN-07). Restrição única parcial garante que estudante e sala não
+tenham duas alocações não liberadas ao mesmo tempo — é a RN-05 e a RN-09 no nível do banco, não só
+no service. O supervisor fica de fora: acompanha vários estudantes até o limite da RN-08.
 
 **atendimento** — `id`, `senha_id` (único), `alocacao_id`, `iniciado_em`, `encerrado_em?`,
 `desfecho?`, `observacoes?` (sensível), `validacao_exigida` (copiado da especialidade no início,
@@ -220,7 +220,7 @@ por restrição:
 | Estudante sem duas alocações ativas        | índice único parcial `WHERE liberada_em IS NULL`                                                                                                     | RN-05  |
 | Sala sem duas alocações ativas             | índice único parcial `WHERE liberada_em IS NULL`                                                                                                     | RN-09  |
 | Justificativa presente na reclassificação  | `CHECK (length(trim(justificativa)) > 0)`; o tamanho mínimo é validado no service pelo parâmetro `justificativa_min_caracteres`, editável (Tabela 8) | RN-01  |
-| Justificativa clínica presente em urgência | `CHECK (prioridade <> 'URGENTE' OR justificativa_clinica IS NOT NULL)`                                                                               | RN-03  |
+| Justificativa clínica presente em urgência | `CHECK (prioridade <> 'URGENTE' OR length(trim(justificativa_clinica)) > 0)`                                                                         | RN-03  |
 | Limite de estudantes por supervisor        | verificado no service, dentro da transação de alocação                                                                                               | RN-08  |
 | Auditoria imutável                         | `REVOKE UPDATE, DELETE ON audit_log`                                                                                                                 | RNF-05 |
 | Uma fila ativa por especialidade           | índice único parcial `WHERE ativa`                                                                                                                   | RF-04  |
@@ -228,6 +228,9 @@ por restrição:
 O limite de supervisor (RN-08) e o tamanho mínimo da justificativa (RN-01) não viram restrição
 declarativa, porque dependem de contagem ou de parâmetro editável da unidade. O limite fica dentro da
 mesma transação que cria a alocação, com bloqueio na linha do supervisor.
+
+Os CHECKs da RN-01 e da RN-03 repetem uma validação que o service já faz. Se algum deles disparar,
+o filtro de erros responde 422 `VALIDACAO` com o campo (`common/errors/restricoes-banco.ts`), e não 500.
 
 ## 5. Máquina de estados da senha (P-01)
 

@@ -42,6 +42,14 @@ class TesteController {
     });
   }
 
+  @Get('check')
+  check(): never {
+    throw new Prisma.PrismaClientUnknownRequestError(
+      'PostgresError { code: "23514", message: "new row for relation \\"triagem\\" violates check constraint \\"triagem_urgente_justificativa_check\\"" }',
+      { clientVersion: '6.19.3' },
+    );
+  }
+
   @Get('inesperado')
   inesperado(): never {
     throw new Error('segredo interno: senha do banco');
@@ -107,6 +115,15 @@ describe('ProblemaFilter (HTTP)', () => {
     const resposta = await request(contexto.servidor).get('/api/v1/teste/prisma').expect(409);
 
     expect(corpoDe(resposta).codigo).toBe('DUPLICIDADE');
+  });
+
+  it('RN-03 CHECK violado no banco vira 422 VALIDACAO com o campo, e não 500', async () => {
+    const resposta = await request(contexto.servidor).get('/api/v1/teste/check').expect(422);
+
+    expect(corpoDe(resposta)).toMatchObject({
+      codigo: 'VALIDACAO',
+      campos: [{ campo: 'justificativaClinica' }],
+    });
   });
 
   it('exceção inesperada vira 500 genérico sem vazar a mensagem, e a stack vai para o log', async () => {
