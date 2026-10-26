@@ -6,6 +6,7 @@ import { handlersCadastros, handlersCatalogos } from './cadastros';
 import { handlers } from './handlers';
 import { handlersAusencias } from './ausencias';
 import { handlersAlocacao } from './alocacao';
+import { handlersAtendimentos } from './atendimentos';
 import { handlersFilas } from './filas';
 
 export const worker = setupWorker(
@@ -14,6 +15,7 @@ export const worker = setupWorker(
   ...handlersCatalogos,
   ...handlersFilas,
   ...handlersAlocacao,
+  ...handlersAtendimentos,
   ...handlersAusencias,
 
   ...handlersAuditoria,
