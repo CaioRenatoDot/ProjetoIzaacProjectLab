@@ -198,10 +198,11 @@ Hoje quem responde é a simulação `apps/web/src/mocks/alocacao.ts`, sobre as s
 indisponível na confirmação (409 `RECURSO_INDISPONIVEL`); Nutrição não exige supervisor; N106 não
 tem sala compatível.
 
-| Status | Provisório                                                                                                              | Onde                             | Destrava                            | Troca a fazer                                                             |
-| ------ | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
-| ⏳     | Sugestões, confirmação com `Idempotency-Key` e "Manter aguardando recurso" sobre MSW, com dados fictícios               | `apps/web/src/mocks/alocacao.ts` | #21 (API, parte 7.1)                | Conferir a tela contra a API real; apagar os handlers                     |
-| ⏳     | "Trocar recurso" de uma alocação já confirmada (`PUT /senhas/{id}/alocacao`, "Reavaliar alocação" da T-09) não tem tela | —                                | decisão do time (não entrou na #44) | Definir onde a reavaliação acontece; ver também a lacuna 4 do atendimento |
+| Status | Provisório                                                                                                                      | Onde                                                  | Destrava                            | Troca a fazer                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| ⏳     | Sugestões, confirmação com `Idempotency-Key` e "Manter aguardando recurso" sobre MSW, com dados fictícios                       | `apps/web/src/mocks/alocacao.ts`                      | #21 (API, parte 7.1)                | Conferir a tela contra a API real; apagar os handlers                                                |
+| ⏳     | Sugestão do sistema destacada e pré-escolhida em cada bloco (#45): a tela usa `sugestao` como vem, sem reordenar nem recalcular | `apps/web/src/components/alocacao/bloco-alocacao.tsx` | #22 (API, parte 7.5)                | Conferir com a API real que `sugestao` vem apta e fora de `alternativas`; a tela já tolera repetição |
+| ⏳     | "Trocar recurso" de uma alocação já confirmada (`PUT /senhas/{id}/alocacao`, "Reavaliar alocação" da T-09) não tem tela         | —                                                     | decisão do time (não entrou na #44) | Definir onde a reavaliação acontece; ver também a lacuna 4 do atendimento                            |
 
 ### Lacunas do contrato da alocação (decisão antes de integrar com a #21)
 
