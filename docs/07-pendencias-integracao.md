@@ -30,6 +30,7 @@ indicada e remove o item deste arquivo no mesmo PR.
 | #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                              | [Painel de fila](#painel-de-fila-w-08-41)                 |
 | #21 (7.1, API de alocação)                      | Alocação de recursos (W-11)                        | [Alocação](#alocação-de-recursos-w-11-43)                 |
 | #23 (7.2, ciclo do atendimento)                 | Atendimento e encerramento (W-12, W-13)            | [Atendimento](#atendimento-e-encerramento-w-12-e-w-13-44) |
+| #26 (9.1, API de encaminhamento)                | Encaminhamento interno e externo (W-14)            | [Encaminhamento](#encaminhamento-w-14-46)                 |
 
 ## Sessão e acesso
 
@@ -102,8 +103,8 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 ## Rotas ainda inexistentes
 
 Os links do menu (`apps/web/src/lib/modulos.ts`) e das ações da home apontam para rotas que
-outras issues criam: `/chamada`, `/encaminhamento` (#46) e `/indicadores` (#48; hoje só existe
-`/indicadores/alertas`). Até lá, respondem 404.
+outras issues criam: `/chamada` e `/indicadores` (#48; hoje só existe `/indicadores/alertas`). Até
+lá, respondem 404. `/encaminhamento` sem `?atendimento=` explica que o registro parte do encerramento.
 
 No painel de fila (W-08, #41), "Abrir atendimento" (em atendimento, pausado ou pendente) e
 "Iniciar atendimento" (chamada ou aguardando recurso) levam a `/atendimento?senha=<id>` (#44).
@@ -236,6 +237,29 @@ alocada a uma sala em manutenção (409 `RECURSO_INDISPONIVEL`).
 | 4   | **Recurso indisponível na retomada**: a T-13 pede nova alocação, mas `PUT /senhas/{id}/alocacao` só vale antes do início (`CHAMADA`, `AGUARDANDO_RECURSO`)                                                | Mostra o `detail` e orienta avisar a recepção, sem link para a alocação                                                                           | Definir a realocação de atendimento pausado                                                        |
 | 5   | **Motivo de pausa obrigatório pelo protocolo**: o modelo ainda não tem onde configurar (o `openapi.yaml` registra a pendência)                                                                            | Campo opcional com a orientação; trata o 422 mostrando a mensagem abaixo do campo                                                                 | Nenhuma até existir o parâmetro                                                                    |
 | 6   | **Senha alocada aguardando início** na home do estudante (W-02): `GET /atendimentos` só lista atendimentos já iniciados                                                                                   | O bloco "Atendimento atual" da home segue vazio; o início parte do painel de fila                                                                 | Definir a fonte (por exemplo `GET /senhas?estudanteId=&status=CHAMADA` com alocação)               |
+
+## Encaminhamento (W-14, #46)
+
+A tela (`apps/web/src/components/encaminhamento/`, rota `/encaminhamento?atendimento=<id>`) abre
+quando o encerramento devolve `exigeEncaminhamento` (#44); a variante sai do desfecho registrado.
+Consome a API pelo cliente HTTP (`lib/encaminhamento/api.ts`); hoje quem responde é a simulação
+`apps/web/src/mocks/encaminhamentos.ts`: o interno gera senha AGUARDANDO na fila de destino de
+`mocks/filas.ts`, Fonoaudiologia aceita com o aviso `FILA_BLOQUEADA` (RN-10) e Psicologia é
+inativada no envio (409 `ESPECIALIDADE_INATIVA`).
+
+| Status | Provisório                                                               | Onde                                     | Destrava                                              | Troca a fazer                                   |
+| ------ | ------------------------------------------------------------------------ | ---------------------------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| ⏳     | `POST /atendimentos/{id}/encaminhamentos` sobre MSW, com dados fictícios | `apps/web/src/mocks/encaminhamentos.ts`  | #26 (API, parte 9.1)                                  | Conferir contra a API real; apagar os handlers  |
+| ⏳     | Tipos de entrada e de `Encaminhamento` copiados do `openapi.yaml`        | `apps/web/src/lib/encaminhamento/api.ts` | Schemas em `@filas/contracts` (PR de contrato da #26) | Importar de `@filas/contracts` e apagar a cópia |
+
+### Lacunas do contrato do encaminhamento (decisão antes de integrar com a #26)
+
+| #   | Lacuna                                                                                                                    | O que o front faz hoje                                                                                                                   | Pedido ao back-end                                                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Destinos do interno**: `GET /especialidades` exige `cadastros:consultar`, que o perfil Estudante não tem                | Lista as filas ativas (`GET /filas?ativa=true`, `fila:consultar`), uma por especialidade, que já trazem o bloqueio para o aviso de RN-10 | Confirmar as filas como fonte dos destinos ou liberar a listagem de especialidades ativas a quem tem `encaminhamento:criar`               |
+| 2   | **Cabeçalho e desfecho da origem** só vêm de `GET /atendimentos/{id}`, sensível (grava CONSULTAR_SENSIVEL)                | Usa o detalhe, com `atendimento:consultar_sensivel` (Estudante e Supervisão têm)                                                         | Expor `AtendimentoResumo` por id, ou o desfecho na resposta do encerramento basta (`exigeEncaminhamento` não diz se é interno ou externo) |
+| 3   | **Encaminhamento repetido**: o contrato não diz se um atendimento aceita mais de um encaminhamento                        | Depois de registrar, a tela troca o formulário pela confirmação; recarregar a página permite registrar de novo                           | Definir (409 para o segundo, ou permitir vários)                                                                                          |
+| 4   | **Motivo do interno**: `EncaminhamentoInternoEntrada` não exige `motivo`, mas `Encaminhamento.motivo` é texto obrigatório | Campo opcional, como a T-14                                                                                                              | Confirmar se a resposta traz `motivo` vazio quando não informado                                                                          |
 
 ## Ausência e desistência (W-15 e W-16, #47)
 
