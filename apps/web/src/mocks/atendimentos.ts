@@ -59,11 +59,11 @@ const ALOCACOES_PREVIAS: Record<string, Recursos & { salaIndisponivel?: boolean 
 };
 
 const NOMES_FICTICIOS: Record<string, string> = {
-  'senha-f016': 'Paciente Fictício P. R. A.',
-  'senha-n105': 'Paciente Fictício S. U. V.',
-  'senha-n107': 'Paciente Fictício Z. A. B.',
-  'senha-n108': 'Paciente Fictício C. E. F.',
-  'senha-n109': 'Paciente Fictício H. J. K.',
+  'senha-f016': 'Pedro Rocha Alves',
+  'senha-n105': 'Sônia Uchoa Viana',
+  'senha-n107': 'Zeca Araújo Barros',
+  'senha-n108': 'Cecília Esteves Faria',
+  'senha-n109': 'Hugo Jardim Kato',
 };
 
 let atendimentos = new Map<string, AtendimentoSimulado>();
@@ -79,7 +79,7 @@ function semente(
   return {
     id: `atendimento-simulado-${sequencia}`,
     senhaId,
-    pacienteNome: NOMES_FICTICIOS[senhaId] ?? 'Paciente Fictício',
+    pacienteNome: NOMES_FICTICIOS[senhaId] ?? 'Nome fictício',
     iniciadoEm: new Date(Date.now() - iniciadoHaMinutos * 60_000).toISOString(),
     encerradoEm: null,
     desfecho: null,
