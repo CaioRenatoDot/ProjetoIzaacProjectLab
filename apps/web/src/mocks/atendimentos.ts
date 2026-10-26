@@ -223,6 +223,11 @@ const versaoDesatualizada = () =>
 
 const transicaoInvalida = (detail: string) => problema(409, 'TRANSICAO_INVALIDA', detail);
 
+/** Atendimento e senha da simulação, para o encaminhamento (#46). */
+export function atendimentoDaSimulacao(id: unknown) {
+  return porId(id);
+}
+
 function porId(id: unknown) {
   for (const a of atendimentos.values()) {
     if (a.id !== id) continue;
