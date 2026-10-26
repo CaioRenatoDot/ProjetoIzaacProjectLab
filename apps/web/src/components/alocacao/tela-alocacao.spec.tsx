@@ -41,6 +41,38 @@ describe('<TelaAlocacao> (W-11 / T-10)', () => {
     expect(confirmar()).toBeEnabled();
   });
 
+  it('cada bloco destaca a sugestão do sistema, já escolhida, com as alternativas abaixo', async () => {
+    abrir('senha-f013');
+    await screen.findByRole('radio', { name: /Bruno Lima/ });
+    const esperado = { Estudante: /Bruno Lima/, Supervisor: /Prof. Elisa Nunes/, Sala: /Sala 03/ };
+    for (const [titulo, sugerido] of Object.entries(esperado)) {
+      const grupo = bloco(new RegExp(titulo));
+      const sugestao = within(grupo).getByRole('radio', { name: sugerido });
+      expect(sugestao).toBeChecked();
+      expect(sugestao.closest('label')).toHaveTextContent('Sugestão do sistema');
+      expect(within(grupo).getAllByText('Sugestão do sistema')).toHaveLength(1);
+      expect(within(grupo).getByText('Alternativas')).toBeInTheDocument();
+    }
+    expect(confirmar()).toBeEnabled();
+  });
+
+  it('trocar a sugestão pelo teclado confirma com o recurso escolhido', async () => {
+    const usuario = abrir('senha-f013');
+    const sala03 = await screen.findByRole('radio', { name: /Sala 03/ });
+    sala03.focus();
+    await usuario.keyboard('{ArrowDown}');
+    expect(screen.getByRole('radio', { name: /Sala 07/ })).toBeChecked();
+    expect(sala03).not.toBeChecked();
+
+    await usuario.click(confirmar());
+    await waitFor(() => expect(push).toHaveBeenCalledWith('/fila'));
+    expect(
+      screen.getByText('Recursos alocados à senha F013: Bruno Lima, Prof. Elisa Nunes, Sala 07.', {
+        selector: 'div',
+      }),
+    ).toBeInTheDocument();
+  });
+
   it('RN-05: estudante com atendimento ativo aparece inapto, com o motivo escrito no item', async () => {
     abrir('senha-f013');
     const carla = await screen.findByRole('radio', { name: /Carla Souza/ });
@@ -88,13 +120,19 @@ describe('<TelaAlocacao> (W-11 / T-10)', () => {
     ).toBeInTheDocument();
   });
 
-  it('sem sala compatível, "Confirmar" fica desabilitado e a senha pode ficar aguardando a sala', async () => {
+  it('sem sala compatível, o bloco mostra o motivo e oferece manter a senha aguardando a sala', async () => {
     const usuario = abrir('senha-n106');
-    expect(await screen.findByText(/Nenhuma sala disponível e compatível/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/Nenhuma sala disponível e compatível, por isso não há sugestão/),
+    ).toBeInTheDocument();
+    expect(within(bloco(/Sala/)).queryByText('Sugestão do sistema')).not.toBeInTheDocument();
+    expect(within(bloco(/Sala/)).getByText(/Inapto: Ocupada por outro atendimento/)).toBeVisible();
     expect(confirmar()).toBeDisabled();
     expect(confirmar()).toHaveAccessibleDescription('Escolha sala para confirmar.');
 
-    await usuario.click(screen.getByRole('button', { name: 'Manter aguardando recurso' }));
+    await usuario.click(
+      within(bloco(/Sala/)).getByRole('button', { name: 'Manter aguardando recurso' }),
+    );
     const modal = await screen.findByRole('dialog', {
       name: /Manter a senha N106 aguardando recurso/,
     });

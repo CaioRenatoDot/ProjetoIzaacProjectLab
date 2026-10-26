@@ -62,6 +62,38 @@ test.describe('alocação de recursos (#43)', () => {
     await expect(page).toHaveURL('/fila/senhas/senha-f013/alocacao');
   });
 
+  test('sugestão do sistema vem marcada e pode ser trocada pelo teclado (#45)', async ({
+    page,
+  }) => {
+    await page.goto('/fila/senhas/senha-f013/alocacao');
+    const sala = page.getByRole('group', { name: /Sala/ });
+    await expect(sala.getByRole('radio', { name: /Sala 03/ })).toBeChecked();
+    await expect(sala.getByText('Sugestão do sistema')).toBeVisible();
+
+    await sala.getByRole('radio', { name: /Sala 03/ }).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(sala.getByRole('radio', { name: /Sala 07/ })).toBeChecked();
+    await page.getByRole('button', { name: confirmar }).click();
+    await expect(
+      page.getByText('Recursos alocados à senha F013: Bruno Lima, Prof. Elisa Nunes, Sala 07.', {
+        exact: true,
+      }),
+    ).toBeVisible();
+  });
+
+  test('bloco sem recurso apto mostra o motivo e oferece manter aguardando (#45)', async ({
+    page,
+  }) => {
+    await page.goto('/fila/senhas/senha-n106/alocacao');
+    const sala = page.getByRole('group', { name: /Sala/ });
+    await expect(sala.getByText(/por isso não há sugestão/)).toBeVisible();
+    await sala.getByRole('button', { name: 'Manter aguardando recurso' }).click();
+    await expect(
+      page.getByRole('dialog', { name: /Manter a senha N106 aguardando recurso/ }),
+    ).toBeVisible();
+    await semViolacoesDeAcessibilidade(page);
+  });
+
   test('"Alocação" no menu leva para a fila', async ({ page }) => {
     await page.goto('/');
     await page
