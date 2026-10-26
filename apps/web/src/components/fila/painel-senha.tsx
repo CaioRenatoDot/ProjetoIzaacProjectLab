@@ -150,6 +150,17 @@ export function PainelSenha({
             </Permitido>
           )}
 
+          {comAlocacao && (
+            <Permitido permissao="atendimento:criar">
+              <Link
+                href={`/atendimento?senha=${encodeURIComponent(senha.id)}`}
+                className={classesBotao.secundario}
+              >
+                Iniciar atendimento
+              </Link>
+            </Permitido>
+          )}
+
           {podeReclassificar(senha.status) && (
             <Permitido permissao="senha:reclassificar">
               <Button

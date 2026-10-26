@@ -13,6 +13,7 @@ import { handlersCadastros, handlersCatalogos, reiniciarMockCadastros } from '@/
 import { handlers, reiniciarMockAuth } from '@/mocks/handlers';
 import { handlersAusencias, reiniciarMockAusencias } from '@/mocks/ausencias';
 import { handlersAlocacao, reiniciarMockAlocacao } from '@/mocks/alocacao';
+import { handlersAtendimentos, reiniciarMockAtendimentos } from '@/mocks/atendimentos';
 import { handlersFilas } from '@/mocks/filas';
 
 export const servidor = setupServer(
@@ -21,6 +22,7 @@ export const servidor = setupServer(
   ...handlersCatalogos,
   ...handlersFilas,
   ...handlersAlocacao,
+  ...handlersAtendimentos,
   ...handlersAusencias,
 
   ...handlersAuditoria,
@@ -35,6 +37,7 @@ export function usarServidorMock() {
     reiniciarMockAuth();
     reiniciarMockAusencias();
     reiniciarMockAlocacao();
+    reiniciarMockAtendimentos();
     reiniciarMockCadastros();
     reiniciarMockAuditoria();
     reiniciarMockAlertas();
