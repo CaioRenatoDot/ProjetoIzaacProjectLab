@@ -249,7 +249,7 @@ describe('<ListaAtendimentos>', () => {
       'href',
       '/atendimento?senha=senha-f016',
     );
-    expect(tabela).not.toHaveTextContent(/Dor lombar|Paciente Fictício/);
+    expect(tabela).not.toHaveTextContent(/Dor lombar|Pedro Rocha Alves/);
   });
 
   it('filtrar por situação sem resultado mostra o estado vazio', async () => {
