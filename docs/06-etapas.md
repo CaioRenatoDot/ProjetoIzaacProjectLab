@@ -201,13 +201,13 @@ Objetivo: equipe chama a próxima senha e o telão mostra a chamada em tempo rea
 Objetivo: conduzir o atendimento do início ao encerramento.
 **Pronto quando:** a senha vai de _chamada_ até _encerrada_, com validação do supervisor quando exigida.
 
-| Parte  | Descrição                                                                                                      | Responsável         |
-| ------ | -------------------------------------------------------------------------------------------------------------- | ------------------- |
-| 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Rildo ✅            |
-| 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Rildo ✅            |
-| 7.3    | Tela W-11 · Alocação                                                                                           | Caio Gabriel ✅     |
-| 7.4    | Telas W-12 · Atendimento e W-13 · Encerramento e validação                                                     | Caio Renato         |
-| ⭐ 7.5 | Sugestão automática de recursos, com o motivo de inaptidão                                                     | Nathan, Caio Renato |
+| Parte  | Descrição                                                                                                      | Responsável                   |
+| ------ | -------------------------------------------------------------------------------------------------------------- | ----------------------------- |
+| 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Rildo ✅                      |
+| 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Rildo ✅                      |
+| 7.3    | Tela W-11 · Alocação                                                                                           | Caio Gabriel ✅               |
+| 7.4    | Telas W-12 · Atendimento e W-13 · Encerramento e validação                                                     | Caio Renato                   |
+| ⭐ 7.5 | Sugestão automática de recursos, com o motivo de inaptidão                                                     | Nathan, Caio Renato ✅ (tela) |
 
 ### Etapa 8 · Ausências e desistências
 
