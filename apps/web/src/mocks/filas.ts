@@ -47,6 +47,41 @@ export function semCamposInternos<T extends Partial<SenhaSimulada>>(senha: T) {
   return publica;
 }
 
+/** Filas da simulação: o encaminhamento interno (#46) gera senha na fila de destino. */
+export function filasDaSimulacao() {
+  return filas;
+}
+
+const LETRA_DA_FILA: Record<string, string> = {
+  Fisioterapia: 'F',
+  Fonoaudiologia: 'O',
+  Nutrição: 'N',
+  Psicologia: 'P',
+};
+
+/** Nova senha AGUARDANDO na fila, como a emissão faria (encaminhamento interno, RF-08). */
+export function incluirSenhaSimulada(
+  f: Fila,
+  dados: { pacienteIniciais: string; prioridade: Prioridade },
+): SenhaResumo {
+  const letra = LETRA_DA_FILA[f.especialidade] ?? 'X';
+  const ultimo = Math.max(
+    0,
+    ...senhas.filter((x) => x.filaId === f.id).map((x) => Number(x.numero.slice(1)) || 0),
+  );
+  const agora = Date.now();
+  const nova = senha(f, agora, {
+    id: `senha-encaminhada-${senhas.length + 1}`,
+    numero: `${letra}${String(ultimo + 1).padStart(3, '0')}`,
+    pacienteIniciais: dados.pacienteIniciais,
+    status: 'AGUARDANDO',
+    chegouHaMinutos: 0,
+    prioridade: dados.prioridade,
+  });
+  senhas.push(nova);
+  return resumo(nova, f, agora);
+}
+
 /** Roda antes de cada leitura do quadro (ex.: expiração automática da tolerância, #47). */
 export function aoConsultarQuadro(acao: () => void) {
   antesDoQuadro.add(acao);
@@ -334,9 +369,11 @@ export const handlersFilas = [
   http.get(`${API_URL}/filas`, ({ request, cookies }) => {
     const erro = autorizar(request, cookies, 'fila:consultar');
     if (erro) return erro;
+    const ativa = new URL(request.url).searchParams.get('ativa');
+    const lista = ativa === 'true' ? filas.filter((x) => x.ativa) : filas;
     return HttpResponse.json({
-      dados: filas,
-      meta: { pagina: 1, tamanho: 100, total: filas.length, totalPaginas: 1 },
+      dados: lista,
+      meta: { pagina: 1, tamanho: 100, total: lista.length, totalPaginas: 1 },
     });
   }),
 

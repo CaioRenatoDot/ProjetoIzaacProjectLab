@@ -17,18 +17,20 @@ indicada e remove o item deste arquivo no mesmo PR.
 
 ## Índice por issue do back-end
 
-| Issue (back-end)                                | O que destrava no front                            | Seção                                                   |
-| ----------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------- |
-| #10 (3.1, login, refresh e bloqueio)            | Login e sessão reais (hoje sobre a simulação MSW)  | [Sessão e acesso](#sessão-e-acesso)                     |
-| #11 (3.2, guard e catálogo de permissões)       | Permissões usadas em menu, home e telas            | [Sessão e acesso](#sessão-e-acesso)                     |
-| #12 (3.6, API de perfis)                        | Tela de perfis (W-05)                              | [Perfis](#perfis-w-05-36)                               |
-| #13 e #14 (4.1, API dos cadastros base)         | Lista e formulário de cadastros (W-03, W-04)       | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)             |
-| #15 (5.1, API de triagem)                       | Ficha de triagem (W-06)                            | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
-| #16 (5.2, emissão e reclassificação de senha)   | Emissão da senha e modal de reclassificação (W-07) | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40) |
-| #29 (9.4, consulta e exportação da trilha)      | Trilha de auditoria (W-18)                         | [Auditoria](#trilha-de-auditoria-w-18-50)               |
-| #28 (9.3, alertas de SLA e escalonamento)       | Alertas de SLA (W-18)                              | [Alertas](#alertas-de-sla-w-18-49)                      |
-| #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                              | [Painel de fila](#painel-de-fila-w-08-41)               |
-| #21 (7.1, API de alocação)                      | Alocação de recursos (W-11)                        | [Alocação](#alocação-de-recursos-w-11-43)               |
+| Issue (back-end)                                | O que destrava no front                            | Seção                                                     |
+| ----------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------- |
+| #10 (3.1, login, refresh e bloqueio)            | Login e sessão reais (hoje sobre a simulação MSW)  | [Sessão e acesso](#sessão-e-acesso)                       |
+| #11 (3.2, guard e catálogo de permissões)       | Permissões usadas em menu, home e telas            | [Sessão e acesso](#sessão-e-acesso)                       |
+| #12 (3.6, API de perfis)                        | Tela de perfis (W-05)                              | [Perfis](#perfis-w-05-36)                                 |
+| #13 e #14 (4.1, API dos cadastros base)         | Lista e formulário de cadastros (W-03, W-04)       | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)               |
+| #15 (5.1, API de triagem)                       | Ficha de triagem (W-06)                            | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40)   |
+| #16 (5.2, emissão e reclassificação de senha)   | Emissão da senha e modal de reclassificação (W-07) | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40)   |
+| #29 (9.4, consulta e exportação da trilha)      | Trilha de auditoria (W-18)                         | [Auditoria](#trilha-de-auditoria-w-18-50)                 |
+| #28 (9.3, alertas de SLA e escalonamento)       | Alertas de SLA (W-18)                              | [Alertas](#alertas-de-sla-w-18-49)                        |
+| #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                              | [Painel de fila](#painel-de-fila-w-08-41)                 |
+| #21 (7.1, API de alocação)                      | Alocação de recursos (W-11)                        | [Alocação](#alocação-de-recursos-w-11-43)                 |
+| #23 (7.2, ciclo do atendimento)                 | Atendimento e encerramento (W-12, W-13)            | [Atendimento](#atendimento-e-encerramento-w-12-e-w-13-44) |
+| #26 (9.1, API de encaminhamento)                | Encaminhamento interno e externo (W-14)            | [Encaminhamento](#encaminhamento-w-14-46)                 |
 
 ## Sessão e acesso
 
@@ -101,10 +103,11 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 ## Rotas ainda inexistentes
 
 Os links do menu (`apps/web/src/lib/modulos.ts`) e das ações da home apontam para rotas que
-outras issues criam: `/triagem`, `/chamada`, `/atendimento`,
-`/encaminhamento`, `/ausencias`, `/indicadores`. Até lá, respondem 404.
+outras issues criam: `/chamada` e `/indicadores` (#48; hoje só existe `/indicadores/alertas`). Até
+lá, respondem 404. `/encaminhamento` sem `?atendimento=` explica que o registro parte do encerramento.
 
-No painel de fila (W-08, #41), "Abrir atendimento" leva a `/atendimento?senha=<id>` (Etapa 7).
+No painel de fila (W-08, #41), "Abrir atendimento" (em atendimento, pausado ou pendente) e
+"Iniciar atendimento" (chamada ou aguardando recurso) levam a `/atendimento?senha=<id>` (#44).
 "Alocar recursos" abre `/fila/senhas/<id>/alocacao` (#43); `/alocacao`, do menu, redireciona para
 a alocação quando recebe `?senha=<id>` e, sem senha, para a fila.
 
@@ -195,10 +198,11 @@ Hoje quem responde é a simulação `apps/web/src/mocks/alocacao.ts`, sobre as s
 indisponível na confirmação (409 `RECURSO_INDISPONIVEL`); Nutrição não exige supervisor; N106 não
 tem sala compatível.
 
-| Status | Provisório                                                                                                              | Onde                             | Destrava                           | Troca a fazer                                         |
-| ------ | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------- | ---------------------------------- | ----------------------------------------------------- |
-| ⏳     | Sugestões, confirmação com `Idempotency-Key` e "Manter aguardando recurso" sobre MSW, com dados fictícios               | `apps/web/src/mocks/alocacao.ts` | #21 (API, parte 7.1)               | Conferir a tela contra a API real; apagar os handlers |
-| ⏳     | "Trocar recurso" de uma alocação já confirmada (`PUT /senhas/{id}/alocacao`, "Reavaliar alocação" da T-09) não tem tela | —                                | parte 7.4 (#44) ou decisão do time | Definir onde a reavaliação acontece                   |
+| Status | Provisório                                                                                                                      | Onde                                                  | Destrava                            | Troca a fazer                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| ⏳     | Sugestões, confirmação com `Idempotency-Key` e "Manter aguardando recurso" sobre MSW, com dados fictícios                       | `apps/web/src/mocks/alocacao.ts`                      | #21 (API, parte 7.1)                | Conferir a tela contra a API real; apagar os handlers                                                |
+| ⏳     | Sugestão do sistema destacada e pré-escolhida em cada bloco (#45): a tela usa `sugestao` como vem, sem reordenar nem recalcular | `apps/web/src/components/alocacao/bloco-alocacao.tsx` | #22 (API, parte 7.5)                | Conferir com a API real que `sugestao` vem apta e fora de `alternativas`; a tela já tolera repetição |
+| ⏳     | "Trocar recurso" de uma alocação já confirmada (`PUT /senhas/{id}/alocacao`, "Reavaliar alocação" da T-09) não tem tela         | —                                                     | decisão do time (não entrou na #44) | Definir onde a reavaliação acontece; ver também a lacuna 4 do atendimento                            |
 
 ### Lacunas do contrato da alocação (decisão antes de integrar com a #21)
 
@@ -208,6 +212,55 @@ tem sala compatível.
 | 2   | **Sala ocupada**: `motivoInaptidao` não tem valor para sala ocupada por outro atendimento                                                         | A simulação usa `ATENDIMENTO_ATIVO` com o texto "Ocupada por outro atendimento" | Acrescentar o valor ou confirmar o uso de `ATENDIMENTO_ATIVO`             |
 | 3   | **Cabeçalho da tela**: número, especialidade e horário da chamada vêm de `GET /senhas/{id}`, que exige `senha:consultar` além de `alocacao:criar` | Usa `GET /senhas/{id}` (sem `incluirTriagem`, então sem dado sensível)          | Incluir esses dados em `SugestoesAlocacao` ou confirmar a dupla permissão |
 | 4   | **`SUPERVISOR_INDISPONIVEL`**: a tela mostra o `detail` e avisa que a senha ficou aguardando recurso e que a gestão foi notificada                | Não simulado                                                                    | Garantir que `detail` diga a causa e o próximo passo                      |
+
+## Atendimento e encerramento (W-12 e W-13, #44)
+
+A tela (`apps/web/src/components/atendimento/`, rota `/atendimento?senha=<id>`) consome a API pelo
+cliente HTTP (`lib/atendimento/api.ts`), com os tipos de `@filas/contracts`; sem `?senha=`, a rota
+lista os atendimentos (`GET /atendimentos`, filtro `?status=` usado pelo cartão da home). Hoje
+quem responde é a simulação `apps/web/src/mocks/atendimentos.ts`, sobre as senhas de
+`mocks/filas.ts`: F016 (Fisioterapia, exige validação) e N107 (Nutrição, não exige) em
+atendimento, N108 pausado, N109 pendente de validação, N105 alocada pronta para iniciar e F018
+alocada a uma sala em manutenção (409 `RECURSO_INDISPONIVEL`).
+
+| Status | Provisório                                                                                       | Onde                                          | Destrava                 | Troca a fazer                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| 🔧     | Início, pausa, retomada, encerramento, validação, lista e detalhe sobre MSW, com dados fictícios | `apps/web/src/mocks/atendimentos.ts`          | #23 entregue             | Rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e conferir as lacunas abaixo; apagar os handlers |
+| ⏳     | Mudança feita por outra pessoa só aparece ao recarregar ou no 409 `VERSAO_DESATUALIZADA`         | `components/atendimento/tela-atendimento.tsx` | Etapa 6 (Socket.IO, #19) | Em `senha.status_alterado` da senha aberta, invalidar `[atendimento, senhaId]`                       |
+
+### Lacunas do contrato do atendimento (decisão antes de integrar com a #23)
+
+| #   | Lacuna                                                                                                                                                                                                    | O que o front faz hoje                                                                                                                            | Pedido ao back-end                                                                                 |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 1   | **Da senha ao atendimento**: o painel de fila só conhece a senha, `GET /atendimentos` não filtra por senha e `SenhaResumo`/`SenhaDetalhe` não trazem o id do atendimento (um por senha, `senha_id` único) | Lista `GET /atendimentos?status=<status da senha>&tamanho=100` e escolhe pelo `senhaId`; envia também `senhaId` (**proposta**, a API real ignora) | Aceitar `senhaId` em `GET /atendimentos` ou incluir `atendimentoId` na senha                       |
+| 2   | **Perfil Estudante sem `senha:consultar`** (seed): a tela lê `GET /senhas/{id}` para o número, o status e a `versao` antes do início                                                                      | Usa `GET /senhas/{id}`; com 403, mostra o estado de sem permissão                                                                                 | Incluir `senha:consultar` no perfil Estudante ou expor esses campos por um endpoint do atendimento |
+| 3   | **Recursos alocados antes do início**: só vêm em `SenhaDetalhe` (`incluirTriagem`, exige `triagem:consultar_sensivel`)                                                                                    | Mostra os recursos e a triagem só depois de iniciar (vêm em `AtendimentoResumo`/`AtendimentoDetalhe`)                                             | Expor a alocação vigente sem a triagem (por exemplo `GET /senhas/{id}/alocacao`)                   |
+| 4   | **Recurso indisponível na retomada**: a T-13 pede nova alocação, mas `PUT /senhas/{id}/alocacao` só vale antes do início (`CHAMADA`, `AGUARDANDO_RECURSO`)                                                | Mostra o `detail` e orienta avisar a recepção, sem link para a alocação                                                                           | Definir a realocação de atendimento pausado                                                        |
+| 5   | **Motivo de pausa obrigatório pelo protocolo**: o modelo ainda não tem onde configurar (o `openapi.yaml` registra a pendência)                                                                            | Campo opcional com a orientação; trata o 422 mostrando a mensagem abaixo do campo                                                                 | Nenhuma até existir o parâmetro                                                                    |
+| 6   | **Senha alocada aguardando início** na home do estudante (W-02): `GET /atendimentos` só lista atendimentos já iniciados                                                                                   | O bloco "Atendimento atual" da home segue vazio; o início parte do painel de fila                                                                 | Definir a fonte (por exemplo `GET /senhas?estudanteId=&status=CHAMADA` com alocação)               |
+
+## Encaminhamento (W-14, #46)
+
+A tela (`apps/web/src/components/encaminhamento/`, rota `/encaminhamento?atendimento=<id>`) abre
+quando o encerramento devolve `exigeEncaminhamento` (#44); a variante sai do desfecho registrado.
+Consome a API pelo cliente HTTP (`lib/encaminhamento/api.ts`); hoje quem responde é a simulação
+`apps/web/src/mocks/encaminhamentos.ts`: o interno gera senha AGUARDANDO na fila de destino de
+`mocks/filas.ts`, Fonoaudiologia aceita com o aviso `FILA_BLOQUEADA` (RN-10) e Psicologia é
+inativada no envio (409 `ESPECIALIDADE_INATIVA`).
+
+| Status | Provisório                                                               | Onde                                     | Destrava                                              | Troca a fazer                                   |
+| ------ | ------------------------------------------------------------------------ | ---------------------------------------- | ----------------------------------------------------- | ----------------------------------------------- |
+| ⏳     | `POST /atendimentos/{id}/encaminhamentos` sobre MSW, com dados fictícios | `apps/web/src/mocks/encaminhamentos.ts`  | #26 (API, parte 9.1)                                  | Conferir contra a API real; apagar os handlers  |
+| ⏳     | Tipos de entrada e de `Encaminhamento` copiados do `openapi.yaml`        | `apps/web/src/lib/encaminhamento/api.ts` | Schemas em `@filas/contracts` (PR de contrato da #26) | Importar de `@filas/contracts` e apagar a cópia |
+
+### Lacunas do contrato do encaminhamento (decisão antes de integrar com a #26)
+
+| #   | Lacuna                                                                                                                    | O que o front faz hoje                                                                                                                   | Pedido ao back-end                                                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Destinos do interno**: `GET /especialidades` exige `cadastros:consultar`, que o perfil Estudante não tem                | Lista as filas ativas (`GET /filas?ativa=true`, `fila:consultar`), uma por especialidade, que já trazem o bloqueio para o aviso de RN-10 | Confirmar as filas como fonte dos destinos ou liberar a listagem de especialidades ativas a quem tem `encaminhamento:criar`               |
+| 2   | **Cabeçalho e desfecho da origem** só vêm de `GET /atendimentos/{id}`, sensível (grava CONSULTAR_SENSIVEL)                | Usa o detalhe, com `atendimento:consultar_sensivel` (Estudante e Supervisão têm)                                                         | Expor `AtendimentoResumo` por id, ou o desfecho na resposta do encerramento basta (`exigeEncaminhamento` não diz se é interno ou externo) |
+| 3   | **Encaminhamento repetido**: o contrato não diz se um atendimento aceita mais de um encaminhamento                        | Depois de registrar, a tela troca o formulário pela confirmação; recarregar a página permite registrar de novo                           | Definir (409 para o segundo, ou permitir vários)                                                                                          |
+| 4   | **Motivo do interno**: `EncaminhamentoInternoEntrada` não exige `motivo`, mas `Encaminhamento.motivo` é texto obrigatório | Campo opcional, como a T-14                                                                                                              | Confirmar se a resposta traz `motivo` vazio quando não informado                                                                          |
 
 ## Ausência e desistência (W-15 e W-16, #47)
 

@@ -149,7 +149,7 @@ function FormularioAlocacao({
     sala: escolhaInicial(sugestoes.sala),
   }));
   const [erro, setErro] = useState<string | null>(null);
-  const [manter, setManter] = useState(false);
+  const [manter, setManter] = useState<RecursoFaltante | null>(null);
 
   // Alternativas recarregadas (409 RECURSO_INDISPONIVEL): escolha inapta volta para a sugestão.
   useEffect(() => {
@@ -285,7 +285,8 @@ function FormularioAlocacao({
           bloco={sugestoes.estudante}
           escolhido={escolhas.estudante}
           onEscolher={(id) => setEscolhas((e) => ({ ...e, estudante: id }))}
-          desabilitado={confirmar.isPending}
+          desabilitado={confirmar.isPending || !podeEscrever}
+          onManterAguardando={() => setManter('ESTUDANTE')}
         />
         {comSupervisor && (
           <BlocoAlocacaoRecurso
@@ -294,7 +295,8 @@ function FormularioAlocacao({
             bloco={sugestoes.supervisor}
             escolhido={escolhas.supervisor}
             onEscolher={(id) => setEscolhas((e) => ({ ...e, supervisor: id }))}
-            desabilitado={confirmar.isPending}
+            desabilitado={confirmar.isPending || !podeEscrever}
+            onManterAguardando={() => setManter('SUPERVISOR')}
           />
         )}
         <BlocoAlocacaoRecurso
@@ -303,7 +305,8 @@ function FormularioAlocacao({
           bloco={sugestoes.sala}
           escolhido={escolhas.sala}
           onEscolher={(id) => setEscolhas((e) => ({ ...e, sala: id }))}
-          desabilitado={confirmar.isPending}
+          desabilitado={confirmar.isPending || !podeEscrever}
+          onManterAguardando={() => setManter('SALA')}
         />
       </div>
 
@@ -327,7 +330,7 @@ function FormularioAlocacao({
           <Button
             variante="secundario"
             disabled={!podeEscrever || confirmar.isPending}
-            onClick={() => setManter(true)}
+            onClick={() => setManter(faltante)}
           >
             Manter aguardando recurso
           </Button>
@@ -345,12 +348,12 @@ function FormularioAlocacao({
         </div>
       </footer>
 
-      {manter && (
+      {manter !== null && (
         <ModalManterAguardando
           api={api}
           senha={senha}
-          sugerido={faltante}
-          onFechar={() => setManter(false)}
+          sugerido={manter}
+          onFechar={() => setManter(null)}
           onMantida={() => {
             void queryClient.invalidateQueries({ queryKey: ['fila'] });
             router.push('/fila');

@@ -137,6 +137,11 @@ export function reiniciarMockAlocacao() {
   sequencia = 0;
 }
 
+/** Alocação vigente confirmada nesta simulação, para o início do atendimento (#44). */
+export function alocacaoDaSimulacao(senhaId: string) {
+  return alocacoes.get(senhaId) ?? null;
+}
+
 function cenarioDa(especialidade: string) {
   return especialidade === 'Nutrição' ? NUTRICAO : FISIOTERAPIA;
 }
