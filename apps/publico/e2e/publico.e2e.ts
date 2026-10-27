@@ -118,7 +118,7 @@ test('queda mantém última chamada e reconexão aplica snapshot recebido', asyn
   await expect(page.getByRole('heading', { name: 'F014', exact: true })).toBeVisible();
   const controle = await controlador(page);
   await controle.getByRole('button', { name: 'Simular queda', exact: true }).click();
-  await expect(page.getByRole('status')).toContainText('Conexão interrompida');
+  await expect(page.locator('.conexao-publica')).toContainText('Conexão interrompida');
   await controle.getByRole('button', { name: 'Nova chamada', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'F014', exact: true })).toBeVisible();
   await page.clock.install();

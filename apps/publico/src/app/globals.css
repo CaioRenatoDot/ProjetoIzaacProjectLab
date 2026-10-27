@@ -426,3 +426,44 @@
   background: var(--publico-destaque);
   font-weight: 500;
 }
+
+.telao-acoes {
+  display: grid;
+  justify-items: end;
+  gap: 0.5rem;
+}
+.som-telao {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  max-width: 44rem;
+  font-size: 1rem;
+}
+.som-telao p {
+  max-width: 24rem;
+  color: var(--publico-secundario);
+}
+.som-telao button {
+  flex-shrink: 0;
+}
+@media (max-width: 900px) {
+  .telao-cabecalho {
+    flex-wrap: wrap;
+  }
+  .telao-acoes {
+    justify-items: start;
+  }
+  .som-telao {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+}
+@media (min-width: 901px) and (max-height: 850px) {
+  .telao-acoes {
+    gap: 0;
+  }
+  .telao-acoes .telao-boas-vindas {
+    display: none;
+  }
+}

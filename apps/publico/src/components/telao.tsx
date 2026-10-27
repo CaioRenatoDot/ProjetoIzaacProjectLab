@@ -3,10 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { aplicarChamada, type EstadoPainel, type FontePublica } from '../lib/publico';
+import { useSomTelao } from '../lib/use-som-telao';
 
 const VAZIO: EstadoPainel = { atual: null, anteriores: [] };
 
 export function Telao({ fonte, unidade }: { fonte: FontePublica; unidade: string }) {
+  const som = useSomTelao();
+  const tocar = som.tocar;
   const [estado, setEstado] = useState<EstadoPainel | null>(null);
   const [conectado, setConectado] = useState(false);
   const [erro, setErro] = useState(false);
@@ -60,6 +63,7 @@ export function Telao({ fonte, unidade }: { fonte: FontePublica; unidade: string
       chamada(chamada) {
         const proximo = aplicarChamada(estadoAtual.current, chamada);
         if (!ativo || proximo === estadoAtual.current) return;
+        tocar();
         revisao += 1;
         estadoAtual.current = proximo;
         setEstado(proximo);
@@ -97,7 +101,7 @@ export function Telao({ fonte, unidade }: { fonte: FontePublica; unidade: string
       clearTimeout(brilho);
       window.clearInterval(polling);
     };
-  }, [fonte, tentativa]);
+  }, [fonte, tentativa, tocar]);
 
   return (
     <main className="telao" aria-labelledby="titulo-telao">
@@ -106,7 +110,33 @@ export function Telao({ fonte, unidade }: { fonte: FontePublica; unidade: string
           <p className="sobretitulo">Clínica-Escola</p>
           <h1 id="titulo-telao">Sala de espera</h1>
         </div>
-        <p className="telao-boas-vindas">Aguarde sua senha ser chamada</p>
+        <div className="telao-acoes">
+          <p className="telao-boas-vindas">Aguarde sua senha ser chamada</p>
+          <div className="som-telao">
+            {som.estado === 'ativo' ? (
+              <button className="botao-secundario" onClick={som.desativar}>
+                Desativar som
+              </button>
+            ) : som.estado !== 'desligado' && som.estado !== 'carregando' ? (
+              <button
+                onClick={som.ativar}
+                disabled={som.estado === 'ativando'}
+                aria-describedby="aviso-som"
+              >
+                {som.estado === 'ativando' ? 'Ativando som…' : 'Ativar som'}
+              </button>
+            ) : null}
+            <p id="aviso-som" role="status">
+              {som.estado === 'erro'
+                ? 'Não foi possível tocar o som. Verifique o áudio e tente ativar novamente.'
+                : som.estado === 'ativo'
+                  ? 'Som ativado.'
+                  : som.estado === 'desligado'
+                    ? 'Som desativado na configuração.'
+                    : 'Ao ativar, um sinal de teste será reproduzido.'}
+            </p>
+          </div>
+        </div>
       </header>
       <span className="somente-leitor" aria-live="assertive" aria-atomic="true">
         {anuncio}
