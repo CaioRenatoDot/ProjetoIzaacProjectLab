@@ -7,6 +7,7 @@ export * from './desistencias';
 export * from './enums';
 export * from './erros';
 export * from './eventos';
+export * from './eventos-publicos';
 export * from './filas';
 export * from './indicadores';
 export * from './paginacao';
