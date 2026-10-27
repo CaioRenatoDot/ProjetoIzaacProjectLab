@@ -227,6 +227,18 @@ que mudou.
 
 Socket.IO em três namespaces. A conexão autenticada envia o access token no `auth` do handshake.
 
+O handshake usa os seguintes campos; a entrada na sala acontece no servidor, sem evento
+genérico para o cliente escolher salas:
+
+| Namespace  | Handshake                                       | Validação da sala                                           |
+| ---------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| `/filas`   | `auth: { token }`, `query: { especialidadeId }` | Exige `fila:consultar` e especialidade da unidade da sessão |
+| `/painel`  | `query: { unidadeId }`, sem token               | Unidade existente; somente projeção pública                 |
+| `/alertas` | `auth: { token }`                               | Exige `alertas:consultar`; unidade derivada da sessão       |
+
+Token inválido ou permissão insuficiente recusa a conexão. A conexão autenticada é encerrada
+quando o access token expira; o cliente reconecta com um token renovado.
+
 ### `/filas` — autenticado, sala `especialidade:{id}`
 
 O serviço emite os eventos de domínio pelo `EventosDominio` (`apps/api/src/common/eventos`)
@@ -252,6 +264,11 @@ repassa para a sala.
 | `painel.estado`  | `{ atual, anteriores[] }` — enviado no connect, para reconexão |
 
 Apenas esses campos. O namespace não conhece paciente, prioridade nem triagem (ADR-003).
+
+`ChamadaPublica`, `ChamadaExibida`, `EstadoPainel` e `EventosPainel` são exportados por
+`@filas/contracts`. `painel.estado` contém `atual: ChamadaPublica | null` e até quatro
+`anteriores`, conforme o estado do telão no OpenAPI. Não contém `servidorEm`, que pertence à
+resposta HTTP, nem herda campos de `SenhaResumo`. Os schemas públicos recusam campos extras.
 
 ### `/alertas` — autenticado com permissão `alertas:consultar`, sala `unidade:{id}`
 

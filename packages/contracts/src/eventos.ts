@@ -18,8 +18,15 @@ export interface EventosFila {
     automatica: boolean;
     restricaoAplicada: RestricaoAplicada | null;
   };
-  /** RN-10: fila sem supervisor habilitado disponível. O desbloqueio é da parte 6.3. */
+  /** RN-10: fila sem supervisor habilitado disponível. */
   'fila.bloqueada': { filaId: string; especialidade: string; motivo: string; desde: string };
+  'fila.desbloqueada': { filaId: string; especialidade: string; em: string };
+  'fila.metricas': {
+    filaId: string;
+    aguardando: number;
+    emAtendimento: number;
+    tempoMedioEsperaMinutos: number | null;
+  };
   /** Toda transição da máquina de estados (P-01, docs/03 §5). */
   'senha.status_alterado': {
     senhaId: string;

@@ -196,6 +196,10 @@ Objetivo: equipe chama a próxima senha e o telão mostra a chamada em tempo rea
 | 6.4   | Tela W-08 · Painel de fila                                                           | Caio Gabriel ✅ |
 | 6.5   | Tela W-09 · Telão e W-10 · Consulta de senha pelo paciente                           | Thalita ✅      |
 
+**6.3 (#19):** contrato de tempo real em preparação para revisão própria, antes da implementação
+(AGENTS.md §6). Os critérios de aceite de execução continuam pendentes; acompanhamento em
+[entregas/GH-19-aceite.md](entregas/GH-19-aceite.md).
+
 **6.5 (#42):** front validado com dados fictícios e pontos de integração com #19/#20
 documentados. Evidências e critérios em [entregas/GH-42-validacao.md](entregas/GH-42-validacao.md).
 
