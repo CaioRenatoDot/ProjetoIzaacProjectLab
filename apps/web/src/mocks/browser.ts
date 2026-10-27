@@ -1,3 +1,4 @@
+import { handlersIndicadores } from './indicadores';
 import { setupWorker } from 'msw/browser';
 
 import { handlersAlertas } from './alertas';
@@ -12,6 +13,7 @@ import { handlersFilas } from './filas';
 
 export const worker = setupWorker(
   ...handlers,
+  ...handlersIndicadores,
   ...handlersCadastros,
   ...handlersCatalogos,
   ...handlersFilas,

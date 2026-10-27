@@ -386,3 +386,23 @@ A aplicação não importa `web` nem autenticação.
 - O simulador é local, isolado em `apps/publico/src/mocks`, com eventos entre abas. Substitui
   apenas as dependências indisponíveis; não cria endpoints de API nem regras de produção.
 - Sinal sonoro fica na #51. Relatório e capturas em [entregas/GH-42-validacao.md](entregas/GH-42-validacao.md).
+
+## Painel de indicadores (W-17 / T-16, #48)
+
+O front usa o cliente autenticado existente e os schemas da API #27 já implementada.
+Integração local validada em 27/10/2026 com PostgreSQL e API reais, sem MSW:
+login/refresh, cartões, filtros, CSV e evento EXPORTAR confirmado na auditoria.
+O modo MSW continua habilitado em desenvolvimento; `NEXT_PUBLIC_API_MOCK=false`
+usa as rotas reais de resumo, volume e exportação.
+
+- Volume aceita período/turno, sem especialidade; a tela seleciona a especialidade na
+  série agregada retornada, reutilizada pelo gráfico e pela tabela.
+- Especialidades do seletor vêm do volume do período, sem acrescentar permissão de cadastros.
+- Exportação recebe filtros aplicados e formato CSV. Auditoria é feita pela API, sem chamada extra do front.
+- O schema/API de exportação aceita turno, mas o OpenAPI ainda não o lista; alinhar
+  documentação em PR próprio de contrato. Nenhum contrato alterado nesta entrega.
+- A simulação continua opcional. Para a API real, use `apps/web/.env.example`
+  com `NEXT_PUBLIC_API_MOCK=false`. O cenário local persistido no banco é fictício
+  e está descrito no relatório; não contém dados de pacientes reais.
+
+Relatório e evidências: [GH-48](entregas/GH-48-validacao.md).
