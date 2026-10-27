@@ -15,6 +15,7 @@ import { SenhaProjecao } from '../senhas/senha-projecao.service';
 import { SenhasRepository, type Transacao } from '../senhas/senhas.repository';
 import { type ChamadaCompleta, FilasRepository } from './filas.repository';
 import { filaNaoEncontrada } from './filas.service';
+import { BloqueioService } from './bloqueio.service';
 
 function paraChamada(chamada: ChamadaCompleta): Chamada {
   return {
@@ -59,14 +60,16 @@ export class ChamadasService {
     private readonly parametros: ParametrosService,
     private readonly idempotencia: IdempotenciaService,
     private readonly eventos: EventosDominio,
+    private readonly bloqueio: BloqueioService,
   ) {}
 
-  chamarProxima(
+  async chamarProxima(
     filaId: string,
     entrada: ChamarProximaEntrada,
     usuario: { id: string; unidadeId: string },
     chaveIdempotencia: string | undefined,
   ): Promise<ResultadoChamada> {
+    await this.bloqueio.atualizar(filaId, usuario.unidadeId);
     return this.idempotencia.executar(
       {
         usuarioId: usuario.id,

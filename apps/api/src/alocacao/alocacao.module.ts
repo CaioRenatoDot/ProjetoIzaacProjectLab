@@ -10,5 +10,6 @@ import { AlocacaoService } from './alocacao.service';
   imports: [ParametrosModule, SenhasModule],
   controllers: [AlocacaoController],
   providers: [AlocacaoService, AlocacaoRepository],
+  exports: [AlocacaoService],
 })
 export class AlocacaoModule {}
