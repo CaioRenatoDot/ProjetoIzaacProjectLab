@@ -363,3 +363,26 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 | 4   | **Histórico "do período" sem filtro de data**: `GET /alertas` não aceita `de`/`ate`                                                             | O histórico lista os normalizados, paginado, na ordem da API                                                                                | Acrescentar `de` e `ate` (ou definir o período padrão do histórico)               |
 | 5   | **Respostas de erro** de `/reconhecimento` e `/escalonamento`: só o 403 está no contrato (reconhecer alerta já normalizado, `acao` inválida)    | Trata 403 com mensagem própria; outros erros com mensagem genérica                                                                          | Definir 409 para alerta normalizado e 422 para `acao` inválida                    |
 | 6   | **Bloqueio sem limite**: alerta `FILA_BLOQUEADA` vem com `tempoEsperaMinutos` e `limiteMinutos` nulos                                           | Mostra a causa (RN-10) no lugar dos tempos                                                                                                  | Nenhuma, se for o comportamento esperado                                          |
+
+## Telão e consulta pública (W-09 / W-10, #42)
+
+Front da etapa 6.5 implementado e validado com dados fictícios. Rotas em `apps/publico`:
+`/telao`, `/consulta` e `/demonstracao` (esta última apenas no modo simulado).
+A aplicação não importa `web` nem autenticação.
+
+- **#19:** conectar namespace `/painel`, eventos `chamada.exibir` e `painel.estado`.
+  A entrada na sala `unidade:{id}` não está especificada; a query `unidadeId` usada no
+  cliente é **proposta de adaptação**, a confirmar com o responsável.
+- **#20:** usar `GET /publico/painel/{unidadeId}` e `GET /publico/senhas/{numero}`.
+  O snapshot HTTP não declara `sequencia`; o front aceita sua ausência e preserva a sequência
+  de evento já conhecida para a mesma chamada. Confirmar a compatibilidade na integração.
+- Configuração real em `apps/publico/.env.local`: simulação desligada, URLs HTTP/Socket.IO,
+  UUID e nome da unidade. A API e o socket públicos não recebem cookies ou token de sessão.
+- A projeção do telão tem apenas número, especialidade, local e sequência. A projeção da
+  consulta é independente. Propriedades extras e o texto livre de orientação não são propagados.
+  O back ainda deve assegurar a projeção pública **antes** de enviar dados pela rede (ADR-003).
+- Consultas e recuperação HTTP do telão a cada 30 segundos. Queda de conexão preserva a chamada;
+  a consulta preserva o último resultado com aviso de desatualização em falhas de atualização.
+- O simulador é local, isolado em `apps/publico/src/mocks`, com eventos entre abas. Substitui
+  apenas as dependências indisponíveis; não cria endpoints de API nem regras de produção.
+- Sinal sonoro fica na #51. Relatório e capturas em [entregas/GH-42-validacao.md](entregas/GH-42-validacao.md).

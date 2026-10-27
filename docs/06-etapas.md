@@ -194,7 +194,10 @@ Objetivo: equipe chama a próxima senha e o telão mostra a chamada em tempo rea
 | 6.2   | Quadro da fila ordenado (RN-04) e "Chamar próxima" sem chamada duplicada             | Rildo ✅        |
 | 6.3   | Bloqueio da fila por falta de supervisor (RN-10) e eventos em tempo real (Socket.IO) | Nathan          |
 | 6.4   | Tela W-08 · Painel de fila                                                           | Caio Gabriel ✅ |
-| 6.5   | Tela W-09 · Telão e W-10 · Consulta de senha pelo paciente                           | Thalita         |
+| 6.5   | Tela W-09 · Telão e W-10 · Consulta de senha pelo paciente                           | Thalita ✅      |
+
+**6.5 (#42):** front validado com dados fictícios e pontos de integração com #19/#20
+documentados. Evidências e critérios em [entregas/GH-42-validacao.md](entregas/GH-42-validacao.md).
 
 ### Etapa 7 · Alocação e atendimento
 
