@@ -1,3 +1,4 @@
+import { handlersIndicadores } from '@/mocks/indicadores';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render } from '@testing-library/react';
 import { setupServer } from 'msw/node';
@@ -19,6 +20,7 @@ import { handlersFilas } from '@/mocks/filas';
 
 export const servidor = setupServer(
   ...handlers,
+  ...handlersIndicadores,
   ...handlersCadastros,
   ...handlersCatalogos,
   ...handlersFilas,

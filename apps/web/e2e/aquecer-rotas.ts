@@ -14,6 +14,7 @@ const ROTAS = [
   '/fila',
   '/fila/senhas/senha-f013/alocacao',
   '/auditoria',
+  '/indicadores',
   '/indicadores/alertas',
 ];
 
