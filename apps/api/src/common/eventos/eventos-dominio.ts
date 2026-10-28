@@ -21,9 +21,19 @@ export class EventosDominio {
     }
   }
 
-  assinar<N extends NomeEventoFila>(nome: N, ouvinte: (carga: EventosFila[N]) => void): () => void {
-    this.emissor.on(nome, ouvinte);
-    return () => this.emissor.off(nome, ouvinte);
+  assinar<N extends NomeEventoFila>(
+    nome: N,
+    ouvinte: (carga: EventosFila[N]) => void | Promise<void>,
+  ): () => void {
+    const receber = (carga: EventosFila[N]): void => {
+      const resultado = ouvinte(carga);
+      if (resultado)
+        void resultado.catch((erro: unknown) => {
+          this.logger.error({ err: erro, evento: nome }, 'Falha ao entregar evento de domínio');
+        });
+    };
+    this.emissor.on(nome, receber);
+    return () => this.emissor.off(nome, receber);
   }
 }
 

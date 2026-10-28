@@ -23,6 +23,7 @@ import { PerfisModule } from './perfis/perfis.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SenhasModule } from './senhas/senhas.module';
 import { TriagemModule } from './triagem/triagem.module';
+import { TempoRealModule } from './tempo-real/tempo-real.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { TriagemModule } from './triagem/triagem.module';
     AtendimentosModule,
     AusenciasModule,
     IndicadoresModule,
+    TempoRealModule,
   ],
 })
 export class AppModule {}
