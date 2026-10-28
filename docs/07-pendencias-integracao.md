@@ -374,6 +374,8 @@ A aplicação não importa `web` nem autenticação.
   O contrato da #19 formaliza a query `unidadeId` já usada no cliente; o servidor valida a
   unidade e efetua a entrada na sala `unidade:{id}` sem autenticação.
 - **#20:** usar `GET /publico/painel/{unidadeId}` e `GET /publico/senhas/{numero}`.
+  Back-end implementado e validado localmente conforme o contrato do PR #122; aguardando
+  merge da implementação. Critérios e decisões em [GH-20-aceite](entregas/GH-20-aceite.md).
   O snapshot HTTP não declara `sequencia`; o front aceita sua ausência e preserva a sequência
   de evento já conhecida para a mesma chamada. Confirmar a compatibilidade na integração.
 - Configuração real em `apps/publico/.env.local`: simulação desligada, URLs HTTP/Socket.IO,

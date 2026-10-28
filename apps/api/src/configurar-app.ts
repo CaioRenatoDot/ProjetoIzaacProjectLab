@@ -28,7 +28,7 @@ export function configurarApp(app: INestApplication, opcoes: OpcoesApp = {}): vo
     app.enableCors({
       origin: opcoes.origensCors,
       credentials: true,
-      exposedHeaders: [HEADER_REQUEST_ID],
+      exposedHeaders: [HEADER_REQUEST_ID, 'Retry-After'],
     });
   }
 }

@@ -45,11 +45,11 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue    | Dono   | Depende de | Observação                                                                                                        |
-| -------- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------- |
-| #20      | Nathan | #19 pronta | Endpoints HTTP públicos: contrato em preparação; decisões e critérios em [GH-20-aceite](entregas/GH-20-aceite.md) |
-| #22      | Nathan | —          | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                              |
-| #26, #28 | Nathan | —          | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                        |
+| Issue    | Dono   | Depende de | Observação                                                                                                                   |
+| -------- | ------ | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| #20      | Nathan | #19 pronta | Endpoints HTTP públicos implementados e validados localmente; revisão/CI/merge pendentes. [Aceite](entregas/GH-20-aceite.md) |
+| #22      | Nathan | —          | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                                         |
+| #26, #28 | Nathan | —          | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                                   |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
