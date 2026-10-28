@@ -2374,6 +2374,7 @@ paths:
         W-09, UC-09, RF-05. Sem autenticação. Retorna exclusivamente número da senha,
         especialidade e local - nunca nome, prioridade clínica ou dado de saúde (P-03, RNF-02).
         Complementa o evento `chamada.exibir` do namespace `/painel`, e serve à reconexão.
+        Rate limit compartilhado de 30 requisições por minuto por IP em `/publico/*`.
       security: []
       responses:
         '200':
@@ -2381,22 +2382,13 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  atual:
-                    oneOf:
-                      - $ref: '#/components/schemas/ChamadaPublica'
-                      - type: 'null'
-                  anteriores:
-                    type: array
-                    maxItems: 4
-                    items: { $ref: '#/components/schemas/ChamadaPublica' }
-                  servidorEm: { type: string, format: date-time }
+                $ref: '#/components/schemas/EstadoPainelPublico'
         '404':
           description: Unidade inexistente
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problema' }
+        '429': { $ref: '#/components/responses/LimiteRequisicoes' }
 
   /publico/senhas/{numero}:
     parameters:
@@ -2413,7 +2405,11 @@ paths:
         W-10, UC-08, RF-04. Sem autenticação, mediante número da senha. Senha inexistente ou de
         outro dia retorna 404 com mensagem neutra, sem revelar dados. Dados insuficientes para
         estimar tempo retornam `tempoEstimadoMinutos: null` e apenas a posição.
-        Rate limit de 30 requisições por minuto por IP.
+        A estimativa é a média entre chegada e primeira chamada das senhas da mesma fila no
+        dia, com no mínimo 10 senhas chamadas; rechamadas não aumentam a amostra. A média
+        não é multiplicada pela posição. Regra aprovada para a #20 pelo responsável.
+        Se houver mais de uma senha com o número no dia, retorna o mesmo 404 neutro.
+        Rate limit compartilhado de 30 requisições por minuto por IP em `/publico/*`.
       security: []
       responses:
         '200':
@@ -2421,18 +2417,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  numero: { type: string }
-                  especialidade: { type: string }
-                  status: { $ref: '#/components/schemas/StatusSenha' }
-                  posicao: { type: [integer, 'null'] }
-                  tempoEstimadoMinutos: { type: [integer, 'null'] }
-                  local: { type: [string, 'null'] }
-                  orientacao:
-                    type: string
-                    description: Texto pronto para exibição, conforme o status
-                    example: Dirija-se à Sala 03.
+                $ref: '#/components/schemas/ConsultaSenhaPublica'
         '404':
           description: Mensagem neutra, sem revelar existência de dados
           content:
@@ -2443,6 +2428,7 @@ paths:
                 status: 404
                 codigo: SENHA_NAO_ENCONTRADA
                 detail: Não localizamos essa senha para o dia de hoje. Procure a recepção.
+        '429': { $ref: '#/components/responses/LimiteRequisicoes' }
 
   /health:
     get:
@@ -2528,6 +2514,21 @@ components:
       schema: { type: string, format: uuid }
 
   responses:
+    LimiteRequisicoes:
+      description: Limite compartilhado de 30 requisições por minuto por IP em `/publico/*` atingido
+      headers:
+        Retry-After:
+          description: Segundos até poder consultar novamente
+          schema: { type: integer, minimum: 1 }
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problema' }
+          example:
+            type: about:blank
+            title: Limite de requisições atingido
+            status: 429
+            codigo: LIMITE_REQUISICOES
+            detail: Aguarde antes de consultar novamente.
     NaoAutenticado:
       description: Não autenticado
       content:
@@ -3094,10 +3095,44 @@ components:
     ChamadaPublica:
       type: object
       description: Projeção do telão - apenas três campos (P-03, RNF-02)
+      additionalProperties: false
+      required: [numero, especialidade, local]
       properties:
         numero: { type: string, example: F014 }
         especialidade: { type: string, example: Fisioterapia }
         local: { type: string, example: Sala 03 }
+
+    EstadoPainelPublico:
+      type: object
+      additionalProperties: false
+      required: [atual, anteriores, servidorEm]
+      properties:
+        atual:
+          oneOf:
+            - $ref: '#/components/schemas/ChamadaPublica'
+            - type: 'null'
+        anteriores:
+          type: array
+          maxItems: 4
+          items: { $ref: '#/components/schemas/ChamadaPublica' }
+        servidorEm: { type: string, format: date-time }
+
+    ConsultaSenhaPublica:
+      type: object
+      description: Consulta do paciente (UC-08), sem identificação nem dado clínico
+      additionalProperties: false
+      required: [numero, especialidade, status, posicao, tempoEstimadoMinutos, local]
+      properties:
+        numero: { type: string }
+        especialidade: { type: string }
+        status: { $ref: '#/components/schemas/StatusSenha' }
+        posicao: { type: [integer, 'null'], minimum: 1 }
+        tempoEstimadoMinutos: { type: [integer, 'null'], minimum: 0 }
+        local: { type: [string, 'null'] }
+        orientacao:
+          type: string
+          description: Texto pronto para exibição, conforme o status
+          example: Dirija-se à Sala 03.
 
     # ── Alocação ──
     SugestoesAlocacao:

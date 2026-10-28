@@ -2,7 +2,8 @@
 
 Implementação da [issue #19](https://github.com/CaioRenatoDot/ProjetoIzaacProjectLab/issues/19),
 a partir do contrato aprovado e mergeado no PR #119. Os quatro critérios foram validados
-localmente; revisão, CI remoto e merge da implementação continuam pendentes.
+localmente; implementação mergeada na `develop` no PR #120, com CI aprovado e merge
+confirmados pelo responsável.
 
 ## Fontes conferidas
 
