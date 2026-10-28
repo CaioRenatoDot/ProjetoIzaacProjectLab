@@ -78,7 +78,7 @@ export class ChamadasService {
         corpo: entrada,
       },
       async (tx) => {
-        const fila = await this.repositorio.buscar(filaId, usuario.unidadeId, tx);
+        const fila = await this.repositorio.bloquearParaChamada(tx, filaId, usuario.unidadeId);
         if (!fila) throw filaNaoEncontrada();
         if (fila.bloqueada) {
           throw new ErroDominio(

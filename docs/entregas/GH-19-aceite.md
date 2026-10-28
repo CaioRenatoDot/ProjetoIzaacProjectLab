@@ -83,3 +83,11 @@ responsável pela reconexão com token renovado e pela degradação via HTTP pre
 
 Os eventos de SLA (#28), os endpoints públicos HTTP (#20), as sugestões (#22), os
 encaminhamentos (#26) e alterações nas telas permanecem fora desta entrega.
+
+## Revisão posterior em 28/10/2026
+
+A revisão encontrou uma corrida entre chamada e alteração do bloqueio, além da ausência de
+auditoria nas mudanças automáticas. Ambas foram reproduzidas com o `AppModule` compilado
+e corrigidas na branch `fix/GH-19-concorrencia-auditoria-bloqueio`. A correção inclui o
+bloqueio iniciado pela alocação. Testes de regressão passaram; publicação, revisão e merge
+da correção são acompanhados na [revisão final](revisao-final-backend-nathan.md).

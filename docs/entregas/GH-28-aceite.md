@@ -3,10 +3,9 @@
 ## Estado e fontes
 
 Contrato mergeado na `develop` no [PR #127](https://github.com/CaioRenatoDot/ProjetoIzaacProjectLab/pull/127),
-com CI nº 141 aprovado, conforme conferência em 28/10/2026. Implementação validada
-localmente na branch `feat/GH-28-alertas-sla`, criada da `origin/develop` após esse merge.
-OpenAPI e `packages/contracts` não mudam nesta implementação. Revisão, CI remoto e merge
-do PR de implementação permanecem pendentes; a issue #28 continua aberta.
+com CI nº 141 aprovado, conforme conferência em 28/10/2026. Implementação mergeada no [PR #128](https://github.com/CaioRenatoDot/ProjetoIzaacProjectLab/pull/128),
+com CI nº 143 aprovado. Conferido no GitHub em 28/10/2026; a issue #28 ainda estava aberta.
+OpenAPI e `packages/contracts` não mudaram na implementação.
 
 Fontes conferidas: PDF de Requisitos UC-19 (p. 33), Tabelas 8/20/21; DOCX originais;
 UI T-17; wireframe W-18; `docs/01` §3/§4, `docs/03` §3.1/§3.5, `docs/04` §7, OpenAPI,
@@ -107,8 +106,8 @@ para ID inexistente; autorizado com recurso inexistente/outra unidade: 404 neutr
 
 ## Próxima etapa
 
-Revisar o PR de implementação com `Closes #28`, conferir o CI remoto e mergear na `develop`
-antes de fechar a issue. O diff supera o alvo aproximado de 400 linhas por incluir módulo,
+O PR #128 foi mergeado na `develop` com CI aprovado; a issue #28 pode ser fechada pelo
+responsável. A revisão posterior das entregas está na [revisão final](revisao-final-backend-nathan.md). O diff supera o alvo aproximado de 400 linhas por incluir módulo,
 migração e testes de concorrência/rollback/HTTP/Socket.IO; o contrato foi separado no PR #127.
 Este relatório preserva as decisões e evidências para o resumo final das issues #19, #20,
 #22, #26 e #28.

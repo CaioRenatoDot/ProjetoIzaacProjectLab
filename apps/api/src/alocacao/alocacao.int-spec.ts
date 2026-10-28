@@ -10,6 +10,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { EventosDominio, EventosDominioModule } from '../common/eventos/eventos-dominio';
+import { AuditoriaService } from '../common/auditoria/auditoria.service';
 import { IdempotenciaModule } from '../common/idempotencia/idempotencia.service';
 import { Relogio, RelogioModule } from '../common/relogio';
 import {
@@ -352,6 +353,42 @@ describe('alocação de estudante, supervisor e sala (#21)', () => {
     );
     expect(ouvinte).toHaveBeenCalledWith(expect.objectContaining({ filaId: c.filaId }));
     expect(await contexto.prisma.alocacao.count({ where: { senhaId: senha.id } })).toBe(0);
+    for (const [entidade, entidadeId] of [
+      ['fila', c.filaId],
+      ['senha', senha.id],
+    ]) {
+      const registros = await contexto.prisma.auditLog.findMany({
+        where: { entidade, entidadeId, modulo: 'alocacao', operacao: 'EDITAR' },
+      });
+      expect(registros).toHaveLength(1);
+      expect(registros[0]?.usuarioId).toBe(atendente.usuarioId);
+    }
+  });
+
+  it('RN-10 e RNF-05 falha de auditoria desfaz bloqueio e espera por supervisor sem evento', async () => {
+    const c = await cenario();
+    const senha = await senhaChamada(c);
+    const entrada = { estudanteId: await estudante(c), salaId: await sala(c) };
+    const falha = vi
+      .spyOn(contexto.app.get(AuditoriaService), 'registrar')
+      .mockRejectedValueOnce(new Error('Falha fictícia de auditoria'));
+    const evento = vi.spyOn(contexto.app.get(EventosDominio), 'emitir');
+    try {
+      await alocar(senha.id, entrada).expect(500);
+      expect(
+        (await contexto.prisma.fila.findUniqueOrThrow({ where: { id: c.filaId } })).bloqueada,
+      ).toBe(false);
+      expect(
+        (await contexto.prisma.senha.findUniqueOrThrow({ where: { id: senha.id } })).status,
+      ).toBe('CHAMADA');
+      expect(evento).not.toHaveBeenCalled();
+      expect(
+        await contexto.prisma.auditLog.count({ where: { entidade: 'fila', entidadeId: c.filaId } }),
+      ).toBe(0);
+    } finally {
+      falha.mockRestore();
+      evento.mockRestore();
+    }
   });
 
   it('troca de sala libera a alocação anterior na mesma transação', async () => {

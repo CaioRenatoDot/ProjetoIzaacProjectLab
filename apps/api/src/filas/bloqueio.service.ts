@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 import { AlocacaoService } from '../alocacao/alocacao.service';
+import { AuditoriaService } from '../common/auditoria/auditoria.service';
 import { EventosDominio } from '../common/eventos/eventos-dominio';
 import { Relogio } from '../common/relogio';
 import { turnoAtual } from '../common/turno';
@@ -19,6 +20,7 @@ export class BloqueioService {
     private readonly parametros: ParametrosService,
     private readonly relogio: Relogio,
     private readonly eventos: EventosDominio,
+    private readonly auditoria: AuditoriaService,
   ) {}
 
   async atualizar(id: string, unidadeId: string): Promise<void> {
@@ -40,6 +42,18 @@ export class BloqueioService {
       if (fila.bloqueada === bloqueada) return null;
       const motivo = 'Sem supervisor habilitado disponível na especialidade.';
       await this.repositorio.gravar(tx, id, bloqueada, motivo, agora);
+      await this.auditoria.registrar(
+        {
+          operacao: 'EDITAR',
+          modulo: 'fila',
+          entidade: 'fila',
+          entidadeId: id,
+          justificativa: bloqueada
+            ? `Bloqueio automático: ${motivo} (RN-10)`
+            : 'Supervisão regularizada: fila desbloqueada (RN-10).',
+        },
+        tx,
+      );
       return { bloqueada, motivo, especialidade: fila.especialidade.nome, em: agora.toISOString() };
     });
     // Publica somente depois que a gravação do bloqueio foi confirmada.

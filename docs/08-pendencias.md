@@ -7,7 +7,7 @@ ponto. Complementa dois documentos:
 - [`07-pendencias-integracao.md`](07-pendencias-integracao.md): troca do MSW pela API, tela por
   tela, e lacunas do contrato.
 
-**Quem fechar um item daqui atualiza este arquivo no mesmo PR.** Situação em 25/10/2026.
+**Quem fechar um item daqui atualiza este arquivo no mesmo PR.** Situação conferida em 28/10/2026.
 
 ## 1. Back-end pronto
 
@@ -32,6 +32,8 @@ integração da API (PostgreSQL)").
 | #21   | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
 | #22   | Sugestões com avaliação compartilhada de aptidão, alternativas e motivos; implementação mergeada no PR #124                                 | —        |
 | #20   | Endpoints HTTP públicos do telão e da consulta, estimativa e limite por IP; implementação mergeada no PR #123                               | #122     |
+| #19   | Bloqueio automático e Socket.IO, PR #120; correção de concorrência/auditoria em revisão                                                     | #119     |
+| #28   | Alertas de SLA, reconhecimento, escalonamento e eventos; implementação mergeada no PR #128                                                  | #127     |
 | #26   | Encaminhamento interno/externo, emissão compartilhada e auditoria transacional; implementação mergeada no PR #126                           | #125     |
 | #23   | Atendimento: iniciar, pausar, retomar, encerrar (libera a alocação), validação RN-11 com recusa e reenvio, tempo efetivo                    | #103     |
 | #25   | Desistência (só AGUARDANDO e EM_ATENDIMENTO), libera recursos, nunca grava ausência                                                         | #105     |
@@ -43,14 +45,11 @@ integração da API (PostgreSQL)").
 
 ## 2. Back-end que falta
 
-### Depende do schema da parte 2.2 (#7, pronto) e das Etapas 6 e 7
-
-As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
-as que não bloqueiam ninguém seguem com o Nathan:
-
-| Issue | Dono   | Depende de | Observação                                                                                                                          |
-| ----- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| #28   | Nathan | #19 pronta | Alertas de SLA e escalonamento implementados e validados localmente; revisão/CI/merge pendentes. [Aceite](entregas/GH-28-aceite.md) |
+As entregas #19, #20, #22, #26 e #28 foram mergeadas na `develop`. Na revisão final,
+duas lacunas da #19 foram reproduzidas e corrigidas localmente: concorrência entre chamada
+e bloqueio, e auditoria do bloqueio automático. A correção ainda precisa de revisão/CI/merge;
+[relatório e evidências](entregas/revisao-final-backend-nathan.md). A RN-06 continua com a
+limitação de modelo descrita na seção 3; a verificação de nomes de testes não a resolve.
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
@@ -150,7 +149,7 @@ trocar agora (🔧 lá):
 | Indicadores (W-17)                   | `GET /indicadores/resumo`, `/volume-por-especialidade` e `/exportacao` (só csv); mostrar a nota quando `amostraPequena`                             | #27      |
 | Testes de ponta a ponta              | Entrar com os usuários do seed (`<perfil>@clinica.invalid`, senha `senha-dev`, README)                                                              | #10, #9  |
 
-Ainda dependem do back: tempo real do painel e telão (W-08 a W-10: #19, #20), alertas (W-18: #28) e o estado real da conexão Socket.IO.
+Ainda falta integrar no front o tempo real do painel/telão (W-08 a W-10), os alertas (W-18) e o estado da conexão Socket.IO; os endpoints e eventos de #19, #20 e #28 já foram entregues no back.
 
 Também ficam com o front: rota `/acesso` com tela própria, TanStack Query na tela de perfis,
 formulário de perfil com React Hook Form e o schema do contrato, layout de impressão da senha,

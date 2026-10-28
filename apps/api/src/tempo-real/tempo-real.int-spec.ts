@@ -8,6 +8,7 @@ import request from 'supertest';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { type ConteudoToken, TokenAcessoService } from '../auth/token-acesso.service';
+import { AuditoriaService } from '../common/auditoria/auditoria.service';
 import { EventosDominio, EventosDominioModule } from '../common/eventos/eventos-dominio';
 import { IdempotenciaModule } from '../common/idempotencia/idempotencia.service';
 import { Relogio } from '../common/relogio';
@@ -248,6 +249,111 @@ describe('RN-10 e tempo real da #19', () => {
     } finally {
       relogio.mockReturnValue(AGORA);
       monitoradas.mockRestore();
+    }
+  });
+
+  it('RN-10 bloqueio concorrente espera a chamada concluir; depois impede novas chamadas', async () => {
+    const c = await cenario(true);
+    const supervisor = await contexto.prisma.supervisor.create({
+      data: {
+        nome: 'Supervisor fictício da regressão',
+        especialidades: { create: { especialidadeId: c.especialidade.id } },
+        disponibilidades: { create: TURNO },
+      },
+    });
+    const repo = contexto.app.get(FilasRepository);
+    const proxima = repo.proximaBloqueada.bind(repo);
+    let avisar!: () => void;
+    let liberar!: () => void;
+    const entrou = new Promise<void>((resolve) => {
+      avisar = resolve;
+    });
+    const seguir = new Promise<void>((resolve) => {
+      liberar = resolve;
+    });
+    const pausa = vi.spyOn(repo, 'proximaBloqueada').mockImplementationOnce(async (tx, id) => {
+      avisar();
+      await seguir;
+      return proxima(tx, id);
+    });
+    const chamada = autenticado(api().post(`/api/v1/filas/${c.fila.id}/chamadas`))
+      .send({})
+      .then((r) => r);
+    let bloqueada: Promise<void> | undefined;
+    try {
+      await entrou;
+      await contexto.prisma.supervisor.update({
+        where: { id: supervisor.id },
+        data: { ativo: false },
+      });
+      bloqueada = contexto.app.get(BloqueioService).atualizar(c.fila.id, UNIDADE_PADRAO);
+      await vi.waitFor(
+        async () => {
+          const [r] = await contexto.prisma.$queryRaw<{ total: number }[]>`
+          SELECT COUNT(*)::int AS total FROM pg_stat_activity
+          WHERE datname = current_database() AND wait_event_type = 'Lock'
+            AND query LIKE '%FROM fila WHERE id =%FOR UPDATE%'`;
+          expect(r!.total).toBeGreaterThan(0);
+        },
+        { timeout: 2000, interval: 10 },
+      );
+      expect(
+        (await contexto.prisma.fila.findUniqueOrThrow({ where: { id: c.fila.id } })).bloqueada,
+      ).toBe(false);
+      liberar();
+      expect((await chamada).status).toBe(201);
+      await bloqueada;
+      expect(
+        (await contexto.prisma.fila.findUniqueOrThrow({ where: { id: c.fila.id } })).bloqueada,
+      ).toBe(true);
+      const recusada = await autenticado(api().post(`/api/v1/filas/${c.fila.id}/chamadas`))
+        .send({})
+        .expect(409);
+      expect((recusada.body as { codigo: string }).codigo).toBe('FILA_BLOQUEADA');
+      expect(await contexto.prisma.chamada.count({ where: { senhaId: c.senha.id } })).toBe(1);
+    } finally {
+      liberar();
+      await Promise.allSettled([chamada, ...(bloqueada ? [bloqueada] : [])]);
+      pausa.mockRestore();
+    }
+  });
+
+  it('RN-10 e RNF-05 bloqueio/desbloqueio têm auditoria; falha desfaz a mudança sem publicar', async () => {
+    const c = await cenario(true);
+    const bloqueio = contexto.app.get(BloqueioService);
+    const auditoria = vi
+      .spyOn(contexto.app.get(AuditoriaService), 'registrar')
+      .mockRejectedValueOnce(new Error('Falha fictícia de auditoria'));
+    const eventos = vi.spyOn(contexto.app.get(EventosDominio), 'emitir');
+    try {
+      await expect(bloqueio.atualizar(c.fila.id, UNIDADE_PADRAO)).rejects.toThrow('Falha fictícia');
+      expect(
+        (await contexto.prisma.fila.findUniqueOrThrow({ where: { id: c.fila.id } })).bloqueada,
+      ).toBe(false);
+      expect(eventos).not.toHaveBeenCalled();
+      await bloqueio.atualizar(c.fila.id, UNIDADE_PADRAO);
+      await bloqueio.atualizar(c.fila.id, UNIDADE_PADRAO);
+      expect(
+        await contexto.prisma.auditLog.count({
+          where: { entidade: 'fila', entidadeId: c.fila.id },
+        }),
+      ).toBe(1);
+      await contexto.prisma.supervisor.create({
+        data: {
+          nome: 'Supervisor fictício',
+          especialidades: { create: { especialidadeId: c.especialidade.id } },
+          disponibilidades: { create: TURNO },
+        },
+      });
+      await bloqueio.atualizar(c.fila.id, UNIDADE_PADRAO);
+      expect(
+        await contexto.prisma.auditLog.count({
+          where: { entidade: 'fila', entidadeId: c.fila.id, operacao: 'EDITAR' },
+        }),
+      ).toBe(2);
+    } finally {
+      auditoria.mockRestore();
+      eventos.mockRestore();
     }
   });
 

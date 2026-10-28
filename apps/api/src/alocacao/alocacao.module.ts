@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuditoriaModule } from '../common/auditoria/auditoria.module';
 
 import { ParametrosModule } from '../parametros/parametros.module';
 import { SenhasModule } from '../senhas/senhas.module';
@@ -9,7 +10,7 @@ import { AptidaoAlocacaoService } from './aptidao-alocacao.service';
 import { SugestoesService } from './sugestoes.service';
 
 @Module({
-  imports: [ParametrosModule, SenhasModule],
+  imports: [ParametrosModule, SenhasModule, AuditoriaModule],
   controllers: [AlocacaoController],
   providers: [AlocacaoService, AlocacaoRepository, AptidaoAlocacaoService, SugestoesService],
   exports: [AlocacaoService],

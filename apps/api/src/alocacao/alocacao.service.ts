@@ -10,6 +10,7 @@ import {
 import { Prisma } from '@prisma/client';
 
 import { ErroDominio, ErroValidacao } from '../common/errors/erro-dominio';
+import { AuditoriaService } from '../common/auditoria/auditoria.service';
 import { EventosDominio } from '../common/eventos/eventos-dominio';
 import { IdempotenciaService } from '../common/idempotencia/idempotencia.service';
 import { Relogio } from '../common/relogio';
@@ -37,6 +38,7 @@ const transicaoInvalida = (detalhe: string) =>
 interface Usuario {
   id: string;
   unidadeId: string;
+  perfilNome?: string;
 }
 
 /**
@@ -56,6 +58,7 @@ export class AlocacaoService {
     private readonly eventos: EventosDominio,
     private readonly relogio: Relogio,
     private readonly aptidao: AptidaoAlocacaoService,
+    private readonly auditoria: AuditoriaService,
   ) {}
 
   async confirmar(
@@ -307,6 +310,23 @@ export class AlocacaoService {
         MOTIVO_BLOQUEIO,
         agora,
       );
+      for (const [entidade, entidadeId] of [
+        ...(bloqueou ? [['fila', senha.filaId] as const] : []),
+        ...(mudanca ? [['senha', senhaId] as const] : []),
+      ])
+        await this.auditoria.registrar(
+          {
+            operacao: 'EDITAR',
+            modulo: 'alocacao',
+            entidade,
+            entidadeId,
+            usuarioId: usuario.id,
+            perfilNomeNoMomento: usuario.perfilNome,
+            justificativa:
+              'Sem supervisor disponível: bloqueio da fila e espera por recurso (RN-10).',
+          },
+          tx,
+        );
       return {
         mudanca,
         bloqueio: bloqueou
