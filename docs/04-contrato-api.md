@@ -73,6 +73,24 @@ credencial inválida é sempre a mesma para usuário inexistente, senha incorret
 Rate limit de 30 requisições por minuto por IP. Nunca devolve nome de paciente, prioridade
 clínica ou dado de saúde (ADR-003).
 
+O limite é compartilhado pelos dois endpoints de `/publico/*`. A requisição que exceder o
+limite recebe `429 LIMITE_REQUISICOES` em RFC 7807 e `Retry-After` em segundos.
+O IP deve vir da conexão; cabeçalhos encaminhados só são aceitos de proxies explicitamente
+confiáveis, para que `X-Forwarded-For` não permita contornar o limite.
+
+`EstadoPainelPublico` e `ConsultaSenhaPublica`, em `@filas/contracts`, são projeções próprias
+que recusam campos extras. O telão HTTP devolve `atual`, até quatro `anteriores` e `servidorEm`;
+cada chamada contém só número, especialidade e local. A consulta devolve número,
+especialidade, status, posição, estimativa e local, com `orientacao` opcional, conforme o OpenAPI.
+Senha inexistente ou de outro dia recebe o mesmo `404 SENHA_NAO_ENCONTRADA` neutro.
+Quando o número corresponde a mais de uma senha no dia, a resposta é o mesmo 404 neutro,
+sem escolher arbitrariamente uma fila ou unidade.
+
+Para a #20, o responsável aprovou a estimativa pela média entre chegada e primeira chamada
+das senhas da mesma fila no dia, com amostra mínima de 10 senhas chamadas. Rechamadas não
+contam novamente. Abaixo desse mínimo, `tempoEstimadoMinutos` é `null`. A média não é
+multiplicada pela posição. A origem e as decisões estão em `entregas/GH-20-aceite.md`.
+
 ## 3. Autorização
 
 Cada operação exige uma permissão `modulo:operacao`. O guard valida o access token e confere no banco, a cada
@@ -182,6 +200,7 @@ Valem para qualquer endpoint. A lista completa de códigos fica em `CodigoErro`
 | `BLOQUEIO_TEMPORARIO` | 401  | Login durante o bloqueio por tentativas (§2)                                         |
 | `SEM_PERMISSAO`       | 403  | Falta de permissão, inclusive sobre recurso inexistente (§3)                         |
 | `NAO_ENCONTRADO`      | 404  | Rota inexistente                                                                     |
+| `LIMITE_REQUISICOES`  | 429  | Limite de requisições dos endpoints públicos atingido; `Retry-After` em segundos     |
 | `BANCO_INDISPONIVEL`  | 503  | Readiness com o banco fora (§9)                                                      |
 | `ERRO_INTERNO`        | 500  | Falha inesperada; o corpo não traz detalhe técnico, só o `X-Request-Id` no cabeçalho |
 

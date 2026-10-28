@@ -45,11 +45,11 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue    | Dono   | Depende de     | Observação                                                                                     |
-| -------- | ------ | -------------- | ---------------------------------------------------------------------------------------------- |
-| #20      | Nathan | #19 em revisão | Endpoints HTTP públicos; o transporte Socket.IO da #19 está implementado e validado localmente |
-| #22      | Nathan | —              | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                           |
-| #26, #28 | Nathan | —              | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                     |
+| Issue    | Dono   | Depende de | Observação                                                                                                        |
+| -------- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| #20      | Nathan | #19 pronta | Endpoints HTTP públicos: contrato em preparação; decisões e critérios em [GH-20-aceite](entregas/GH-20-aceite.md) |
+| #22      | Nathan | —          | Sugestão automática; reaproveitar as regras de `alocacao.service.ts`                                              |
+| #26, #28 | Nathan | —          | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                        |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
@@ -156,9 +156,9 @@ formulário de perfil com React Hook Form e o schema do contrato, layout de impr
 visão consolidada e seletor de turno do painel (dependem das lacunas 4 e 5 da fila) e o local da
 tela de alertas no menu.
 
-## Entrega local da #19
+## Entrega da #19
 
 Bloqueio automático e namespaces Socket.IO implementados com o contrato do PR #119.
 Os quatro critérios de aceite e as verificações adicionais estão registrados em
-[entregas/GH-19-aceite.md](entregas/GH-19-aceite.md). A issue aguarda revisão, CI remoto e
-merge da implementação; #20, #22, #26 e #28 não foram incluídas nesta entrega.
+[entregas/GH-19-aceite.md](entregas/GH-19-aceite.md). Implementação mergeada na `develop`
+no PR #120; #20, #22, #26 e #28 não foram incluídas nessa entrega.

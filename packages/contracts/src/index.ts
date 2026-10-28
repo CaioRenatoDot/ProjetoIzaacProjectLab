@@ -15,6 +15,7 @@ export * from './parametros';
 export * from './perfis';
 export * from './permissoes';
 export * from './pessoas';
+export * from './publico';
 export * from './senhas';
 export * from './sessao';
 export * from './triagem';
