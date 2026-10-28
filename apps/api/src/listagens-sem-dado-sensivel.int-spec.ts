@@ -7,6 +7,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { AlocacaoModule } from './alocacao/alocacao.module';
+import { AlertasModule } from './alertas/alertas.module';
 import { AtendimentosModule } from './atendimentos/atendimentos.module';
 import { AuditoriaConsultaModule } from './auditoria/auditoria-consulta.module';
 import { AusenciasModule } from './ausencias/ausencias.module';
@@ -56,6 +57,7 @@ const MODULOS: Type[] = [
   AtendimentosModule,
   AusenciasModule,
   IndicadoresModule,
+  AlertasModule,
 ];
 
 /** Parâmetros obrigatórios de algumas listagens. */
@@ -232,6 +234,7 @@ describe('listagens sem dado sensível (ADR-003, #30)', () => {
         '/api/v1/atendimentos',
         '/api/v1/filas/:id/senhas',
         '/api/v1/senhas/:id/alocacao/sugestoes',
+        '/api/v1/alertas',
       ]),
     );
   });

@@ -782,6 +782,7 @@ model Desistencia {
   @@map("desistencia")
 }
 
+/// Um aberto por fila/tipo: índice único parcial na migração da #28.
 model Alerta {
   id                 String       @id @default(uuid(7)) @db.Uuid
   tipo               TipoAlerta

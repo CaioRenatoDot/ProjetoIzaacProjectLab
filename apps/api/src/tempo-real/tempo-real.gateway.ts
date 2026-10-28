@@ -7,6 +7,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { HttpAdapterHost } from '@nestjs/core';
 import {
+  Alerta,
+  AlertaNormalizado,
   ChamadaExibida,
   EstadoPainel,
   type EventosFila,
@@ -100,6 +102,20 @@ export class TempoRealGateway implements OnApplicationBootstrap, OnModuleDestroy
     }
     for (const nome of EVENTOS)
       this.cancelar.push(this.eventos.assinar(nome, (carga) => this.repassar(nome, carga)));
+    this.cancelar.push(
+      this.eventos.assinar('sla.excedido', ({ unidadeId, dados }) => {
+        this.io
+          ?.of('/alertas')
+          .to(`unidade:${unidadeId}`)
+          .emit('sla.excedido', Alerta.parse(dados));
+      }),
+      this.eventos.assinar('sla.normalizado', ({ unidadeId, dados }) => {
+        this.io
+          ?.of('/alertas')
+          .to(`unidade:${unidadeId}`)
+          .emit('sla.normalizado', AlertaNormalizado.parse(dados));
+      }),
+    );
   }
 
   private async enviarEstado(socket: Socket, unidadeId: string): Promise<void> {

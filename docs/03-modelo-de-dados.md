@@ -210,6 +210,11 @@ A senha derivada reutiliza a triagem original, preservada, e aponta para a senha
 `tempo_espera_minutos?`, `limite_minutos?`, `senhas_afetadas?`, `disparado_em`,
 `reconhecido_por?`, `reconhecido_em?`, `normalizado_em?`.
 
+Na #28, índice único parcial em `(fila_id, tipo)` para ATIVO/RECONHECIDO impede dois
+abertos da mesma origem. Os tempos e a quantidade preservam o retrato do disparo da
+Tabela 20; normalização registra o horário sem sobrescrevê-los. A migração exige que
+registros anteriores já respeitem essa unicidade, sem apagar histórico.
+
 **escalonamento** — `id`, `alerta_id`, `acao` (`REFORCO_ATENDENTE` | `VAGA_EXTRA`),
 `observacao?`, `acionado_por`, `acionado_em`. Registra autor e horário, como exige T-17.
 
