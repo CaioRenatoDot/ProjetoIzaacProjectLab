@@ -3,9 +3,8 @@
 ## Estado da entrega
 
 Contrato mergeado na `develop` no PR #122, após a implementação da #19 no PR #120.
-Os dois endpoints estão implementados e validados localmente na branch
-`feat/GH-20-endpoints-publicos`, sem alterar o contrato. A entrega ainda aguarda revisão,
-CI remoto e merge da implementação para concluir a #20.
+Os dois endpoints foram implementados e validados, sem alterar o contrato, e mergeados
+na `develop` no PR #123, com CI aprovado. A issue #20 foi fechada pelo responsável.
 
 ## Fontes conferidas
 
@@ -93,4 +92,4 @@ Essas leituras não são sensíveis e não geram auditoria (ADR-003). Não há a
 de `packages/contracts` ou do OpenAPI nesta implementação. Integração das telas continua
 registrada em `docs/07-pendencias-integracao.md`.
 
-Revisão, CI remoto e merge da implementação com `Closes #20` permanecem pendentes.
+Implementação entregue no PR #123, mergeado na `develop`; issue #20 fechada pelo responsável.

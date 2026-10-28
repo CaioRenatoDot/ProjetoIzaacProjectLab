@@ -6,6 +6,43 @@ import { ALOCACAO_COMPLETA, type AlocacaoCompleta } from './alocacao.projecao';
 
 const VIGENTE = { liberadaEm: null } satisfies Prisma.AlocacaoWhereInput;
 
+const disponibilidade = (diaSemana: DiaSemana | null, turno: Turno | null) =>
+  diaSemana && turno ? { where: { diaSemana, turno } } : { take: 0 };
+const estudanteSelect = (dia: DiaSemana | null, turno: Turno | null) =>
+  ({
+    id: true,
+    nome: true,
+    nivelFormacao: true,
+    ativo: true,
+    especialidadeId: true,
+    especialidade: { select: { unidadeId: true, nome: true } },
+    disponibilidades: disponibilidade(dia, turno),
+    _count: { select: { alocacoes: { where: VIGENTE } } },
+  }) satisfies Prisma.EstudanteSelect;
+const supervisorSelect = (dia: DiaSemana | null, turno: Turno | null) =>
+  ({
+    id: true,
+    nome: true,
+    ativo: true,
+    limiteEstudantesSimultaneos: true,
+    especialidades: { select: { especialidadeId: true } },
+    disponibilidades: disponibilidade(dia, turno),
+    _count: { select: { alocacoes: { where: VIGENTE } } },
+  }) satisfies Prisma.SupervisorSelect;
+const SALA_SELECT = {
+  id: true,
+  identificacao: true,
+  ativo: true,
+  unidadeId: true,
+  situacao: true,
+  recursos: { select: { recursoId: true, recurso: { select: { nome: true } } } },
+  _count: { select: { alocacoes: { where: VIGENTE } } },
+} satisfies Prisma.SalaSelect;
+const pagina = (cursor?: string) => ({
+  take: 100,
+  ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+});
+
 /** Leituras e escritas da alocação; todas na transação de quem chama. */
 @Injectable()
 export class AlocacaoRepository {
@@ -45,26 +82,14 @@ export class AlocacaoRepository {
   estudante(tx: Transacao, id: string, diaSemana: DiaSemana | null, turno: Turno | null) {
     return tx.estudante.findFirst({
       where: { id },
-      select: {
-        ativo: true,
-        especialidadeId: true,
-        especialidade: { select: { unidadeId: true } },
-        disponibilidades: diaSemana && turno ? { where: { diaSemana, turno } } : { take: 0 },
-        _count: { select: { alocacoes: { where: VIGENTE } } },
-      },
+      select: estudanteSelect(diaSemana, turno),
     });
   }
 
   sala(tx: Transacao, id: string) {
     return tx.sala.findFirst({
       where: { id },
-      select: {
-        ativo: true,
-        unidadeId: true,
-        situacao: true,
-        recursos: { select: { recursoId: true } },
-        _count: { select: { alocacoes: { where: VIGENTE } } },
-      },
+      select: SALA_SELECT,
     });
   }
 
@@ -78,13 +103,46 @@ export class AlocacaoRepository {
   supervisor(tx: Transacao, id: string, diaSemana: DiaSemana | null, turno: Turno | null) {
     return tx.supervisor.findFirst({
       where: { id },
-      select: {
-        ativo: true,
-        limiteEstudantesSimultaneos: true,
-        especialidades: { select: { especialidadeId: true } },
-        disponibilidades: diaSemana && turno ? { where: { diaSemana, turno } } : { take: 0 },
-        _count: { select: { alocacoes: { where: VIGENTE } } },
-      },
+      select: supervisorSelect(diaSemana, turno),
+    });
+  }
+
+  estudantes(
+    tx: Transacao,
+    unidadeId: string,
+    dia: DiaSemana | null,
+    turno: Turno | null,
+    cursor?: string,
+  ) {
+    return tx.estudante.findMany({
+      where: { ativo: true, especialidade: { unidadeId } },
+      select: estudanteSelect(dia, turno),
+      orderBy: [{ nome: 'asc' }, { id: 'asc' }],
+      ...pagina(cursor),
+    });
+  }
+
+  supervisores(
+    tx: Transacao,
+    unidadeId: string,
+    dia: DiaSemana | null,
+    turno: Turno | null,
+    cursor?: string,
+  ) {
+    return tx.supervisor.findMany({
+      where: { ativo: true, especialidades: { some: { especialidade: { unidadeId } } } },
+      select: supervisorSelect(dia, turno),
+      orderBy: [{ nome: 'asc' }, { id: 'asc' }],
+      ...pagina(cursor),
+    });
+  }
+
+  salas(tx: Transacao, unidadeId: string, cursor?: string) {
+    return tx.sala.findMany({
+      where: { ativo: true, unidadeId },
+      select: SALA_SELECT,
+      orderBy: [{ identificacao: 'asc' }, { id: 'asc' }],
+      ...pagina(cursor),
     });
   }
 
@@ -103,10 +161,7 @@ export class AlocacaoRepository {
         disponibilidades: { some: { diaSemana, turno } },
         ...(exceto ? { NOT: { id: exceto } } : {}),
       },
-      select: {
-        limiteEstudantesSimultaneos: true,
-        _count: { select: { alocacoes: { where: VIGENTE } } },
-      },
+      select: supervisorSelect(diaSemana, turno),
     });
   }
 

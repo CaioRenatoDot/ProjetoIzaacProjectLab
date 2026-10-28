@@ -193,6 +193,8 @@ Nutrição (RN-03, RN-04, SLA e todos os status) e Psicologia (vazia).
 
 A tela (`apps/web/src/components/alocacao/`) consome a API pelo cliente HTTP e não deduz regra:
 quem está apto e o motivo de quem não está vêm prontos de `GET /senhas/{id}/alocacao/sugestoes`.
+O back-end da #22 está implementado e validado localmente, aguardando merge. O relatório
+[GH-22-aceite](entregas/GH-22-aceite.md) registra a projeção, os limites e as evidências.
 Hoje quem responde é a simulação `apps/web/src/mocks/alocacao.ts`, sobre as senhas de
 `mocks/filas.ts`: Fisioterapia exige supervisor e tem inaptos de cada tipo; "Ana Ribeiro" fica
 indisponível na confirmação (409 `RECURSO_INDISPONIVEL`); Nutrição não exige supervisor; N106 não
@@ -206,12 +208,12 @@ tem sala compatível.
 
 ### Lacunas do contrato da alocação (decisão antes de integrar com a #21)
 
-| #   | Lacuna                                                                                                                                            | O que o front faz hoje                                                          | Pedido ao back-end                                                        |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| 1   | **Status depois da alocação**: o contrato não diz se a senha muda de status ao confirmar (nem se `AGUARDANDO_RECURSO` volta a `CHAMADA`)          | A simulação deixa a senha em `CHAMADA`, com `versao` nova                       | Definir a transição (P-01)                                                |
-| 2   | **Sala ocupada**: `motivoInaptidao` não tem valor para sala ocupada por outro atendimento                                                         | A simulação usa `ATENDIMENTO_ATIVO` com o texto "Ocupada por outro atendimento" | Acrescentar o valor ou confirmar o uso de `ATENDIMENTO_ATIVO`             |
-| 3   | **Cabeçalho da tela**: número, especialidade e horário da chamada vêm de `GET /senhas/{id}`, que exige `senha:consultar` além de `alocacao:criar` | Usa `GET /senhas/{id}` (sem `incluirTriagem`, então sem dado sensível)          | Incluir esses dados em `SugestoesAlocacao` ou confirmar a dupla permissão |
-| 4   | **`SUPERVISOR_INDISPONIVEL`**: a tela mostra o `detail` e avisa que a senha ficou aguardando recurso e que a gestão foi notificada                | Não simulado                                                                    | Garantir que `detail` diga a causa e o próximo passo                      |
+| #   | Lacuna                                                                                                                                            | O que o front faz hoje                                                 | Pedido ao back-end                                                            |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| 1   | **Status depois da alocação**: o contrato não diz se a senha muda de status ao confirmar (nem se `AGUARDANDO_RECURSO` volta a `CHAMADA`)          | A simulação deixa a senha em `CHAMADA`, com `versao` nova              | Definir a transição (P-01)                                                    |
+| 2   | **Sala ocupada**: representar ocupação por outro atendimento                                                                                      | A simulação usa `ATENDIMENTO_ATIVO`                                    | A #22 usa o mesmo código existente e texto em português, sem mudar o contrato |
+| 3   | **Cabeçalho da tela**: número, especialidade e horário da chamada vêm de `GET /senhas/{id}`, que exige `senha:consultar` além de `alocacao:criar` | Usa `GET /senhas/{id}` (sem `incluirTriagem`, então sem dado sensível) | Incluir esses dados em `SugestoesAlocacao` ou confirmar a dupla permissão     |
+| 4   | **`SUPERVISOR_INDISPONIVEL`**: a tela mostra o `detail` e avisa que a senha ficou aguardando recurso e que a gestão foi notificada                | Não simulado                                                           | Garantir que `detail` diga a causa e o próximo passo                          |
 
 ## Atendimento e encerramento (W-12 e W-13, #44)
 
