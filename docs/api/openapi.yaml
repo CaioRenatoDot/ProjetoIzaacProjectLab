@@ -2053,12 +2053,24 @@ paths:
       description: |
         UC-14, UC-15, RF-08.
 
+        Exige `encaminhamento:criar` e atendimento da unidade da sessão, com a senha em
+        ENCERRADO e desfecho correspondente ao tipo informado. PENDENTE_VALIDACAO ainda
+        não atende à pré-condição dos UC-14/UC-15 e retorna 409 TRANSICAO_INVALIDA.
         - INTERNO gera automaticamente uma nova entrada de fila vinculada ao atendimento
           original; a resposta traz `senhaGerada` para a mensagem de confirmação (T-14)
+        - Registro e emissão interna acontecem na mesma transação; o evento `senha.criada`
+          só é publicado após commit, com `SenhaResumo` sem conteúdo clínico
         - EXTERNO é apenas registrado, sem gerar entrada de fila
         - Especialidade de destino inativa retorna 409 ESPECIALIDADE_INATIVA
         - Destino com bloqueio ativo por ausência de supervisor **permite** o encaminhamento,
           com aviso de que a chamada está suspensa (RN-10)
+        - Um encaminhamento por atendimento; repetição retorna 409 DUPLICIDADE, inclusive
+          em concorrência. A senha de origem e a triagem original são preservadas
+        - A nova senha reutiliza a triagem original, herda o tipo de atendimento e recebe
+          `senhaOrigemId`. Sem prioridade sugerida, herda a atual; respeita a prioridade
+          legal da triagem (RN-02). Sugerir URGENTE exige motivo clínico (RN-03)
+        - Motivo interno não informado é devolvido como texto vazio. Motivo e destino são
+          dados sensíveis da resposta individual; não entram em listagens nem eventos
       requestBody:
         required: true
         content:
@@ -2076,10 +2088,17 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Encaminhamento' }
         '409':
-          description: Especialidade de destino inexistente ou inativa
+          description: Estado/desfecho inválido, encaminhamento duplicado, especialidade inexistente/inativa ou destino sem fila ativa
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problema' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
+        '404':
+          description: Atendimento inexistente na unidade da sessão
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
 
   # ───────────────────────────── Indicadores ──────────────────────────────────
   /indicadores/resumo:
@@ -3244,7 +3263,17 @@ components:
     # ── Encaminhamento ──
     EncaminhamentoInternoEntrada:
       type: object
+      additionalProperties: false
       required: [tipo, especialidadeDestinoId]
+      allOf:
+        - if:
+            required: [prioridadeSugerida]
+            properties:
+              prioridadeSugerida: { const: URGENTE }
+          then:
+            required: [motivo]
+            properties:
+              motivo: { type: string, minLength: 1, pattern: '\S' }
       properties:
         tipo: { type: string, enum: [INTERNO] }
         especialidadeDestinoId: { type: string, format: uuid }
@@ -3252,14 +3281,17 @@ components:
         prioridadeSugerida: { $ref: '#/components/schemas/Prioridade' }
     EncaminhamentoExternoEntrada:
       type: object
+      additionalProperties: false
       required: [tipo, instituicaoDestino, motivo]
       properties:
         tipo: { type: string, enum: [EXTERNO] }
-        instituicaoDestino: { type: string }
-        motivo: { type: string }
+        instituicaoDestino: { type: string, minLength: 1, pattern: '\S' }
+        motivo: { type: string, minLength: 1, pattern: '\S' }
         observacoes: { type: string }
     Encaminhamento:
       type: object
+      additionalProperties: false
+      required: [id, atendimentoOrigemId, tipo, especialidadeDestino, instituicaoDestino, motivo, senhaGerada, avisos, criadoEm]
       properties:
         id: { type: string, format: uuid }
         atendimentoOrigemId: { type: string, format: uuid }
