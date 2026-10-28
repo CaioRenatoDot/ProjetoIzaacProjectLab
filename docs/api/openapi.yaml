@@ -2196,15 +2196,35 @@ paths:
       summary: Listar alertas
       operationId: listarAlertas
       description: |
-        UC-19, RF-11. Ordenados por gravidade. Bloqueio por ausência de supervisor aparece
-        nesta lista como alerta de origem distinta, tipo FILA_BLOQUEADA (P-04, T-17).
+        UC-19, RF-11. Exige alertas:consultar; consulta somente a unidade da sessão.
+        ATIVO antes de RECONHECIDO, depois NORMALIZADO. Em cada grupo em aberto:
+        FILA_BLOQUEADA primeiro, depois SLA_EXCEDIDO por maior excesso em minutos sobre o
+        limite; desempate por disparadoEm decrescente e id crescente. Normalizados por
+        normalizadoEm decrescente e id crescente. A gravidade é descrita pelos tempos
+        ou pela origem do bloqueio, sem categorias adicionais (T-17).
+        Sem status, inclui os três estados. de e ate são instantes inclusivos do disparo;
+        sem período, consulta todo o histórico, sempre paginado.
+        Bloqueio por ausência de supervisor aparece como FILA_BLOQUEADA (P-04, RN-10).
+        Cada alerta contém as medidas acionadas, com autor e horário, ordenadas por
+        acionadoEm crescente e id crescente; lista vazia quando não houver medidas.
       parameters:
         - name: status
           in: query
+          style: form
+          explode: true
+          description: Pode repetir, por exemplo status=ATIVO&status=RECONHECIDO.
           schema:
             type: array
             items: { $ref: '#/components/schemas/StatusAlerta' }
         - { name: filaId, in: query, schema: { type: string, format: uuid } }
+        - name: de
+          in: query
+          description: Início inclusivo de disparadoEm, ISO-8601 com fuso.
+          schema: { type: string, format: date-time }
+        - name: ate
+          in: query
+          description: Fim inclusivo de disparadoEm; deve ser igual ou posterior a de.
+          schema: { type: string, format: date-time }
         - { $ref: '#/components/parameters/Pagina' }
         - { $ref: '#/components/parameters/Tamanho' }
       responses:
@@ -2220,7 +2240,9 @@ paths:
                       dados:
                         type: array
                         items: { $ref: '#/components/schemas/Alerta' }
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
         '403': { $ref: '#/components/responses/SemPermissao' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
 
   /alertas/{id}/reconhecimento:
     parameters:
@@ -2230,8 +2252,12 @@ paths:
       summary: Reconhecer alerta
       operationId: reconhecerAlerta
       description: |
-        Alerta reconhecido muda de aparência e sai do topo, sem desaparecer da lista (T-17).
-        Registra autor e horário.
+        Exige alertas:reconhecer. ATIVO passa a RECONHECIDO, muda de aparência e sai do
+        topo sem desaparecer (T-17). Registra o usuário da sessão e o horário do servidor.
+        Repetir em RECONHECIDO devolve 200 e preserva o primeiro autor e horário.
+        NORMALIZADO retorna 409 TRANSICAO_INVALIDA. Recurso inexistente ou de outra
+        unidade retorna 404 neutro. Sem permissão, 403 neutro também para ID inexistente.
+        A escrita registra auditoria.
       responses:
         '200':
           description: Alerta reconhecido
@@ -2239,7 +2265,19 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Alerta' }
 
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
         '403': { $ref: '#/components/responses/SemPermissao' }
+        '404':
+          description: NAO_ENCONTRADO - recurso inexistente ou de outra unidade, com mensagem neutra.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+        '409':
+          description: TRANSICAO_INVALIDA - alerta normalizado não pode ser reconhecido.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
   /alertas/{id}/escalonamento:
     parameters:
       - { $ref: '#/components/parameters/Id' }
@@ -2247,19 +2285,18 @@ paths:
       tags: [Alertas de SLA]
       summary: Acionar medida de escalonamento
       operationId: acionarMedidaDeEscalonamento
-      description: UC-19, RF-11. Registra autor e horário de cada ação (T-17).
+      description: |
+        UC-19, RF-11. Exige alertas:escalonar. Em ATIVO ou RECONHECIDO, cada pedido válido
+        registra uma medida e sua auditoria, com usuário da sessão e horário do servidor.
+        Não altera o status do alerta nem cria automaticamente atendentes ou vagas.
+        NORMALIZADO retorna 409 TRANSICAO_INVALIDA. Recurso inexistente ou de outra
+        unidade retorna 404 neutro. Sem permissão, 403 neutro também para ID inexistente.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [acao]
-              properties:
-                acao:
-                  type: string
-                  enum: [REFORCO_ATENDENTE, VAGA_EXTRA]
-                observacao: { type: string }
+              $ref: '#/components/schemas/EscalonamentoEntrada'
       responses:
         '201':
           description: Escalonamento registrado
@@ -2267,7 +2304,19 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Escalonamento' }
 
+        '401': { $ref: '#/components/responses/NaoAutenticado' }
         '403': { $ref: '#/components/responses/SemPermissao' }
+        '404':
+          description: NAO_ENCONTRADO - recurso inexistente ou de outra unidade, com mensagem neutra.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+        '409':
+          description: TRANSICAO_INVALIDA - alerta normalizado não aceita escalonamento.
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/Problema' }
+        '422': { $ref: '#/components/responses/ErroValidacao' }
   # ─────────────────────────────── Auditoria ──────────────────────────────────
   /auditoria:
     get:
@@ -2629,6 +2678,9 @@ components:
     TipoAlerta:
       type: string
       enum: [SLA_EXCEDIDO, FILA_BLOQUEADA]
+    AcaoEscalonamento:
+      type: string
+      enum: [REFORCO_ATENDENTE, VAGA_EXTRA]
     OperacaoAuditoria:
       type: string
       enum: [CRIAR, EDITAR, EXCLUIR, CONSULTAR_SENSIVEL, EXPORTAR, LOGIN, LOGOUT]
@@ -3327,27 +3379,57 @@ components:
     # ── Alertas ──
     Alerta:
       type: object
+      additionalProperties: false
+      required:
+        [id, tipo, status, filaId, especialidade, tempoEsperaMinutos, limiteMinutos,
+         senhasAfetadas, disparadoEm, reconhecidoPor, reconhecidoEm, normalizadoEm, escalonamentos]
+      description: |
+        Tabela 20. Projeção operacional sem paciente ou conteúdo clínico.
+        Os tempos e a quantidade preservam a situação verificada no disparo.
+        Em SLA_EXCEDIDO, tempoEsperaMinutos representa a maior espera entre as senhas
+        AGUARDANDO; senhasAfetadas conta apenas as que ultrapassaram o limite.
+        Em FILA_BLOQUEADA, tempos e limite são nulos e a quantidade conta as aguardando.
+        Autores são nomes de usuários, preenchidos pelo servidor a partir da sessão.
       properties:
         id: { type: string, format: uuid }
         tipo: { $ref: '#/components/schemas/TipoAlerta' }
         status: { $ref: '#/components/schemas/StatusAlerta' }
         filaId: { type: string, format: uuid }
         especialidade: { type: string }
-        tempoEsperaMinutos: { type: [integer, 'null'] }
-        limiteMinutos: { type: [integer, 'null'] }
-        senhasAfetadas: { type: integer }
+        tempoEsperaMinutos:
+          type: [integer, 'null']
+          minimum: 0
+          description: Minutos arredondados para cima; a comparação com o SLA usa o tempo exato.
+        limiteMinutos: { type: [integer, 'null'], minimum: 1 }
+        senhasAfetadas: { type: integer, minimum: 0 }
         disparadoEm: { type: string, format: date-time }
         reconhecidoPor: { type: [string, 'null'] }
         reconhecidoEm: { type: [string, 'null'], format: date-time }
         normalizadoEm: { type: [string, 'null'], format: date-time }
+        escalonamentos:
+          type: array
+          items: { $ref: '#/components/schemas/Escalonamento' }
+    EscalonamentoEntrada:
+      type: object
+      additionalProperties: false
+      required: [acao]
+      properties:
+        acao: { $ref: '#/components/schemas/AcaoEscalonamento' }
+        observacao:
+          type: string
+          description: Texto operacional opcional, sem conteúdo clínico; espaços externos são removidos.
     Escalonamento:
       type: object
+      additionalProperties: false
+      required: [id, alertaId, acao, observacao, acionadoPor, acionadoEm]
       properties:
         id: { type: string, format: uuid }
         alertaId: { type: string, format: uuid }
-        acao: { type: string, enum: [REFORCO_ATENDENTE, VAGA_EXTRA] }
-        observacao: { type: [string, 'null'] }
-        acionadoPor: { type: string }
+        acao: { $ref: '#/components/schemas/AcaoEscalonamento' }
+        observacao:
+          type: [string, 'null']
+          description: Nula quando omitida ou composta apenas por espaços na entrada.
+        acionadoPor: { type: string, description: Nome do usuário autenticado que acionou a medida. }
         acionadoEm: { type: string, format: date-time }
 
     # ── Indicadores ──

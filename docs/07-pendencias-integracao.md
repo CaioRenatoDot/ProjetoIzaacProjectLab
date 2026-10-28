@@ -360,6 +360,13 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 
 ### Lacunas do contrato dos alertas (decisão antes de integrar com a #28)
 
+As propostas para essas lacunas foram aprovadas pelo responsável em 28/10/2026 e estão
+registradas em [GH-28-aceite](entregas/GH-28-aceite.md). O contrato está preparado localmente;
+aguardar aprovação e merge antes de implementar a API ou trocar os tipos/mocks da tela.
+A T-17 pede espera atual, mas a Tabela 20 do PDF principal define valores do disparo:
+o contrato preserva esse retrato. A integração deve identificar os valores como verificados
+no disparo, seguindo a precedência do PDF.
+
 | #   | Lacuna                                                                                                                                          | O que o front faz hoje                                                                                                                      | Pedido ao back-end                                                                |
 | --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | 1   | **Medidas acionadas não vêm no alerta**: `Alerta` não lista os escalonamentos; a T-17 e a issue pedem que o alerta mostre quem acionou e quando | Lê `escalonamentos[]` do alerta (**proposta**, só a simulação devolve) e mostra o `Escalonamento` devolvido pelo `POST` no aviso de sucesso | Incluir `escalonamentos[]` em `Alerta` (ou um `GET /alertas/{id}/escalonamentos`) |

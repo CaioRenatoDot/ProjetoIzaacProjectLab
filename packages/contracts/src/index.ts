@@ -1,4 +1,5 @@
 export * from './alocacao';
+export * from './alertas';
 export * from './atendimentos';
 export * from './auditoria';
 export * from './ausencias';
