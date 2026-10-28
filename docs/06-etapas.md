@@ -199,8 +199,9 @@ Objetivo: equipe chama a próxima senha e o telão mostra a chamada em tempo rea
 **6.3 (#19):** contrato mergeado no PR #119 e implementação mergeada no PR #120. Evidências em
 [entregas/GH-19-aceite.md](entregas/GH-19-aceite.md).
 
-**Complemento (#20):** contrato dos endpoints HTTP públicos em preparação; implementação
-e critérios de execução pendentes. Acompanhamento em
+**Complemento (#20):** Nathan ✅ (implementação local; revisão/CI/merge pendentes).
+Contrato mergeado no PR #122; endpoints públicos e quatro critérios validados com HTTP
+e PostgreSQL reais. Acompanhamento em
 [entregas/GH-20-aceite.md](entregas/GH-20-aceite.md).
 
 **6.5 (#42):** front validado com dados fictícios e pontos de integração com #19/#20

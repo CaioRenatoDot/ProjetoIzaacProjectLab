@@ -21,6 +21,7 @@ import { IndicadoresModule } from './indicadores/indicadores.module';
 import { ParametrosModule } from './parametros/parametros.module';
 import { PerfisModule } from './perfis/perfis.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { PublicoModule } from './publico/publico.module';
 import { SenhasModule } from './senhas/senhas.module';
 import { TriagemModule } from './triagem/triagem.module';
 import { TempoRealModule } from './tempo-real/tempo-real.module';
@@ -60,6 +61,7 @@ import { TempoRealModule } from './tempo-real/tempo-real.module';
     AusenciasModule,
     IndicadoresModule,
     TempoRealModule,
+    PublicoModule,
   ],
 })
 export class AppModule {}
