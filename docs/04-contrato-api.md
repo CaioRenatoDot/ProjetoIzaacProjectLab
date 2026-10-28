@@ -322,3 +322,24 @@ Requisições a endpoints marcados como sensíveis geram `CONSULTAR_SENSIVEL`. S
 
 Toda resposta traz `X-Request-Id`, propagado para o log e para o `audit_log`, o que permite ligar
 um relato de usuário a uma linha de log.
+
+## 10. Encaminhamento (UC-14, UC-15)
+
+`POST /atendimentos/{id}/encaminhamentos` exige `encaminhamento:criar`. A origem deve
+pertencer à unidade da sessão, estar ENCERRADA e ter o desfecho correspondente ao tipo.
+PENDENTE_VALIDACAO ainda não cumpre a pré-condição. Estado/desfecho divergente: 409
+`TRANSICAO_INVALIDA`; repetição: 409 `DUPLICIDADE`, inclusive em concorrência.
+
+Decisões aprovadas pelo responsável para a #26: um encaminhamento por atendimento;
+senha interna reutiliza a triagem original, preservando-a, herda o tipo de atendimento
+e fica vinculada por `senhaOrigemId`. Sem prioridade sugerida, herda a atual; a prioridade
+legal é respeitada (RN-02) e sugestão URGENTE exige motivo clínico (RN-03). Motivo interno
+não informado volta como texto vazio. Origem e evidências em `entregas/GH-26-aceite.md`.
+
+Registro e emissão interna são atômicos; o evento `senha.criada` só sai após commit e usa
+`SenhaResumo`. Destino sem fila ativa: 409 `SEM_FILA_CONFIGURADA`; especialidade inexistente
+ou inativa: 409 `ESPECIALIDADE_INATIVA`. Bloqueio da fila permite emitir e gera aviso
+`FILA_BLOQUEADA` (RN-10). Externo exige instituição e motivo e não gera senha.
+
+`EncaminhamentoEntrada` e `Encaminhamento` são os schemas compartilhados. O motivo da
+resposta individual é sensível; não entra em listas nem eventos. Escrita registra auditoria.

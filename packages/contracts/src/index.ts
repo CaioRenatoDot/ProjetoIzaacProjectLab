@@ -5,6 +5,7 @@ export * from './ausencias';
 export * from './cadastros';
 export * from './desistencias';
 export * from './enums';
+export * from './encaminhamentos';
 export * from './erros';
 export * from './eventos';
 export * from './eventos-publicos';

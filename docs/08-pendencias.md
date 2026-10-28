@@ -30,6 +30,7 @@ integração da API (PostgreSQL)").
 | #17   | Máquina de estados da senha (matriz 9 × 9 testada), versão, horários e evento `senha.status_alterado`                                       | #97      |
 | #18   | Filas, quadro RN-04 com métricas, chamar próxima com `SKIP LOCKED` e `Idempotency-Key`, rechamada e cancelamento                            | #99      |
 | #21   | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
+| #22   | Sugestões com avaliação compartilhada de aptidão, alternativas e motivos; implementação mergeada no PR #124                                 | —        |
 | #20   | Endpoints HTTP públicos do telão e da consulta, estimativa e limite por IP; implementação mergeada no PR #123                               | #122     |
 | #23   | Atendimento: iniciar, pausar, retomar, encerrar (libera a alocação), validação RN-11 com recusa e reenvio, tempo efetivo                    | #103     |
 | #25   | Desistência (só AGUARDANDO e EM_ATENDIMENTO), libera recursos, nunca grava ausência                                                         | #105     |
@@ -46,10 +47,10 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue    | Dono   | Depende de | Observação                                                                                                          |
-| -------- | ------ | ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| #22      | Nathan | #21 pronta | Sugestões implementadas com avaliação compartilhada; revisão/CI/merge pendentes. [Aceite](entregas/GH-22-aceite.md) |
-| #26, #28 | Nathan | —          | Encaminhamento (o encerramento já devolve `exigeEncaminhamento`) e alertas                                          |
+| Issue | Dono   | Depende de | Observação                                                                                     |
+| ----- | ------ | ---------- | ---------------------------------------------------------------------------------------------- |
+| #26   | Nathan | #23 pronta | Contrato do encaminhamento em preparação; decisões em [GH-26-aceite](entregas/GH-26-aceite.md) |
+| #28   | Nathan | —          | Alertas de SLA e escalonamento                                                                 |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 

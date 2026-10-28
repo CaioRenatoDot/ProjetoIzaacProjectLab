@@ -2,8 +2,8 @@
 
 ## Estado da entrega
 
-Implementação validada localmente na branch `feat/GH-22-sugestao-alocacao`, a partir da
-`develop` com a #20 mergeada no PR #123. Revisão, CI remoto e merge da #22 permanecem pendentes.
+Implementação validada e mergeada na `develop` no PR #124, com CI aprovado.
+A issue #22 foi fechada pelo responsável, após a #20 (PR #123).
 O endpoint e os tipos de resposta já constavam no OpenAPI; esta entrega não muda contrato.
 
 ## Fontes conferidas

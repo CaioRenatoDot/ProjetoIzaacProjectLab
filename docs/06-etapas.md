@@ -211,16 +211,15 @@ documentados. Evidências e critérios em [entregas/GH-42-validacao.md](entregas
 Objetivo: conduzir o atendimento do início ao encerramento.
 **Pronto quando:** a senha vai de _chamada_ até _encerrada_, com validação do supervisor quando exigida.
 
-| Parte  | Descrição                                                                                                      | Responsável                                                |
-| ------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Rildo ✅                                                   |
-| 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Rildo ✅                                                   |
-| 7.3    | Tela W-11 · Alocação                                                                                           | Caio Gabriel ✅                                            |
-| 7.4    | Telas W-12 · Atendimento e W-13 · Encerramento e validação                                                     | Caio Renato ✅                                             |
-| ⭐ 7.5 | Sugestão automática de recursos, com o motivo de inaptidão                                                     | Nathan ✅ (back local; PR pendente), Caio Renato ✅ (tela) |
+| Parte  | Descrição                                                                                                      | Responsável                                |
+| ------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Rildo ✅                                   |
+| 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Rildo ✅                                   |
+| 7.3    | Tela W-11 · Alocação                                                                                           | Caio Gabriel ✅                            |
+| 7.4    | Telas W-12 · Atendimento e W-13 · Encerramento e validação                                                     | Caio Renato ✅                             |
+| ⭐ 7.5 | Sugestão automática de recursos, com o motivo de inaptidão                                                     | Nathan ✅ (PR #124), Caio Renato ✅ (tela) |
 
-**7.5 (#22):** endpoint implementado com as mesmas verificações da confirmação; critérios
-validados localmente. Revisão, CI remoto e merge pendentes. Evidências em
+**7.5 (#22):** endpoint mergeado no PR #124, com CI aprovado. Evidências em
 [entregas/GH-22-aceite.md](entregas/GH-22-aceite.md).
 
 ### Etapa 8 · Ausências e desistências
@@ -250,6 +249,9 @@ Entram se o MVP estiver pronto antes do prazo.
 | ⭐ 9.4 | Tela da trilha de auditoria · W-18                        | Rildo, Caio Renato ✅             |
 | ⭐ 9.4 | API de consulta e exportação da trilha (#29)              | Rildo ✅                          |
 | ⭐ 9.5 | Sinal sonoro no telão                                     | Thalita ✅                        |
+
+**9.1 (#26):** contrato em preparação, com decisões aprovadas pelo responsável;
+implementação e critérios HTTP pendentes. [Acompanhamento](entregas/GH-26-aceite.md).
 
 ### Etapa 10 · Qualidade e entrega
 
