@@ -47,10 +47,10 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue | Dono   | Depende de | Observação                                                                                     |
-| ----- | ------ | ---------- | ---------------------------------------------------------------------------------------------- |
-| #26   | Nathan | #23 pronta | Contrato do encaminhamento em preparação; decisões em [GH-26-aceite](entregas/GH-26-aceite.md) |
-| #28   | Nathan | —          | Alertas de SLA e escalonamento                                                                 |
+| Issue | Dono   | Depende de | Observação                                                                                                        |
+| ----- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------- |
+| #26   | Nathan | #23 pronta | Encaminhamento implementado e validado localmente; revisão/CI/merge pendentes. [Aceite](entregas/GH-26-aceite.md) |
+| #28   | Nathan | —          | Alertas de SLA e escalonamento                                                                                    |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 

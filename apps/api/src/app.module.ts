@@ -16,6 +16,7 @@ import { RelogioModule } from './common/relogio';
 import { opcoesLog } from './common/logging/opcoes-log';
 import { type Ambiente, validarAmbiente } from './config/ambiente';
 import { FilasModule } from './filas/filas.module';
+import { EncaminhamentosModule } from './encaminhamentos/encaminhamentos.module';
 import { HealthModule } from './health/health.module';
 import { IndicadoresModule } from './indicadores/indicadores.module';
 import { ParametrosModule } from './parametros/parametros.module';
@@ -62,6 +63,7 @@ import { TempoRealModule } from './tempo-real/tempo-real.module';
     IndicadoresModule,
     TempoRealModule,
     PublicoModule,
+    EncaminhamentosModule,
   ],
 })
 export class AppModule {}

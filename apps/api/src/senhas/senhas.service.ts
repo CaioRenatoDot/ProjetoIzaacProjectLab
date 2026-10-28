@@ -17,7 +17,12 @@ import { ParametrosService } from '../parametros/parametros.service';
 import { TriagemService } from '../triagem/triagem.service';
 import { paraAlocacao } from '../alocacao/alocacao.projecao';
 import { SenhaProjecao } from './senha-projecao.service';
-import { type SenhaCompleta, SenhasRepository } from './senhas.repository';
+import {
+  type NovaSenha,
+  type SenhaCompleta,
+  SenhasRepository,
+  type Transacao,
+} from './senhas.repository';
 
 /** "Ainda não atendida" (UC-07, T-08): antes de o atendimento começar. */
 const RECLASSIFICAVEIS: StatusSenha[] = ['AGUARDANDO', 'CHAMADA', 'AGUARDANDO_RECURSO'];
@@ -65,27 +70,15 @@ export class SenhasService {
           { recursoExistenteId: existente.id },
         );
       }
-      const fila = await this.repositorio.filaAtiva(tx, triagem.especialidadeDestinoId, unidadeId);
-      if (!fila) {
-        throw new ErroDominio(
-          'SEM_FILA_CONFIGURADA',
-          409,
-          'Especialidade sem fila configurada',
-          'A especialidade de destino não tem fila ativa, então a senha não pode ser emitida. Peça à administração para configurar a fila da especialidade.',
-        );
-      }
-      const sequencia = await this.repositorio.proximaSequencia(tx, fila.id);
-      return (
-        await this.repositorio.criar(tx, {
-          numero: numeroDaSenha(fila.letraSenha, sequencia),
-          filaId: fila.id,
-          triagemId: triagem.id,
-          pacienteId: triagem.pacienteId,
-          prioridade: triagem.prioridade,
-          tipoAtendimento: entrada.tipoAtendimento ?? triagem.tipoAtendimento,
-          temAgendamentoPrevio: entrada.temAgendamentoPrevio,
-        })
-      ).id;
+      return this.emitirNaFila(tx, {
+        especialidadeId: triagem.especialidadeDestinoId,
+        unidadeId,
+        triagemId: triagem.id,
+        pacienteId: triagem.pacienteId,
+        prioridade: triagem.prioridade,
+        tipoAtendimento: entrada.tipoAtendimento ?? triagem.tipoAtendimento,
+        temAgendamentoPrevio: entrada.temAgendamentoPrevio,
+      });
     });
 
     const senha = (await this.repositorio.buscar(id, unidadeId))!;
@@ -100,6 +93,30 @@ export class SenhasService {
         ]
       : [];
     return { ...resumo, posicaoEstimada: resumo.posicao ?? 1, avisos };
+  }
+
+  /** Emissão compartilhada; quem abre a transação publica o evento depois do commit. */
+  async emitirNaFila(
+    tx: Transacao,
+    entrada: Omit<NovaSenha, 'numero' | 'filaId'> & { unidadeId: string; especialidadeId: string },
+  ): Promise<string> {
+    const { unidadeId, especialidadeId, ...dados } = entrada;
+    const fila = await this.repositorio.filaAtiva(tx, especialidadeId, unidadeId);
+    if (!fila)
+      throw new ErroDominio(
+        'SEM_FILA_CONFIGURADA',
+        409,
+        'Especialidade sem fila configurada',
+        'A especialidade de destino não tem fila ativa, então a senha não pode ser emitida. Peça à administração para configurar a fila da especialidade.',
+      );
+    const sequencia = await this.repositorio.proximaSequencia(tx, fila.id);
+    return (
+      await this.repositorio.criar(tx, {
+        ...dados,
+        numero: numeroDaSenha(fila.letraSenha, sequencia),
+        filaId: fila.id,
+      })
+    ).id;
   }
 
   async consultar(id: string, unidadeId: string): Promise<SenhaResumo> {

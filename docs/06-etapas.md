@@ -241,17 +241,17 @@ Objetivo: tratar o paciente que não comparece e o que desiste.
 
 Entram se o MVP estiver pronto antes do prazo.
 
-| Parte  | Descrição                                                 | Responsável                       |
-| ------ | --------------------------------------------------------- | --------------------------------- |
-| ⭐ 9.1 | Encaminhamento interno (gera nova senha) e externo · W-14 | Nathan, Caio Renato ✅ (tela)     |
-| ⭐ 9.2 | Indicadores com filtros, gráfico e exportação · W-17      | Rildo ✅ (API), Thalita ✅ (tela) |
-| ⭐ 9.3 | Alertas de tempo de espera (SLA) e escalonamento          | Nathan, Caio Renato ✅            |
-| ⭐ 9.4 | Tela da trilha de auditoria · W-18                        | Rildo, Caio Renato ✅             |
-| ⭐ 9.4 | API de consulta e exportação da trilha (#29)              | Rildo ✅                          |
-| ⭐ 9.5 | Sinal sonoro no telão                                     | Thalita ✅                        |
+| Parte  | Descrição                                                 | Responsável                                                |
+| ------ | --------------------------------------------------------- | ---------------------------------------------------------- |
+| ⭐ 9.1 | Encaminhamento interno (gera nova senha) e externo · W-14 | Nathan ✅ (back local; PR pendente), Caio Renato ✅ (tela) |
+| ⭐ 9.2 | Indicadores com filtros, gráfico e exportação · W-17      | Rildo ✅ (API), Thalita ✅ (tela)                          |
+| ⭐ 9.3 | Alertas de tempo de espera (SLA) e escalonamento          | Nathan, Caio Renato ✅                                     |
+| ⭐ 9.4 | Tela da trilha de auditoria · W-18                        | Rildo, Caio Renato ✅                                      |
+| ⭐ 9.4 | API de consulta e exportação da trilha (#29)              | Rildo ✅                                                   |
+| ⭐ 9.5 | Sinal sonoro no telão                                     | Thalita ✅                                                 |
 
-**9.1 (#26):** contrato em preparação, com decisões aprovadas pelo responsável;
-implementação e critérios HTTP pendentes. [Acompanhamento](entregas/GH-26-aceite.md).
+**9.1 (#26):** contrato mergeado no PR #125. Implementação e três critérios HTTP validados
+localmente; revisão, CI remoto e merge pendentes. [Acompanhamento](entregas/GH-26-aceite.md).
 
 ### Etapa 10 · Qualidade e entrega
 
