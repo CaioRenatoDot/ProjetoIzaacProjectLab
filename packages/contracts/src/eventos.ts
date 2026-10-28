@@ -1,4 +1,5 @@
 import { type Prioridade, type StatusSenha } from './enums';
+import { type Alerta, type AlertaNormalizado } from './alertas';
 import { type RestricaoAplicada } from './ausencias';
 import { type Chamada } from './filas';
 import { type SenhaResumo } from './senhas';
@@ -37,3 +38,10 @@ export interface EventosFila {
   };
 }
 export type NomeEventoFila = keyof EventosFila;
+
+/** Namespace `/alertas`, sala da unidade da sessão; publicação somente após o commit. */
+export interface EventosAlertas {
+  'sla.excedido': Alerta;
+  'sla.normalizado': AlertaNormalizado;
+}
+export type NomeEventoAlerta = keyof EventosAlertas;

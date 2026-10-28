@@ -2,9 +2,10 @@
 
 ## Estado e fontes
 
-Contrato mergeado na `develop` no PR #125, após a #22 (PR #124). A implementação está
-validada localmente na branch `feat/GH-26-encaminhamento`, sem alterar o contrato.
-Revisão, CI remoto e merge da implementação permanecem pendentes para concluir a #26.
+Contrato mergeado na `develop` no PR #125, após a #22 (PR #124). A implementação foi
+mergeada na `develop` no [PR #126](https://github.com/CaioRenatoDot/ProjetoIzaacProjectLab/pull/126)
+em 28/10/2026, sem alterar o contrato. CI nº 139 aprovado no commit `9afb72a`; a issue #26
+está fechada, conforme conferência no GitHub em 28/10/2026.
 
 Fontes: Documento de Requisitos de Sistema, UC-14/UC-15 (p. 31/32), RF-08 e Tabela 17
 (p. 19); UI T-14 e wireframe W-14; `docs/01` §3/§4, `docs/03` §3.4, `docs/04`, OpenAPI,
@@ -84,6 +85,6 @@ detalhe sensível já existente. Ajustes de UI ficam para a integração do fron
 - Não há alteração de UI, OpenAPI ou `packages/contracts` neste PR de implementação.
 
 O motivo é conteúdo sensível da resposta individual, como define a Tabela 23; não pode ser
-incluído no evento `senha.criada` nem em listagens. Revisão, CI remoto e merge da implementação
-com `Closes #26` permanecem pendentes. O relatório preserva as decisões e evidências para o
-resumo final; a #28 continua fora do escopo.
+incluído no evento `senha.criada` nem em listagens. O PR #126 foi mergeado com CI aprovado
+e a issue foi fechada. O relatório preserva as decisões e evidências para o resumo final;
+a #28 continua fora do escopo desta entrega.

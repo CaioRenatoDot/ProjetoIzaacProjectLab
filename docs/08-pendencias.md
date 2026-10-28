@@ -32,6 +32,7 @@ integração da API (PostgreSQL)").
 | #21   | Alocação (RN-05 a RN-09), troca, manter aguardando, `SUPERVISOR_INDISPONIVEL` com bloqueio da fila; ocupação real nos cadastros             | #101     |
 | #22   | Sugestões com avaliação compartilhada de aptidão, alternativas e motivos; implementação mergeada no PR #124                                 | —        |
 | #20   | Endpoints HTTP públicos do telão e da consulta, estimativa e limite por IP; implementação mergeada no PR #123                               | #122     |
+| #26   | Encaminhamento interno/externo, emissão compartilhada e auditoria transacional; implementação mergeada no PR #126                           | #125     |
 | #23   | Atendimento: iniciar, pausar, retomar, encerrar (libera a alocação), validação RN-11 com recusa e reenvio, tempo efetivo                    | #103     |
 | #25   | Desistência (só AGUARDANDO e EM_ATENDIMENTO), libera recursos, nunca grava ausência                                                         | #105     |
 | #24   | Rotina de tolerância (RN-12: volta à fila uma vez, depois ausência), ausência manual, restrição por reincidência (RN-13)                    | #107     |
@@ -47,10 +48,9 @@ integração da API (PostgreSQL)").
 As issues que bloqueavam outras (#7, #17, #18, #21, #23) passaram para o Rildo em 25/10/2026;
 as que não bloqueiam ninguém seguem com o Nathan:
 
-| Issue | Dono   | Depende de | Observação                                                                                                        |
-| ----- | ------ | ---------- | ----------------------------------------------------------------------------------------------------------------- |
-| #26   | Nathan | #23 pronta | Encaminhamento implementado e validado localmente; revisão/CI/merge pendentes. [Aceite](entregas/GH-26-aceite.md) |
-| #28   | Nathan | —          | Alertas de SLA e escalonamento                                                                                    |
+| Issue | Dono   | Depende de | Observação                                                                                                                  |
+| ----- | ------ | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| #28   | Nathan | #19 pronta | Contrato preparado localmente; implementação de alertas de SLA e escalonamento pendente. [Aceite](entregas/GH-28-aceite.md) |
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 

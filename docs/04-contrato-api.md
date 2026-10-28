@@ -296,6 +296,17 @@ resposta HTTP, nem herda campos de `SenhaResumo`. Os schemas públicos recusam c
 | `sla.excedido`    | `Alerta`                      |
 | `sla.normalizado` | `{ alertaId, normalizadoEm }` |
 
+Os schemas `Alerta` e `AlertaNormalizado` e a interface `EventosAlertas` ficam em
+`@filas/contracts`. Os eventos são publicados após o commit e se aplicam às duas origens:
+`SLA_EXCEDIDO` e `FILA_BLOQUEADA`. No bloqueio, os tempos são nulos; a normalização decorre do
+desbloqueio da mesma fila (RN-10), sem inferir disponibilidade no módulo de alertas.
+
+`GET /alertas` e o evento `sla.excedido` incluem `escalonamentos[]`, com medida, autor e horário
+(Tabela 21). O corpo de criação só aceita `acao` e `observacao` operacional opcional; autor e
+horário vêm da sessão e do servidor. Nenhuma projeção inclui paciente ou conteúdo clínico.
+Filtros, ordenação, período por disparo e transições estão definidos no OpenAPI. As decisões
+aprovadas e o acompanhamento da implementação estão em [GH-28-aceite](entregas/GH-28-aceite.md).
+
 ### Degradação
 
 Toda tela que consome WebSocket também revalida por HTTP a cada 30 segundos. Perda de conexão
