@@ -40,6 +40,7 @@ async function novaFila(dados: { bloqueada?: boolean } = {}) {
   const especialidade = await contexto.prisma.especialidade.create({
     data: {
       nome: unico('Especialidade'),
+      exigeSupervisaoDocente: dados.bloqueada ?? false,
       unidadeId: UNIDADE_PADRAO,
       filas: {
         create: { unidadeId: UNIDADE_PADRAO, nome: 'Fila teste', letraSenha: 'T', ...dados },

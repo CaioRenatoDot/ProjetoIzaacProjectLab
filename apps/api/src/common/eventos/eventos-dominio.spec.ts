@@ -31,4 +31,20 @@ describe('EventosDominio', () => {
     expect(() => eventos.emitir('senha.reclassificada', carga)).not.toThrow();
     expect(segundo).toHaveBeenCalled();
   });
+
+  it('registra falha assíncrona do gateway e mantém os demais assinantes', async () => {
+    const log = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+    const eventos = new EventosDominio();
+    const segundo = vi.fn();
+    const erro = new Error('Gateway indisponível');
+    eventos.assinar('senha.reclassificada', () => Promise.reject(erro));
+    eventos.assinar('senha.reclassificada', segundo);
+    eventos.emitir('senha.reclassificada', carga);
+    await Promise.resolve();
+    expect(segundo).toHaveBeenCalled();
+    expect(log).toHaveBeenCalledWith(
+      { err: erro, evento: 'senha.reclassificada' },
+      expect.any(String),
+    );
+  });
 });

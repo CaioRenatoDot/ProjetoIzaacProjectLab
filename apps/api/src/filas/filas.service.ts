@@ -15,6 +15,7 @@ import { deslocamento, montarRespostaPaginada } from '../common/pagination/pagin
 import { ParametrosService } from '../parametros/parametros.service';
 import { SenhaProjecao } from '../senhas/senha-projecao.service';
 import { type FilaCompleta, FilasRepository } from './filas.repository';
+import { BloqueioService } from './bloqueio.service';
 
 export const filaNaoEncontrada = () =>
   new ErroDominio(
@@ -31,6 +32,7 @@ export class FilasService {
     private readonly repositorio: FilasRepository,
     private readonly parametros: ParametrosService,
     private readonly projecao: SenhaProjecao,
+    private readonly bloqueio: BloqueioService,
   ) {}
 
   async listar(query: ListarFilasQuery, unidadeId: string): Promise<RespostaPaginada<Fila>> {
@@ -48,6 +50,7 @@ export class FilasService {
   }
 
   async consultar(id: string, unidadeId: string): Promise<Fila> {
+    await this.bloqueio.atualizar(id, unidadeId);
     return this.paraFila(await this.buscar(id, unidadeId));
   }
 
@@ -102,6 +105,7 @@ export class FilasService {
   }
 
   async quadro(id: string, query: QuadroFilaQuery, unidadeId: string): Promise<QuadroFila> {
+    await this.bloqueio.atualizar(id, unidadeId);
     const fila = await this.buscar(id, unidadeId);
     const [[senhas, total], metricas] = await Promise.all([
       this.repositorio.quadro(

@@ -280,7 +280,7 @@ export class AlocacaoService {
   }
 
   /** Há supervisor habilitado, no turno e abaixo do limite (RN-07, RN-08)? */
-  private async haSupervisorDisponivel(
+  async haSupervisorDisponivel(
     tx: Transacao,
     especialidadeId: string,
     noTurno: ReturnType<typeof turnoAtual>,
