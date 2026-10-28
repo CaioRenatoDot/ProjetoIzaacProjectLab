@@ -48,6 +48,13 @@ export class FilasRepository {
     return (tx ?? this.prisma).fila.findFirst({ where: { id, unidadeId }, include: FILA_COMPLETA });
   }
 
+  async bloquearParaChamada(tx: Transacao, id: string, unidadeId: string) {
+    // Chamadores compartilham a leitura; mudança de bloqueio espera a chamada concluir.
+    await tx.$queryRaw`SELECT id FROM fila WHERE id = ${id}::uuid
+      AND unidade_id = ${unidadeId}::uuid FOR SHARE`;
+    return this.buscar(id, unidadeId, tx);
+  }
+
   especialidadeAtiva(id: string, unidadeId: string): Promise<{ id: string } | null> {
     return this.prisma.especialidade.findFirst({
       where: { id, unidadeId, ativo: true },

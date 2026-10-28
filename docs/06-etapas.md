@@ -245,7 +245,7 @@ Entram se o MVP estiver pronto antes do prazo.
 | ------ | --------------------------------------------------------- | -------------------------------------------------------- |
 | ⭐ 9.1 | Encaminhamento interno (gera nova senha) e externo · W-14 | Nathan ✅ (API, PR #126 mergeado), Caio Renato ✅ (tela) |
 | ⭐ 9.2 | Indicadores com filtros, gráfico e exportação · W-17      | Rildo ✅ (API), Thalita ✅ (tela)                        |
-| ⭐ 9.3 | Alertas de tempo de espera (SLA) e escalonamento          | Nathan ✅ (API local; PR pendente), Caio Renato ✅       |
+| ⭐ 9.3 | Alertas de tempo de espera (SLA) e escalonamento          | Nathan ✅ (API, PR #128 mergeado), Caio Renato ✅        |
 | ⭐ 9.4 | Tela da trilha de auditoria · W-18                        | Rildo, Caio Renato ✅                                    |
 | ⭐ 9.4 | API de consulta e exportação da trilha (#29)              | Rildo ✅                                                 |
 | ⭐ 9.5 | Sinal sonoro no telão                                     | Thalita ✅                                               |
@@ -253,9 +253,10 @@ Entram se o MVP estiver pronto antes do prazo.
 **9.1 (#26):** contrato no PR #125 e implementação no PR #126, mergeados na `develop`,
 com CI aprovado e issue fechada. [Acompanhamento](entregas/GH-26-aceite.md).
 
-**9.3 (#28):** contrato mergeado no PR #127 com CI aprovado. Implementação validada
-localmente, com os três critérios em HTTP/Socket.IO reais, auditoria e concorrência.
-Revisão, CI remoto e merge da implementação pendentes. [Aceite e evidências](entregas/GH-28-aceite.md).
+**9.3 (#28):** contrato no PR #127 e implementação no PR #128, mergeados na `develop`,
+com CI aprovado. [Aceite e evidências](entregas/GH-28-aceite.md). A revisão das entregas
+identificou e corrigiu duas lacunas na #19; o merge dessa correção é acompanhado na
+[revisão final](entregas/revisao-final-backend-nathan.md).
 
 ### Etapa 10 · Qualidade e entrega
 

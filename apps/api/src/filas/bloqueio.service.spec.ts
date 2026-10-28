@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { type AlocacaoService } from '../alocacao/alocacao.service';
+import { type AuditoriaService } from '../common/auditoria/auditoria.service';
 import { type EventosDominio } from '../common/eventos/eventos-dominio';
 import { type ParametrosService } from '../parametros/parametros.service';
 import { type Transacao } from '../senhas/senhas.repository';
@@ -29,14 +30,27 @@ function montar({ bloqueada = false, exigeSupervisao = true, disponivel = false 
   const agora = new Date('2026-10-27T10:00:00-03:00');
   const relogio = { agora: vi.fn().mockReturnValue(agora) };
   const eventos = { emitir: vi.fn() };
+  const auditoria = { registrar: vi.fn().mockResolvedValue(undefined) };
   const service = new BloqueioService(
     repositorio as unknown as BloqueioRepository,
     alocacao as unknown as AlocacaoService,
     parametros as unknown as ParametrosService,
     relogio,
     eventos as unknown as EventosDominio,
+    auditoria as unknown as AuditoriaService,
   );
-  return { service, repositorio, alocacao, parametros, relogio, eventos, fila, tx, agora };
+  return {
+    service,
+    repositorio,
+    alocacao,
+    parametros,
+    relogio,
+    eventos,
+    fila,
+    tx,
+    agora,
+    auditoria,
+  };
 }
 
 describe('bloqueio por supervisão (#19)', () => {
@@ -110,6 +124,32 @@ describe('bloqueio por supervisão (#19)', () => {
       throw new Error('Commit recusado');
     });
     await expect(c.service.atualizar('fila', 'unidade')).rejects.toThrow('Commit recusado');
+    expect(c.eventos.emitir).not.toHaveBeenCalled();
+  });
+
+  it('RN-10 e RNF-05 audita a mudança na mesma transação, inclusive no desbloqueio', async () => {
+    for (const bloqueada of [false, true]) {
+      const c = montar({ bloqueada, disponivel: bloqueada });
+      await c.service.atualizar('fila', 'unidade');
+      expect(c.auditoria.registrar).toHaveBeenCalledWith(
+        expect.objectContaining({
+          operacao: 'EDITAR',
+          entidade: 'fila',
+          entidadeId: 'fila',
+          modulo: 'fila',
+        }),
+        c.tx,
+      );
+    }
+    const inalterada = montar({ bloqueada: true });
+    await inalterada.service.atualizar('fila', 'unidade');
+    expect(inalterada.auditoria.registrar).not.toHaveBeenCalled();
+  });
+
+  it('RN-10 e RNF-05 falha de auditoria rejeita a transação e não emite evento', async () => {
+    const c = montar();
+    c.auditoria.registrar.mockRejectedValueOnce(new Error('Auditoria indisponível'));
+    await expect(c.service.atualizar('fila', 'unidade')).rejects.toThrow('Auditoria indisponível');
     expect(c.eventos.emitir).not.toHaveBeenCalled();
   });
 
