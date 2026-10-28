@@ -358,23 +358,25 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 | ⏳     | `GET /alertas`, `/reconhecimento` e `/escalonamento` sobre MSW, com alertas fictícios | `apps/web/src/mocks/alertas.ts`                                      | #28 (API, parte 9.3)                   | Conferir contra a API real; apagar os handlers                                                                                                                                                                                                 |
 | ⏳     | Rota `/indicadores/alertas`, alcançada pelo cartão da home; não há item de menu       | `apps/web/src/app/(autenticado)/indicadores/alertas/`, `lib/home.ts` | Decisão (`tipo: decisão`) e #48 (W-17) | O W-18 junta alertas e auditoria, mas o supervisor tem `alertas:consultar` sem `auditoria:consultar`. Confirmar onde fica o acesso (aba em Indicadores, item próprio no menu ou junto da Auditoria) e, se for aba, a W-17 ligar para esta rota |
 
-### Lacunas do contrato dos alertas (decisão antes de integrar com a #28)
+### Contrato dos alertas e integração da #28
 
-As propostas para essas lacunas foram aprovadas pelo responsável em 28/10/2026 e estão
-registradas em [GH-28-aceite](entregas/GH-28-aceite.md). O contrato está preparado localmente;
-aguardar aprovação e merge antes de implementar a API ou trocar os tipos/mocks da tela.
-A T-17 pede espera atual, mas a Tabela 20 do PDF principal define valores do disparo:
-o contrato preserva esse retrato. A integração deve identificar os valores como verificados
-no disparo, seguindo a precedência do PDF.
+Contrato mergeado no PR #127 com CI aprovado. As propostas foram aprovadas pelo responsável
+em 28/10/2026 e estão registradas em [GH-28-aceite](entregas/GH-28-aceite.md). A API passou
+na validação local; aguardar o merge da implementação para integrar a tela.
 
-| #   | Lacuna                                                                                                                                          | O que o front faz hoje                                                                                                                      | Pedido ao back-end                                                                |
-| --- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 1   | **Medidas acionadas não vêm no alerta**: `Alerta` não lista os escalonamentos; a T-17 e a issue pedem que o alerta mostre quem acionou e quando | Lê `escalonamentos[]` do alerta (**proposta**, só a simulação devolve) e mostra o `Escalonamento` devolvido pelo `POST` no aviso de sucesso | Incluir `escalonamentos[]` em `Alerta` (ou um `GET /alertas/{id}/escalonamentos`) |
-| 2   | **Sem nível de gravidade**: a T-17 pede gravidade em texto; o contrato só diz que a lista vem "ordenada por gravidade"                          | Mantém a ordem da API e descreve em texto quanto a espera passou do limite; não classifica no front (seria regra de negócio)                | Avaliar um campo `gravidade` com rótulo, ou confirmar que a descrição basta       |
-| 3   | **"Entra no topo" × ordem por gravidade**: a issue diz que o alerta novo entra no topo; a T-17 ordena por gravidade                             | Segue a ordem da API; a simulação desempata pelo mais recente                                                                               | Definir o desempate na API (mais recente primeiro, sugerido)                      |
-| 4   | **Histórico "do período" sem filtro de data**: `GET /alertas` não aceita `de`/`ate`                                                             | O histórico lista os normalizados, paginado, na ordem da API                                                                                | Acrescentar `de` e `ate` (ou definir o período padrão do histórico)               |
-| 5   | **Respostas de erro** de `/reconhecimento` e `/escalonamento`: só o 403 está no contrato (reconhecer alerta já normalizado, `acao` inválida)    | Trata 403 com mensagem própria; outros erros com mensagem genérica                                                                          | Definir 409 para alerta normalizado e 422 para `acao` inválida                    |
-| 6   | **Bloqueio sem limite**: alerta `FILA_BLOQUEADA` vem com `tempoEsperaMinutos` e `limiteMinutos` nulos                                           | Mostra a causa (RN-10) no lugar dos tempos                                                                                                  | Nenhuma, se for o comportamento esperado                                          |
+| Ponto     | Contrato definido                                                                                                                     | Integração pendente                                                                    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Medidas   | `Alerta.escalonamentos[]` obrigatório, com ação, nome do autor e horário                                                              | Adotar os schemas compartilhados no lugar do tipo local opcional e trocar MSW pela API |
+| Gravidade | Descrição textual pelos tempos ou causa do bloqueio, sem categoria nova                                                               | Manter descrição, respeitando a ordem da API                                           |
+| Ordenação | ATIVO, RECONHECIDO, NORMALIZADO; nos abertos, bloqueio, maior excesso e disparo mais recente; histórico por normalização mais recente | Remover qualquer ordenação própria que contrarie a API                                 |
+| Período   | `de`/`ate` opcionais sobre o disparo, ISO-8601 com fuso; sem período, todo o histórico paginado                                       | Enviar os filtros quando houver período selecionado                                    |
+| Ações     | NORMALIZADO retorna 409 TRANSICAO_INVALIDA; entrada inválida retorna 422; reconhecer novamente preserva primeiro autor/horário        | Atualizar o mock e tratar os erros conforme o contrato                                 |
+| Bloqueio  | Tempos nulos, quantidade de aguardando no disparo e origem FILA_BLOQUEADA                                                             | Manter a causa RN-10 no lugar dos tempos                                               |
+
+A T-17 pede espera atual, mas a Tabela 20 do PDF principal define valores do disparo.
+O contrato preserva esse retrato; a integração deve identificá-los como verificados no
+momento do disparo, seguindo a precedência do PDF. A tela ainda usa polling HTTP; o canal
+`/alertas` já emite `sla.excedido` e `sla.normalizado` e deve invalidar a consulta na integração.
 
 ## Telão e consulta pública (W-09 / W-10, #42)
 

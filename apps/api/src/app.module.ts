@@ -4,6 +4,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AlocacaoModule } from './alocacao/alocacao.module';
+import { AlertasModule } from './alertas/alertas.module';
 import { AtendimentosModule } from './atendimentos/atendimentos.module';
 import { AusenciasModule } from './ausencias/ausencias.module';
 import { AuditoriaConsultaModule } from './auditoria/auditoria-consulta.module';
@@ -64,6 +65,7 @@ import { TempoRealModule } from './tempo-real/tempo-real.module';
     TempoRealModule,
     PublicoModule,
     EncaminhamentosModule,
+    AlertasModule,
   ],
 })
 export class AppModule {}

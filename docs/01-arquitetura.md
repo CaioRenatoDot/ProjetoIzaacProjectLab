@@ -124,6 +124,12 @@ do mesmo estado no servidor:
    desabilitado com a causa em texto acessível.
 3. O bloqueio entra na lista de alertas de gestão (W-18) como alerta de origem distinta.
 
+A #28 implementa esse terceiro lugar a partir de `fila.bloqueada`/`fila.desbloqueada`,
+com reconciliação do estado persistido na inicialização. O módulo de alertas não reavalia
+supervisores. A varredura de SLA roda por minuto em filas ativas; transações bloqueiam a
+linha da fila e um índice único parcial impede dois alertas abertos da mesma origem.
+Reconhecimento e escalonamento gravam auditoria na transação; eventos saem após o commit.
+
 ### 4.6 Tempo real (RNF-03)
 
 Três namespaces Socket.IO:
