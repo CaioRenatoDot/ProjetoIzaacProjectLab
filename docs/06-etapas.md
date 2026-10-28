@@ -199,9 +199,8 @@ Objetivo: equipe chama a próxima senha e o telão mostra a chamada em tempo rea
 **6.3 (#19):** contrato mergeado no PR #119 e implementação mergeada no PR #120. Evidências em
 [entregas/GH-19-aceite.md](entregas/GH-19-aceite.md).
 
-**Complemento (#20):** Nathan ✅ (implementação local; revisão/CI/merge pendentes).
-Contrato mergeado no PR #122; endpoints públicos e quatro critérios validados com HTTP
-e PostgreSQL reais. Acompanhamento em
+**Complemento (#20):** Nathan ✅ (contrato no PR #122 e implementação no PR #123, mergeados).
+Endpoints públicos e quatro critérios validados com HTTP e PostgreSQL reais. Acompanhamento em
 [entregas/GH-20-aceite.md](entregas/GH-20-aceite.md).
 
 **6.5 (#42):** front validado com dados fictícios e pontos de integração com #19/#20
@@ -212,13 +211,17 @@ documentados. Evidências e critérios em [entregas/GH-42-validacao.md](entregas
 Objetivo: conduzir o atendimento do início ao encerramento.
 **Pronto quando:** a senha vai de _chamada_ até _encerrada_, com validação do supervisor quando exigida.
 
-| Parte  | Descrição                                                                                                      | Responsável                   |
-| ------ | -------------------------------------------------------------------------------------------------------------- | ----------------------------- |
-| 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Rildo ✅                      |
-| 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Rildo ✅                      |
-| 7.3    | Tela W-11 · Alocação                                                                                           | Caio Gabriel ✅               |
-| 7.4    | Telas W-12 · Atendimento e W-13 · Encerramento e validação                                                     | Caio Renato ✅                |
-| ⭐ 7.5 | Sugestão automática de recursos, com o motivo de inaptidão                                                     | Nathan, Caio Renato ✅ (tela) |
+| Parte  | Descrição                                                                                                      | Responsável                                                |
+| ------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| 7.1    | Alocação de estudante, supervisor e sala, com verificação de disponibilidade e compatibilidade (RN-05 a RN-09) | Rildo ✅                                                   |
+| 7.2    | Iniciar, pausar, retomar e encerrar com desfecho; validação do supervisor (RN-11)                              | Rildo ✅                                                   |
+| 7.3    | Tela W-11 · Alocação                                                                                           | Caio Gabriel ✅                                            |
+| 7.4    | Telas W-12 · Atendimento e W-13 · Encerramento e validação                                                     | Caio Renato ✅                                             |
+| ⭐ 7.5 | Sugestão automática de recursos, com o motivo de inaptidão                                                     | Nathan ✅ (back local; PR pendente), Caio Renato ✅ (tela) |
+
+**7.5 (#22):** endpoint implementado com as mesmas verificações da confirmação; critérios
+validados localmente. Revisão, CI remoto e merge pendentes. Evidências em
+[entregas/GH-22-aceite.md](entregas/GH-22-aceite.md).
 
 ### Etapa 8 · Ausências e desistências
 

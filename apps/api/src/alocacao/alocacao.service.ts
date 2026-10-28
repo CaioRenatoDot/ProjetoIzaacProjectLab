@@ -20,8 +20,9 @@ import { SenhaProjecao } from '../senhas/senha-projecao.service';
 import { SenhasRepository, type Transacao } from '../senhas/senhas.repository';
 import { type AlocacaoCompleta, paraAlocacao } from './alocacao.projecao';
 import { AlocacaoRepository } from './alocacao.repository';
+import { AptidaoAlocacaoService } from './aptidao-alocacao.service';
 
-const ALOCAVEIS: StatusSenha[] = ['CHAMADA', 'AGUARDANDO_RECURSO'];
+export const ALOCAVEIS: StatusSenha[] = ['CHAMADA', 'AGUARDANDO_RECURSO'];
 const MOTIVO_BLOQUEIO = 'Sem supervisor habilitado disponível na especialidade.';
 
 /** Sinaliza, de dentro da transação, que nenhum supervisor está disponível (RN-07, RN-10). */
@@ -54,6 +55,7 @@ export class AlocacaoService {
     private readonly idempotencia: IdempotenciaService,
     private readonly eventos: EventosDominio,
     private readonly relogio: Relogio,
+    private readonly aptidao: AptidaoAlocacaoService,
   ) {}
 
   async confirmar(
@@ -163,46 +165,32 @@ export class AlocacaoService {
         )
       : null;
 
-    // 422: a escolha não serve para esta senha.
-    const campos: CampoInvalido[] = [];
-    if (!estudante || !estudante.ativo || estudante.especialidade.unidadeId !== usuario.unidadeId) {
-      campos.push({ campo: 'estudanteId', mensagem: 'Estudante não encontrado ou inativo.' });
-    } else if (estudante.especialidadeId !== senha.fila.especialidadeId) {
-      // RN-06: só a especialidade tem fonte no modelo (nível, habilitações e procedimentos exigidos não têm).
-      campos.push({ campo: 'estudanteId', mensagem: 'Estudante de outra especialidade.' });
-    }
-    if (!sala || !sala.ativo || sala.unidadeId !== usuario.unidadeId) {
-      campos.push({ campo: 'salaId', mensagem: 'Sala não encontrada ou inativa.' });
-    } else {
-      const naSala = new Set(sala.recursos.map((recurso) => recurso.recursoId));
-      if (especialidade.recursosExigidos.some(({ recursoId }) => !naSala.has(recursoId))) {
-        campos.push({
-          campo: 'salaId',
-          mensagem: 'A sala não tem os recursos exigidos pela especialidade.',
-        });
-      }
-    }
-    if (!especialidade.exigeSupervisaoDocente && supervisorId) {
-      campos.push({ campo: 'supervisorId', mensagem: 'Esta especialidade não exige supervisão.' });
-    }
-    if (supervisor) {
-      if (!supervisor.ativo) {
-        campos.push({ campo: 'supervisorId', mensagem: 'Supervisor inativo.' });
-      } else if (
-        !supervisor.especialidades.some((e) => e.especialidadeId === senha.fila.especialidadeId)
-      ) {
-        campos.push({
-          campo: 'supervisorId',
-          mensagem: 'Supervisor não habilitado nesta especialidade.',
-        });
-      }
-    }
-    const semSupervisorEscolhido = especialidade.exigeSupervisaoDocente && !supervisorId;
-    if (campos.length) throw new ErroValidacao(campos);
-
     const limiteDaUnidade = (
       await this.parametros.vigentes(usuario.unidadeId, senha.fila.especialidadeId, tx)
     ).limiteEstudantesSupervisor;
+    const estudanteInapto = this.aptidao.estudante(
+      estudante,
+      usuario.unidadeId,
+      senha.fila.especialidadeId,
+    );
+    const salaInapta = this.aptidao.sala(sala, usuario.unidadeId, especialidade.recursosExigidos);
+    const supervisorInapto = supervisor
+      ? this.aptidao.supervisor(supervisor, senha.fila.especialidadeId, limiteDaUnidade)
+      : null;
+    const campos: CampoInvalido[] = [];
+    for (const [campo, erro] of [
+      ['estudanteId', estudanteInapto],
+      ['salaId', salaInapta],
+    ] as const)
+      if (erro?.status === 422) campos.push({ campo, mensagem: erro.texto });
+    if (!especialidade.exigeSupervisaoDocente && supervisorId) {
+      campos.push({ campo: 'supervisorId', mensagem: 'Esta especialidade não exige supervisão.' });
+    }
+    if (supervisorInapto?.status === 422)
+      campos.push({ campo: 'supervisorId', mensagem: supervisorInapto.texto });
+    const semSupervisorEscolhido = especialidade.exigeSupervisaoDocente && !supervisorId;
+    if (campos.length) throw new ErroValidacao(campos);
+
     if (semSupervisorEscolhido) {
       if (
         !(await this.haSupervisorDisponivel(
@@ -220,40 +208,27 @@ export class AlocacaoService {
     }
 
     // 409: serve, mas não está livre agora.
-    if (!estudante!.disponibilidades.length) {
-      throw indisponivel('O estudante não está disponível neste turno (RN-05).');
-    }
-    if (estudante!._count.alocacoes > 0) {
-      throw indisponivel('O estudante já está em outro atendimento (RN-05).');
-    }
-    if (sala!.situacao !== 'DISPONIVEL' || sala!._count.alocacoes > 0) {
-      throw indisponivel('A sala não está disponível agora (RN-09).');
-    }
-    if (supervisor) {
-      const limite = supervisor.limiteEstudantesSimultaneos ?? limiteDaUnidade;
-      const foraDoTurno = !supervisor.disponibilidades.length;
-      const noLimite = supervisor._count.alocacoes >= limite;
-      if (foraDoTurno || noLimite) {
-        if (
-          !(await this.haSupervisorDisponivel(
-            tx,
-            senha.fila.especialidadeId,
-            noTurno,
-            limiteDaUnidade,
-            supervisorId!,
-          ))
-        ) {
-          throw new SemSupervisorDisponivel();
-        }
-        if (foraDoTurno)
-          throw indisponivel('O supervisor não está disponível neste turno (RN-07).');
-        throw new ErroDominio(
-          'LIMITE_SUPERVISAO_ATINGIDO',
-          409,
-          'Limite de supervisão atingido',
-          `O supervisor já acompanha ${supervisor._count.alocacoes} estudante(s), o limite dele (RN-08). Escolha outro supervisor.`,
-        );
+    if (estudanteInapto) throw indisponivel(estudanteInapto.texto);
+    if (salaInapta) throw indisponivel(salaInapta.texto);
+    if (supervisorInapto) {
+      if (
+        !(await this.haSupervisorDisponivel(
+          tx,
+          senha.fila.especialidadeId,
+          noTurno,
+          limiteDaUnidade,
+          supervisorId!,
+        ))
+      ) {
+        throw new SemSupervisorDisponivel();
       }
+      if (supervisorInapto.motivo === 'FORA_DO_TURNO') throw indisponivel(supervisorInapto.texto);
+      throw new ErroDominio(
+        'LIMITE_SUPERVISAO_ATINGIDO',
+        409,
+        'Limite de supervisão atingido',
+        supervisorInapto.texto,
+      );
     }
 
     let alocacao: AlocacaoCompleta;
@@ -295,9 +270,7 @@ export class AlocacaoService {
       noTurno.turno,
       exceto,
     );
-    return candidatos.some(
-      (c) => c._count.alocacoes < (c.limiteEstudantesSimultaneos ?? limiteDaUnidade),
-    );
+    return candidatos.some((c) => !this.aptidao.supervisor(c, especialidadeId, limiteDaUnidade));
   }
 
   /**

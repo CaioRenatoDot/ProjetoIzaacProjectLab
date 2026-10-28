@@ -1,4 +1,4 @@
-import { Body, Controller, Headers, HttpCode, Param, Post, Put, Req } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, Param, Post, Put, Req } from '@nestjs/common';
 import {
   AguardandoRecursoEntrada,
   type Alocacao,
@@ -12,12 +12,22 @@ import { Auditar, Requer } from '../common/autorizacao/decorators';
 import { IdPipe } from '../common/validation/id.pipe';
 import { ZodValidationPipe } from '../common/validation/zod-validation.pipe';
 import { AlocacaoService } from './alocacao.service';
+import { SugestoesService } from './sugestoes.service';
 
 type Requisicao = Request & { usuario: UsuarioAutenticado };
 
 @Controller('senhas/:id')
 export class AlocacaoController {
-  constructor(private readonly alocacao: AlocacaoService) {}
+  constructor(
+    private readonly alocacao: AlocacaoService,
+    private readonly sugestoes: SugestoesService,
+  ) {}
+
+  @Get('alocacao/sugestoes')
+  @Requer('alocacao:consultar')
+  sugerir(@Param('id', IdPipe) id: string, @Req() req: Requisicao) {
+    return this.sugestoes.consultar(id, req.usuario.unidadeId);
+  }
 
   @Post('alocacao')
   @Requer('alocacao:criar')

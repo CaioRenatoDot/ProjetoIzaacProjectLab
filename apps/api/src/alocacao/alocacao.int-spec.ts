@@ -20,6 +20,7 @@ import {
 } from '../common/testing/app-integracao';
 import { type AppDeTeste } from '../common/testing/criar-app-de-teste';
 import { AlocacaoModule } from './alocacao.module';
+import { SugestoesAlocacao } from './dto/sugestoes.dto';
 
 type Contexto = AppDeTeste & { prisma: PrismaClient };
 
@@ -37,24 +38,26 @@ const api = () => request(contexto.servidor);
 const comToken = (req: request.Test) => req.set('Authorization', `Bearer ${atendente.token}`);
 
 interface Cenario {
+  unidadeId: string;
   especialidadeId: string;
   filaId: string;
   recursoId: string;
 }
 
-async function cenario(exigeSupervisao = true): Promise<Cenario> {
+async function cenario(exigeSupervisao = true, unidadeId = UNIDADE_PADRAO): Promise<Cenario> {
   const recurso = await contexto.prisma.recurso.create({ data: { nome: unico('Maca') } });
   const especialidade = await contexto.prisma.especialidade.create({
     data: {
       nome: unico('Fisio'),
-      unidadeId: UNIDADE_PADRAO,
+      unidadeId,
       exigeSupervisaoDocente: exigeSupervisao,
       recursosExigidos: { create: { recursoId: recurso.id } },
-      filas: { create: { unidadeId: UNIDADE_PADRAO, nome: 'Fisio', letraSenha: 'F' } },
+      filas: { create: { unidadeId, nome: 'Fisio', letraSenha: 'F' } },
     },
     include: { filas: true },
   });
   return {
+    unidadeId,
     especialidadeId: especialidade.id,
     filaId: especialidade.filas[0]!.id,
     recursoId: recurso.id,
@@ -102,7 +105,7 @@ const sala = async (c: Cenario, dados: { comRecurso?: boolean; situacao?: 'EM_MA
     await contexto.prisma.sala.create({
       data: {
         identificacao: unico('Sala'),
-        unidadeId: UNIDADE_PADRAO,
+        unidadeId: c.unidadeId,
         ...(dados.situacao ? { situacao: dados.situacao } : {}),
         ...(dados.comRecurso === false ? {} : { recursos: { create: { recursoId: c.recursoId } } }),
       },
@@ -132,7 +135,11 @@ describe('alocação de estudante, supervisor e sala (#21)', () => {
       imports: [EventosDominioModule, IdempotenciaModule, RelogioModule, AlocacaoModule],
     });
     vi.spyOn(contexto.app.get(Relogio), 'agora').mockImplementation(() => SEGUNDA_DE_MANHA);
-    atendente = await entrarComPermissoes(contexto, ['alocacao:criar', 'alocacao:editar']);
+    atendente = await entrarComPermissoes(contexto, [
+      'alocacao:criar',
+      'alocacao:editar',
+      'alocacao:consultar',
+    ]);
     pacienteId = (
       await contexto.prisma.paciente.create({
         data: {
@@ -415,5 +422,138 @@ describe('alocação de estudante, supervisor e sala (#21)', () => {
     }).expect(409);
 
     expect(corpo<Problema>(resposta).codigo).toBe('TRANSICAO_INVALIDA');
+  });
+
+  const sugerir = async (senhaId: string) =>
+    SugestoesAlocacao.parse(
+      (await comToken(api().get(`/api/v1/senhas/${senhaId}/alocacao/sugestoes`)).expect(200)).body,
+    );
+
+  it('#22 RN-05 a RN-09: sugere um apto por bloco e a confirmação aceita os mesmos recursos', async () => {
+    const c = await cenario();
+    const senha = await senhaChamada(c);
+    const estudanteId = await estudante(c);
+    const supervisorId = await supervisor(c);
+    const salaId = await sala(c);
+    const r = await sugerir(senha.id);
+    expect(r.estudante.sugestao).toMatchObject({ id: estudanteId, apto: true, motivoTexto: null });
+    expect(r.supervisor).toMatchObject({
+      aplicavel: true,
+      sugestao: { id: supervisorId, apto: true },
+    });
+    expect(r.sala.sugestao).toMatchObject({ id: salaId, apto: true });
+    for (const bloco of [r.estudante, r.supervisor, r.sala])
+      expect(bloco.alternativas.some((a) => a.id === bloco.sugestao!.id)).toBe(false);
+    expect(await contexto.prisma.alocacao.count({ where: { senhaId: senha.id } })).toBe(0);
+    await alocar(senha.id, { estudanteId, supervisorId, salaId }).expect(201);
+  });
+
+  it('#22 RN-05 estudante fora do turno aparece nas alternativas; RN-07 sem supervisão oculta o bloco', async () => {
+    const c = await cenario(false);
+    const s = await senhaChamada(c);
+    const foraId = await estudante(c, false);
+    await contexto.prisma.estudante.update({
+      where: { id: foraId },
+      data: { nome: '! Fora do turno' },
+    });
+    await estudante(c);
+    await sala(c);
+    const r = await sugerir(s.id);
+    const fora = r.estudante.alternativas.find((e) => e.id === foraId);
+    expect(fora).toMatchObject({ apto: false, motivoInaptidao: 'FORA_DO_TURNO' });
+    expect(fora?.motivoTexto).toContain('turno');
+    expect(r.supervisor).toEqual({
+      aplicavel: false,
+      sugestao: null,
+      alternativas: [],
+      regrasVerificadas: [],
+    });
+  });
+
+  it('#22 RN-08 supervisor ocupado até o limite aparece com motivo textual; sugere outro', async () => {
+    const c = await cenario();
+    const ocupado = await supervisor(c, 1);
+    const livre = await supervisor(c);
+    await contexto.prisma.supervisor.update({
+      where: { id: ocupado },
+      data: { nome: '! Limite atingido' },
+    });
+    await alocar((await senhaChamada(c)).id, {
+      estudanteId: await estudante(c),
+      supervisorId: ocupado,
+      salaId: await sala(c),
+    }).expect(201);
+    const r = await sugerir((await senhaChamada(c)).id);
+    expect(r.supervisor.sugestao?.id).toBe(livre);
+    const limitado = r.supervisor.alternativas.find((s) => s.id === ocupado);
+    expect(limitado?.motivoInaptidao).toBe('LIMITE_SUPERVISAO_ATINGIDO');
+    expect(limitado?.motivoTexto).toContain('limite');
+  });
+
+  it('#22 RN-05 e RN-09 uma sugestão tomada antes da confirmação continua sujeita ao 409', async () => {
+    const c = await cenario(false);
+    const s = await senhaChamada(c);
+    const estudanteId = await estudante(c);
+    const salaId = await sala(c);
+    await sugerir(s.id);
+    await alocar((await senhaChamada(c)).id, { estudanteId, salaId }).expect(201);
+    const r = await alocar(s.id, { estudanteId, salaId }).expect(409);
+    expect(corpo<Problema>(r).codigo).toBe('RECURSO_INDISPONIVEL');
+    const nova = await sugerir(s.id);
+    expect(nova.estudante.sugestao).toBeNull();
+    expect(nova.sala.sugestao).toBeNull();
+  });
+
+  it('#22 busca em lotes encontra apto após cem inaptos, sem repetir sugestão nem exceder vinte alternativas', async () => {
+    const c = await cenario(false);
+    const s = await senhaChamada(c);
+    await contexto.prisma.estudante.createMany({
+      data: Array.from({ length: 100 }, (_, i) => ({
+        nome: `! Inapto ${i}`,
+        especialidadeId: c.especialidadeId,
+        nivelFormacao: '7º período',
+      })),
+    });
+    const apto = await estudante(c);
+    const r = await sugerir(s.id);
+    expect(r.estudante.sugestao?.id).toBe(apto);
+    expect(r.estudante.alternativas).toHaveLength(20);
+  });
+
+  it('#22 autorização neutra, isolamento por unidade e estado alocável são respeitados', async () => {
+    const c = await cenario(false);
+    const s = await senhaChamada(c);
+    const rota = (id: string) => `/api/v1/senhas/${id}/alocacao/sugestoes`;
+    await api().get(rota(s.id)).expect(401);
+    const semPermissao = await entrarComPermissoes(contexto, []);
+    for (const id of [s.id, randomUUID()]) {
+      const r = await api().get(rota(id)).auth(semPermissao.token, { type: 'bearer' }).expect(403);
+      expect(corpo<Problema>(r).codigo).toBe('SEM_PERMISSAO');
+    }
+    const unidade = await contexto.prisma.unidade.create({
+      data: { nome: unico('Outra unidade') },
+    });
+    const outro = await cenario(false, unidade.id);
+    const senhaOutra = await senhaChamada(outro);
+    const estudanteOutro = await estudante(outro);
+    const salaOutra = await sala(outro);
+    const supervisorOutro = await supervisor(outro);
+    await comToken(api().get(rota(senhaOutra.id))).expect(404);
+    const r = await sugerir(s.id);
+    expect(JSON.stringify(r)).not.toContain(estudanteOutro);
+    expect(JSON.stringify(r)).not.toContain(salaOutra);
+    const supervisionada = await cenario();
+    const semRecursos = await senhaChamada(supervisionada);
+    const vazia = await sugerir(semRecursos.id);
+    expect(JSON.stringify(vazia)).not.toContain(supervisorOutro);
+    expect(vazia.supervisor.sugestao).toBeNull();
+    expect(
+      await contexto.prisma.fila.findUnique({ where: { id: supervisionada.filaId } }),
+    ).toMatchObject({ bloqueada: false });
+    expect(await contexto.prisma.senha.findUnique({ where: { id: semRecursos.id } })).toMatchObject(
+      { status: 'CHAMADA', versao: 1 },
+    );
+    await comToken(api().get(rota((await senhaChamada(c, 'AGUARDANDO')).id))).expect(409);
+    await comToken(api().get(rota((await senhaChamada(c, 'AGUARDANDO_RECURSO')).id))).expect(200);
   });
 });

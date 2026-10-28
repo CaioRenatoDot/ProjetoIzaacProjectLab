@@ -194,6 +194,30 @@ describe('listagens sem dado sensível (ADR-003, #30)', () => {
     });
     ids.filas = especialidade.filas[0]!.id;
     ids.senhas = senha.id;
+    const triagemSugestoes = await contexto.prisma.triagem.create({
+      data: {
+        pacienteId: paciente.id,
+        profissionalId: admin.usuarioId,
+        especialidadeDestinoId: especialidade.id,
+        tipoAtendimento: 'PRIMEIRA_CONSULTA',
+        prioridade: 'NORMAL',
+        motivo: 'Motivo clinico sigiloso',
+        observacoes: 'Observacao sigilosa',
+      },
+    });
+    ids.sugestoes = (
+      await contexto.prisma.senha.create({
+        data: {
+          numero: 'S002',
+          filaId: especialidade.filas[0]!.id,
+          triagemId: triagemSugestoes.id,
+          pacienteId: paciente.id,
+          prioridade: 'NORMAL',
+          tipoAtendimento: 'PRIMEIRA_CONSULTA',
+          status: 'CHAMADA',
+        },
+      })
+    ).id;
   });
 
   afterAll(async () => {
@@ -207,6 +231,7 @@ describe('listagens sem dado sensível (ADR-003, #30)', () => {
         '/api/v1/triagens',
         '/api/v1/atendimentos',
         '/api/v1/filas/:id/senhas',
+        '/api/v1/senhas/:id/alocacao/sugestoes',
       ]),
     );
   });
@@ -216,7 +241,8 @@ describe('listagens sem dado sensível (ADR-003, #30)', () => {
     const falhas: string[] = [];
     for (const rota of rotasDeListagem()) {
       const recurso = rota.split('/')[3]!;
-      const url = rota.replace(':id', ids[recurso] ?? '');
+      const id = rota.endsWith('/alocacao/sugestoes') ? ids.sugestoes : ids[recurso];
+      const url = rota.replace(':id', id ?? '');
       const resposta = await request(contexto.servidor)
         .get(QUERY[rota] ? `${url}?${QUERY[rota]}` : url)
         .set('Authorization', `Bearer ${admin.token}`);
