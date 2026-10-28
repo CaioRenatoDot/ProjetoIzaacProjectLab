@@ -724,7 +724,7 @@ model PausaAtendimento {
 
 model Encaminhamento {
   id                     String             @id @default(uuid(7)) @db.Uuid
-  atendimentoId          String             @map("atendimento_id") @db.Uuid
+  atendimentoId          String             @unique @map("atendimento_id") @db.Uuid
   tipo                   TipoEncaminhamento
   /// Encaminhamento interno.
   especialidadeDestinoId String?            @map("especialidade_destino_id") @db.Uuid
@@ -743,7 +743,6 @@ model Encaminhamento {
   senhaGerada          Senha?         @relation("EncaminhamentoSenhaGerada", fields: [senhaGeradaId], references: [id], onDelete: Restrict)
   autor                Usuario        @relation(fields: [criadoPor], references: [id], onDelete: Restrict)
 
-  @@index([atendimentoId])
   @@map("encaminhamento")
 }
 

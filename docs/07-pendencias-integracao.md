@@ -250,8 +250,8 @@ Consome a API pelo cliente HTTP (`lib/encaminhamento/api.ts`); hoje quem respond
 `mocks/filas.ts`, Fonoaudiologia aceita com o aviso `FILA_BLOQUEADA` (RN-10) e Psicologia é
 inativada no envio (409 `ESPECIALIDADE_INATIVA`).
 
-Contrato da #26 em preparação, com decisões aprovadas registradas em
-[GH-26-aceite](entregas/GH-26-aceite.md). A implementação HTTP permanece pendente.
+Contrato da #26 mergeado no PR #125; implementação HTTP validada localmente, aguardando
+revisão/CI/merge. Decisões e evidências em [GH-26-aceite](entregas/GH-26-aceite.md).
 
 | Status | Provisório                                                               | Onde                                     | Destrava                                              | Troca a fazer                                   |
 | ------ | ------------------------------------------------------------------------ | ---------------------------------------- | ----------------------------------------------------- | ----------------------------------------------- |

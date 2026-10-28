@@ -22,6 +22,7 @@ export type SenhaCompleta = Prisma.SenhaGetPayload<{ include: typeof SENHA_COMPL
 export type Transacao = Prisma.TransactionClient;
 
 export interface NovaSenha {
+  senhaOrigemId?: string;
   numero: string;
   filaId: string;
   triagemId: string;

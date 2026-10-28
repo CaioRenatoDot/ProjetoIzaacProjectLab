@@ -86,6 +86,10 @@ Um interceptador global grava em `audit_log` toda operação de escrita e toda l
 sensível. A tabela é append-only: sem UPDATE, sem DELETE, garantido por permissão do usuário de
 banco da aplicação. A exportação da própria trilha também gera evento (T-18).
 
+Escritas críticas podem usar `@Auditar({ entidade, naTransacao: true })`: o service grava
+`AuditoriaService.registrar(registro, tx)` junto com a escrita, e o interceptador não duplica
+o registro. A #26 usa esse fluxo; falha da auditoria desfaz também o encaminhamento e a senha.
+
 Leituras auditadas: abertura de ficha de triagem, dados clínicos na tela de atendimento e
 exportações. Cada uma grava `operacao = CONSULTAR_SENSIVEL` com o identificador do registro consultado.
 

@@ -55,7 +55,7 @@ export class AuditoriaInterceptor implements NestInterceptor {
 
     return proximo.handle().pipe(
       mergeMap(async (resultado: unknown) => {
-        if (operacao && requisicao.usuario) {
+        if (operacao && requisicao.usuario && !opcoes?.naTransacao) {
           const permissao = this.reflector.getAllAndOverride<string | undefined>(CHAVE_REQUER, [
             contexto.getHandler(),
             contexto.getClass(),

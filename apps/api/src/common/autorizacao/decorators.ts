@@ -29,6 +29,8 @@ export const LeituraSensivel = (quando?: CondicaoSensivel) =>
   SetMetadata(CHAVE_LEITURA_SENSIVEL, quando ?? true);
 
 export interface OpcoesAuditoria {
+  /** O service grava a auditoria na transação da escrita; o interceptador não a duplica. */
+  naTransacao?: boolean;
   /** Padrão: o módulo da permissão exigida. */
   modulo?: string;
   /** Nome da entidade gravada em `audit_log.entidade`. */

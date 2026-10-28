@@ -194,6 +194,9 @@ indicadores (RF-10).
 `prioridade_sugerida?`, `senha_gerada_id?` (interno gera nova entrada de fila — RF-08),
 `observacoes?`, `criado_em`, `criado_por`.
 
+A #26 limita a um encaminhamento por atendimento, com índice único em `atendimento_id`.
+A senha derivada reutiliza a triagem original, preservada, e aponta para a senha de origem.
+
 ### 3.5 Ausência, desistência e alertas
 
 **ausencia** — `id`, `senha_id`, `automatica` (boolean — expiração de tolerância, RN-12),
