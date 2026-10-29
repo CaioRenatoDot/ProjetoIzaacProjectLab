@@ -554,8 +554,8 @@ paths:
       operationId: cadastrarEstudanteAtendente
       description: |
         RN-06 - especialidade, nível, habilitações e procedimentos autorizados. Habilitações,
-        procedimentos e disponibilidade são obrigatórios, como no W-04. Duplicidade provisória
-        por nome + especialidade, sem diferenciar maiúsculas (decisão pendente na #81).
+        procedimentos e disponibilidade são obrigatórios, como no W-04. Duplicidade por nome +
+        especialidade, sem diferenciar maiúsculas (decidido na #81).
       requestBody:
         required: true
         content:

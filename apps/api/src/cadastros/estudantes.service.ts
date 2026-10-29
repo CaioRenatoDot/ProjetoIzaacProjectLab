@@ -52,9 +52,8 @@ function paraEstudante(estudante: EstudanteComDetalhe): Estudante {
 }
 
 /**
- * Estudante ou atendente (Tabela 2, RN-05, RN-06). Duplicidade provisória por nome +
- * especialidade, sem diferenciar maiúsculas (decisão pendente na #81). A unidade vem da
- * especialidade (RNF-08).
+ * Estudante ou atendente (Tabela 2, RN-05, RN-06). Duplicidade por nome + especialidade, sem
+ * diferenciar maiúsculas (decidido na #81). A unidade vem da especialidade (RNF-08).
  */
 @Injectable()
 export class EstudantesService {
