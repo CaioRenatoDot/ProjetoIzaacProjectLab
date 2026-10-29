@@ -13,6 +13,7 @@ import {
 } from '@nestjs/common';
 import {
   AlteracaoAtivo,
+  ConfirmarQuery,
   type Estudante,
   EstudanteEntrada,
   ListarEstudantesQuery,
@@ -132,9 +133,10 @@ export class EstudantesController {
   atualizar(
     @Param('id', IdPipe) id: string,
     @Body(new ZodValidationPipe(EstudanteEntrada)) entrada: EstudanteEntrada,
+    @Query(new ZodValidationPipe(ConfirmarQuery)) { confirmar }: ConfirmarQuery,
     @Req() req: Requisicao,
   ): Promise<Estudante> {
-    return this.estudantes.atualizar(id, entrada, req.usuario.unidadeId);
+    return this.estudantes.atualizar(id, entrada, req.usuario.unidadeId, confirmar);
   }
 
   @Patch(':id')
@@ -143,9 +145,10 @@ export class EstudantesController {
   alterarSituacao(
     @Param('id', IdPipe) id: string,
     @Body(new ZodValidationPipe(AlteracaoAtivo)) { ativo }: AlteracaoAtivo,
+    @Query(new ZodValidationPipe(ConfirmarQuery)) { confirmar }: ConfirmarQuery,
     @Req() req: Requisicao,
   ): Promise<Estudante> {
-    return this.estudantes.alterarSituacao(id, ativo, req.usuario.unidadeId);
+    return this.estudantes.alterarSituacao(id, ativo, req.usuario.unidadeId, confirmar);
   }
 
   @Delete(':id')
@@ -192,9 +195,10 @@ export class SupervisoresController {
   atualizar(
     @Param('id', IdPipe) id: string,
     @Body(new ZodValidationPipe(SupervisorEntrada)) entrada: SupervisorEntrada,
+    @Query(new ZodValidationPipe(ConfirmarQuery)) { confirmar }: ConfirmarQuery,
     @Req() req: Requisicao,
   ): Promise<Supervisor> {
-    return this.supervisores.atualizar(id, entrada, req.usuario.unidadeId);
+    return this.supervisores.atualizar(id, entrada, req.usuario.unidadeId, confirmar);
   }
 
   @Patch(':id')
@@ -203,9 +207,10 @@ export class SupervisoresController {
   alterarSituacao(
     @Param('id', IdPipe) id: string,
     @Body(new ZodValidationPipe(AlteracaoAtivo)) { ativo }: AlteracaoAtivo,
+    @Query(new ZodValidationPipe(ConfirmarQuery)) { confirmar }: ConfirmarQuery,
     @Req() req: Requisicao,
   ): Promise<Supervisor> {
-    return this.supervisores.alterarSituacao(id, ativo, req.usuario.unidadeId);
+    return this.supervisores.alterarSituacao(id, ativo, req.usuario.unidadeId, confirmar);
   }
 
   @Delete(':id')

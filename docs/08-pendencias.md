@@ -55,8 +55,9 @@ limitação de modelo descrita na seção 3; a verificação de nomes de testes 
 
 Decidido na #79: opção A, só para os campos que afetam alocações em curso (T-04). O `PUT` dos
 quatro cadastros sem `?confirmar=true` responde `409 IMPACTO_EM_USO` com o impacto, e a W-04
-reenvia depois da confirmação. Falta o PR de contrato, a API e a troca no front (#38); até lá, o
-formulário avisa sozinho com os campos de ocupação (opção C, provisória).
+reenvia depois da confirmação. Contrato no #137 e API no PR da #79 (também no `PATCH` de inativar).
+Falta a troca no front (#38): trocar o aviso calculado no formulário pelo 409 e apagar a regra
+local.
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 

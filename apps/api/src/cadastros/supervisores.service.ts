@@ -17,6 +17,7 @@ import {
   pessoaComVinculo,
   pessoaNaoEncontrada,
 } from './pessoas.util';
+import { exigirConfirmacao, mesmoConjunto, usoPorAlocacao } from './impacto';
 
 const DETALHE = {
   especialidades: { select: { especialidade: { select: { id: true, nome: true } } } },
@@ -92,8 +93,44 @@ export class SupervisoresService {
     return paraSupervisor(supervisor);
   }
 
-  async atualizar(id: string, entrada: SupervisorEntrada, unidadeId: string): Promise<Supervisor> {
-    await this.buscar(id, unidadeId);
+  async atualizar(
+    id: string,
+    entrada: SupervisorEntrada,
+    unidadeId: string,
+    confirmar = false,
+  ): Promise<Supervisor> {
+    const atual = paraSupervisor(await this.buscar(id, unidadeId));
+    const campos = [
+      ...(mesmoConjunto(
+        atual.especialidades.map((e) => e.id),
+        entrada.especialidadesIds,
+      )
+        ? []
+        : ['especialidadesIds']),
+      ...(mesmoConjunto(
+        atual.procedimentos.map((p) => p.id),
+        entrada.procedimentosIds,
+      )
+        ? []
+        : ['procedimentosIds']),
+      ...(mesmoConjunto(
+        atual.disponibilidade.map((d) => `${d.diaSemana}-${d.turno}`),
+        entrada.disponibilidade.map((d) => `${d.diaSemana}-${d.turno}`),
+      )
+        ? []
+        : ['disponibilidade']),
+      ...((atual.limiteEstudantesSimultaneos || null) ===
+      (entrada.limiteEstudantesSimultaneos ?? null)
+        ? []
+        : ['limiteEstudantesSimultaneos']),
+    ];
+    if (campos.length) {
+      exigirConfirmacao(
+        confirmar,
+        await usoPorAlocacao(this.prisma, 'Supervisor', { supervisorId: id }),
+        campos,
+      );
+    }
     await this.validarReferencias(entrada, unidadeId);
     const supervisor = await this.prisma.$transaction(async (tx) => {
       await tx.supervisorEspecialidade.deleteMany({ where: { supervisorId: id } });
@@ -112,8 +149,20 @@ export class SupervisoresService {
     return paraSupervisor(supervisor);
   }
 
-  async alterarSituacao(id: string, ativo: boolean, unidadeId: string): Promise<Supervisor> {
-    await this.buscar(id, unidadeId);
+  async alterarSituacao(
+    id: string,
+    ativo: boolean,
+    unidadeId: string,
+    confirmar = false,
+  ): Promise<Supervisor> {
+    const atual = await this.buscar(id, unidadeId);
+    if (atual.ativo && !ativo) {
+      exigirConfirmacao(
+        confirmar,
+        await usoPorAlocacao(this.prisma, 'Supervisor', { supervisorId: id }),
+        ['ativo'],
+      );
+    }
     return paraSupervisor(
       await this.prisma.supervisor.update({ where: { id }, data: { ativo }, include: DETALHE }),
     );

@@ -10,6 +10,7 @@ import { Prisma } from '@prisma/client';
 import { deslocamento, montarRespostaPaginada } from '../common/pagination/paginacao';
 import { PrismaService } from '../prisma/prisma.service';
 import { naoEncontrado, recursosInexistentes, vinculoAtivo } from './erros';
+import { exigirConfirmacao, mesmoConjunto, usoPorAlocacao } from './impacto';
 
 const COM_RECURSOS = {
   recursos: { select: { recurso: { select: { id: true, nome: true } } } },
@@ -81,9 +82,30 @@ export class SalasService {
     return paraSala(sala);
   }
 
-  async atualizar(id: string, entrada: SalaEntrada, unidadeId: string): Promise<Sala> {
-    await this.buscar(id, unidadeId);
+  async atualizar(
+    id: string,
+    entrada: SalaEntrada,
+    unidadeId: string,
+    confirmar = false,
+  ): Promise<Sala> {
+    const atual = await this.buscar(id, unidadeId);
     await this.garantirRecursos(entrada.recursosIds);
+    const campos = [
+      ...(mesmoConjunto(
+        atual.recursos.map(({ recurso }) => recurso.id),
+        entrada.recursosIds,
+      )
+        ? []
+        : ['recursos']),
+      ...(atual.situacao === entrada.situacao ? [] : ['situacao']),
+    ];
+    if (campos.length) {
+      exigirConfirmacao(
+        confirmar,
+        await usoPorAlocacao(this.prisma, 'Sala', { salaId: id }),
+        campos,
+      );
+    }
     const sala = await this.prisma.$transaction(async (tx) => {
       await tx.salaRecurso.deleteMany({ where: { salaId: id } });
       return tx.sala.update({
@@ -100,8 +122,18 @@ export class SalasService {
     return paraSala(sala);
   }
 
-  async alterarSituacao(id: string, ativo: boolean, unidadeId: string): Promise<Sala> {
-    await this.buscar(id, unidadeId);
+  async alterarSituacao(
+    id: string,
+    ativo: boolean,
+    unidadeId: string,
+    confirmar = false,
+  ): Promise<Sala> {
+    const atual = await this.buscar(id, unidadeId);
+    if (atual.ativo && !ativo) {
+      exigirConfirmacao(confirmar, await usoPorAlocacao(this.prisma, 'Sala', { salaId: id }), [
+        'ativo',
+      ]);
+    }
     return paraSala(
       await this.prisma.sala.update({ where: { id }, data: { ativo }, include: COM_RECURSOS }),
     );
