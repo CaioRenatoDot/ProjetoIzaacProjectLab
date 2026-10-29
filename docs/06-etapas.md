@@ -159,6 +159,7 @@ Objetivo: usuário entra no sistema e só vê o que o perfil permite; ações se
 | 3.5    | Tela W-02 · Home por perfil                                                   | Caio Renato ✅  |
 | ⭐ 3.6 | Tela W-05 · Perfis e matriz de permissões editável                            | Caio Renato ✅  |
 | ⭐ 3.6 | API de perfis, permissões e usuários (#12)                                    | Rildo ✅        |
+| ⭐ 3.6 | Tela W-05 integrada à API real (#133)                                         | Caio Gabriel ✅ |
 
 ### Etapa 4 · Cadastros base
 
