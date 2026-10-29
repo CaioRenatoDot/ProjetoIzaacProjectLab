@@ -32,6 +32,21 @@ export const AlteracaoAtiva = z.object({
 });
 export type AlteracaoAtiva = z.infer<typeof AlteracaoAtiva>;
 
+/**
+ * `?confirmar=true` nos `PUT` e `PATCH` de sala, especialidade, estudante e supervisor (#79):
+ * sem ele, mudar campo que afeta alocação em curso responde 409 IMPACTO_EM_USO.
+ */
+export const ConfirmarQuery = z.object({ confirmar: booleanoDaQuery.default(false) });
+export type ConfirmarQuery = z.infer<typeof ConfirmarQuery>;
+
+/** Corpo extra do 409 IMPACTO_EM_USO: o que está em uso e quais campos alterados afetam. */
+export const ImpactoEmUso = z.object({
+  /** Ex.: "Estudante alocado nas senhas F014 e F015". */
+  emUso: z.string(),
+  campos: z.array(z.string()),
+});
+export type ImpactoEmUso = z.infer<typeof ImpactoEmUso>;
+
 export const ListarApoioQuery = ParametrosPaginacao.extend({ busca: z.string().trim().optional() });
 export type ListarApoioQuery = z.infer<typeof ListarApoioQuery>;
 
