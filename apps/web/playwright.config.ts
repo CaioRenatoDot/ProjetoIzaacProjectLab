@@ -8,12 +8,16 @@ export default defineConfig({
   testMatch: '**/*.e2e.ts',
   globalSetup: './e2e/aquecer-rotas.ts',
   fullyParallel: true,
+  // Fora do CI, mais processos disputam o servidor de desenvolvimento, que compila cada rota na
+  // primeira visita, e os testes estouram o tempo.
+  workers: process.env.CI ? undefined : 2,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: `http://localhost:${PORTA}`,
     trace: 'retain-on-failure',
+    video: 'retain-on-failure',
   },
   projects: [
     {
