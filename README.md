@@ -115,6 +115,23 @@ pnpm contract:lint            # valida docs/api/openapi.yaml
 pnpm format                   # formata com Prettier
 ```
 
+Testes de ponta a ponta (Playwright, com verificação de acessibilidade pelo axe-core):
+
+```bash
+pnpm --filter web exec playwright install chromium   # uma vez, baixa o navegador
+pnpm test:e2e                 # tudo: telas simuladas (web e publico) e o fluxo real
+pnpm --filter web e2e         # telas do web sobre a simulação (MSW)
+pnpm --filter publico e2e     # telão e consulta de senha
+pnpm --filter web e2e:real    # fluxo da demonstração com API e banco reais
+```
+
+O fluxo real (`apps/web/e2e-real/`) percorre login → cadastro → triagem → senha → chamada no telão
+→ alocação → atendimento encerrado, mais ausência e desistência. Ele precisa do banco no ar
+(`docker compose up -d`) e das portas 3000, 3001 e 3333 livres (pare o `pnpm dev` antes), e
+**recria o banco `filas_test`** a cada execução; o `filas_dev` não é tocado. A API roda com o
+relógio deslocado para uma segunda às 14h (`relogio-deslocado.cjs`), porque a alocação depende do
+dia e do turno.
+
 Dados fictícios para desenvolver (idempotente: pode rodar de novo sem duplicar nem desfazer o que
 foi editado pela tela):
 

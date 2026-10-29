@@ -39,3 +39,5 @@ prisma/*.db
 # Planejamento local (Claude Code) — não versionado
 CLAUDE.md
 planejamento/
+playwright-report-real/
+test-results-real/

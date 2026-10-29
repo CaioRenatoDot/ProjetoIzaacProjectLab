@@ -146,13 +146,10 @@ trocar agora (🔧 lá):
 | Perfis (W-05)                        | Cliente HTTP para `PerfisApi`; usar `usuariosAfetados` e o aviso `PERFIL_SEM_CONSULTA`                                                              | #12      |
 | Cadastros (W-03, W-04)               | Trocar o MSW; importar os schemas de `@filas/contracts` (`cadastros.ts`, `pessoas.ts`); inativar com `PATCH`; listas de apoio pelos endpoints novos | #13, #14 |
 | Trilha de auditoria (W-18)           | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                             | #29      |
-| Triagem (W-06)                       | Cliente HTTP para `TriagemApi`; importar `TriagemEntrada` e `prioridadeEfetiva` de `@filas/contracts`; especialidades por `?comFila=true`           | #15      |
-| Senha (W-07)                         | `POST /senhas`, `PATCH /senhas/{id}/prioridade` (ler `senha.prioridade` e `senha.versao`), histórico; mínimo da justificativa por `GET /parametros` | #16      |
 | Painel de fila (W-08)                | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                                          | #18      |
 | Alocação e atendimento (W-11 a W-13) | Trocar o MSW pelos endpoints de alocação e atendimento; `versao` é sempre a da senha; após `exigeEncaminhamento`, seguir para a W-14                | #21, #23 |
 | Ausências (W-15, W-16)               | Trocar o MSW por `POST /senhas/{id}/ausencia` e `/desistencia`; ligar `ausencia.registrada` (via #19) às ausências automáticas                      | #24, #25 |
 | Indicadores (W-17)                   | `GET /indicadores/resumo`, `/volume-por-especialidade` e `/exportacao` (só csv); mostrar a nota quando `amostraPequena`                             | #27      |
-| Testes de ponta a ponta              | Entrar com os usuários do seed (`<perfil>@clinica.invalid`, senha `senha-dev`, README)                                                              | #10, #9  |
 
 Ainda falta integrar no front o tempo real do painel/telão (W-08 a W-10), os alertas (W-18) e o estado da conexão Socket.IO; os endpoints e eventos de #19, #20 e #28 já foram entregues no back.
 
