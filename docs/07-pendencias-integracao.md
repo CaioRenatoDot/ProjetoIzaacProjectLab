@@ -17,20 +17,18 @@ indicada e remove o item deste arquivo no mesmo PR.
 
 ## Índice por issue do back-end
 
-| Issue (back-end)                                | O que destrava no front                            | Seção                                                     |
-| ----------------------------------------------- | -------------------------------------------------- | --------------------------------------------------------- |
-| #10 (3.1, login, refresh e bloqueio)            | Login e sessão reais (hoje sobre a simulação MSW)  | [Sessão e acesso](#sessão-e-acesso)                       |
-| #11 (3.2, guard e catálogo de permissões)       | Permissões usadas em menu, home e telas            | [Sessão e acesso](#sessão-e-acesso)                       |
-| #12 (3.6, API de perfis)                        | Tela de perfis (W-05)                              | [Perfis](#perfis-w-05-36)                                 |
-| #13 e #14 (4.1, API dos cadastros base)         | Lista e formulário de cadastros (W-03, W-04)       | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)               |
-| #15 (5.1, API de triagem)                       | Ficha de triagem (W-06)                            | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40)   |
-| #16 (5.2, emissão e reclassificação de senha)   | Emissão da senha e modal de reclassificação (W-07) | [Triagem e senha](#triagem-e-senha-w-06-e-w-07-39-e-40)   |
-| #29 (9.4, consulta e exportação da trilha)      | Trilha de auditoria (W-18)                         | [Auditoria](#trilha-de-auditoria-w-18-50)                 |
-| #28 (9.3, alertas de SLA e escalonamento)       | Alertas de SLA (W-18)                              | [Alertas](#alertas-de-sla-w-18-49)                        |
-| #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                              | [Painel de fila](#painel-de-fila-w-08-41)                 |
-| #21 (7.1, API de alocação)                      | Alocação de recursos (W-11)                        | [Alocação](#alocação-de-recursos-w-11-43)                 |
-| #23 (7.2, ciclo do atendimento)                 | Atendimento e encerramento (W-12, W-13)            | [Atendimento](#atendimento-e-encerramento-w-12-e-w-13-44) |
-| #26 (9.1, API de encaminhamento)                | Encaminhamento interno e externo (W-14)            | [Encaminhamento](#encaminhamento-w-14-46)                 |
+| Issue (back-end)                                | O que destrava no front                           | Seção                                                     |
+| ----------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------- |
+| #10 (3.1, login, refresh e bloqueio)            | Login e sessão reais (hoje sobre a simulação MSW) | [Sessão e acesso](#sessão-e-acesso)                       |
+| #11 (3.2, guard e catálogo de permissões)       | Permissões usadas em menu, home e telas           | [Sessão e acesso](#sessão-e-acesso)                       |
+| #12 (3.6, API de perfis)                        | Tela de perfis (W-05)                             | [Perfis](#perfis-w-05-36)                                 |
+| #13 e #14 (4.1, API dos cadastros base)         | Lista e formulário de cadastros (W-03, W-04)      | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)               |
+| #29 (9.4, consulta e exportação da trilha)      | Trilha de auditoria (W-18)                        | [Auditoria](#trilha-de-auditoria-w-18-50)                 |
+| #28 (9.3, alertas de SLA e escalonamento)       | Alertas de SLA (W-18)                             | [Alertas](#alertas-de-sla-w-18-49)                        |
+| #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                             | [Painel de fila](#painel-de-fila-w-08-41)                 |
+| #21 (7.1, API de alocação)                      | Alocação de recursos (W-11)                       | [Alocação](#alocação-de-recursos-w-11-43)                 |
+| #23 (7.2, ciclo do atendimento)                 | Atendimento e encerramento (W-12, W-13)           | [Atendimento](#atendimento-e-encerramento-w-12-e-w-13-44) |
+| #26 (9.1, API de encaminhamento)                | Encaminhamento interno e externo (W-14)           | [Encaminhamento](#encaminhamento-w-14-46)                 |
 
 ## Sessão e acesso
 
@@ -123,47 +121,19 @@ Pontos do [plano de implementação](.ref/SPECS/frontend/plano-implementacao.md)
 
 ## Triagem e senha (W-06 e W-07, #39 e #40)
 
-Telas em `apps/web` (`/triagem`), construídas sobre a interface `TriagemApi`
-(`apps/web/src/lib/triagem/tipos.ts`), que hoje tem uma implementação em memória
-(`apps/web/src/lib/triagem/api-em-memoria.ts`). Para integrar: criar um cliente HTTP que implemente
-`TriagemApi`, usá-lo em `apps/web/src/app/(autenticado)/triagem/page.tsx` e apagar a versão em
-memória. O front **não altera** `openapi.yaml`; tudo o que está em "Lacuna do contrato" precisa de
-decisão do tech lead e do back-end dono do módulo.
-
-### O que o front consome de cada API
-
-| Status | Endpoint                            | O que a tela envia e lê                                                                                                                                                  | Destrava |
-| ------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
-| ⏳     | `GET /pacientes?busca=`             | Lê `id`, `nomeCompleto` (só para a busca, nunca exibido), `documento`, `vinculo`, `restricaoAtiva`, `restricaoAte`. Exibe iniciais e documento mascarado                 | #38      |
-| ⏳     | `GET /especialidades?ativa=true`    | Lê `id`, `nome`, `ativa`, `filasVinculadas`. A ficha só oferece as que têm `ativa` e `filasVinculadas > 0`                                                               | #38      |
-| 🔧     | `POST /triagens`                    | Envia `TriagemEntrada` completo. Lê `id`, `pacienteIniciais`, `especialidade`, `tipoAtendimento`, `prioridade`, `enquadramentoLegal`                                     | #15      |
-| 🔧     | `POST /senhas`                      | Envia `{ triagemId, tipoAtendimento }`. Lê `id`, `numero`, `especialidade`, `pacienteIniciais`, `prioridade`, `tipoAtendimento`, `posicaoEstimada`, `versao`, `avisos[]` | #16      |
-| ⏳     | `GET /senhas/{id}`                  | Só `prioridade`, `versao`, `posicao`, para recarregar após `VERSAO_DESATUALIZADA`                                                                                        | #16      |
-| ⏳     | `GET /senhas/{id}/reclassificacoes` | Lê a lista; vazia deve vir como `[]`, não 404                                                                                                                            | #16      |
-| 🔧     | `PATCH /senhas/{id}/prioridade`     | Envia `{ prioridade, justificativa, versao }`. Lê `senha.prioridade`, `senha.versao`, `novaPosicao`                                                                      | #16      |
-
-### Lacunas do contrato (decisão necessária antes de integrar)
-
-| #   | Lacuna                                                                                                                                                                                               | O que o front faz hoje                                                            | Pedido ao back-end                                                                                                                                                                         |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 1   | **Mínimo da justificativa da unidade** (`justificativaMinCaracteres`) não tem endpoint. O `PATCH /senhas/{id}/prioridade` o valida no servidor, mas o modal precisa do número para orientar a pessoa | `TriagemApi.parametros()` devolve 20 (valor provisório do `openapi.yaml`)         | **Decidido (#16):** `GET /parametros?especialidadeId=` devolve `justificativaMinCaracteres` em vigor (e os outros parâmetros da Tabela 8); o 422 `JUSTIFICATIVA_OBRIGATORIA` traz `minimo` |
-| 2   | **`TriagemDetalhe` não traz `especialidadeId`**; a tela de emissão usa o id para saber a especialidade e a fila                                                                                      | O mock devolve `especialidadeId`                                                  | **Decidido (#15):** `TriagemResumo` e `TriagemDetalhe` trazem `especialidadeId`                                                                                                            |
-| 3   | **`POST /senhas` e `SEM_FILA_CONFIGURADA`:** a tela exibe a mensagem do servidor como causa e próximo passo ("peça à administração para configurar a fila")                                          | O mock devolve o texto completo                                                   | **Decidido (#16):** o `detail` do 409 traz a causa e o próximo passo                                                                                                                       |
-| 4   | **Código do aviso de fila bloqueada (RN-10)** em `SenhaEmitida.avisos[]` não está definido                                                                                                           | A tela mostra qualquer `avisos[].mensagem` num banner, sem olhar o `codigo`       | **Decidido (#16):** `codigo: FILA_BLOQUEADA`, com `mensagem` legível                                                                                                                       |
-| 5   | **Resposta do `PATCH /senhas/{id}/prioridade`** devolve `{ senha, novaPosicao }`, mas o front lê `prioridade`/`versao` no nível de cima                                                              | O mock devolve `{ prioridade, novaPosicao, versao }`                              | Ao integrar, o cliente HTTP mapeia `senha.prioridade` e `senha.versao`; nenhuma mudança de contrato, só aviso                                                                              |
-| 6   | **Aviso de reincidência (RN-13):** a spec do módulo diz que vem como aviso na busca do paciente, mas `Paciente` só tem `restricaoAtiva` e `restricaoAte`, sem texto de política                      | A tela monta o banner com `restricaoAte` e a frase "A triagem continua permitida" | **Decidido (#14):** a busca usa `restricaoAtiva`/`restricaoAte` (como a tela já faz); o aviso `PACIENTE_COM_RESTRICAO` vem em `avisos[]` de `GET /pacientes/{id}`                          |
-| 7   | **Busca de paciente devolve `nomeCompleto`**; a issue #39 pede resultado resumido (nome abreviado, P-03)                                                                                             | A tela só exibe `iniciais` e documento mascarado                                  | **Decidido (#14):** a lista de pacientes devolve o nome completo por desenho (o cadastro é o objeto da tela, `openapi.yaml`); a tela de triagem continua exibindo só as iniciais           |
-| 8   | **Especialidades "ativas com fila"**: o contrato só filtra por `ativa`                                                                                                                               | A tela filtra `filasVinculadas > 0` no cliente                                    | **Decidido (#15):** `GET /especialidades?comFila=true` devolve só as que têm fila ativa                                                                                                    |
-| 9   | **Erro 422 de validação** devolve `campos[]`; a ficha valida localmente com o mesmo critério                                                                                                         | A tela só usa a validação local                                                   | **Decidido (#15):** `campos[].campo` usa os nomes de `TriagemEntrada`                                                                                                                      |
+Integradas à API real na #52 (`apps/web/src/lib/triagem/api-http.ts`): busca de paciente,
+especialidades ativas com fila (`?comFila=true`), `POST /triagens`, `POST /senhas` e a
+reclassificação pelo mesmo cliente do painel de fila. O fluxo de ponta a ponta com API e banco
+reais (`apps/web/e2e-real/`) percorre a tela. Na simulação (MSW), que não tem triagem nem senha, a
+página segue usando `api-em-memoria.ts`, com os dados de `e2e/triagem.e2e.ts`.
 
 ### Pendências só do front (sem depender de API)
 
-| Status | Provisório                                                          | Onde                                              | Troca a fazer                                                                                                                      |
-| ------ | ------------------------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| ⏳     | Schema Zod da ficha é uma cópia local, com RN-02 e RN-03            | `apps/web/src/lib/triagem/schema.ts`              | 🔧 Importar `TriagemEntrada` e `prioridadeEfetiva` de `@filas/contracts` e apagar a cópia; o servidor devolve a prioridade efetiva |
-| ⏳     | "Imprimir senha" só chama `window.print()`, sem layout de impressão | `apps/web/src/components/triagem/etapa-senha.tsx` | Criar estilo de impressão com a senha em destaque (e decidir se há impressora térmica)                                             |
-| ⏳     | Posição estimada na fila é fixa no mock                             | `apps/web/src/lib/triagem/api-em-memoria.ts`      | Usar `posicaoEstimada` real da API                                                                                                 |
-| ⏳     | Testes Playwright rodam contra os dados em memória                  | `apps/web/e2e/triagem.e2e.ts`                     | Com API real, rodar contra o banco de teste com seed (paciente com restrição, especialidade sem fila, especialidade bloqueada)     |
+| Status | Provisório                                                          | Onde                                              | Troca a fazer                                                                                                                   |
+| ------ | ------------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| 🔧     | Schema Zod da ficha é uma cópia local, com RN-02 e RN-03            | `apps/web/src/lib/triagem/schema.ts`              | Importar `TriagemEntrada` e `prioridadeEfetiva` de `@filas/contracts` e apagar a cópia; o servidor devolve a prioridade efetiva |
+| ⏳     | "Imprimir senha" só chama `window.print()`, sem layout de impressão | `apps/web/src/components/triagem/etapa-senha.tsx` | Criar estilo de impressão com a senha em destaque (e decidir se há impressora térmica)                                          |
+| 🔧     | A simulação não tem handlers de triagem e senha                     | `apps/web/src/lib/triagem/api-em-memoria.ts`      | Criar os handlers MSW, apontar `e2e/triagem.e2e.ts` para eles e apagar a API em memória                                         |
 
 ## Painel de fila (W-08, #41)
 
