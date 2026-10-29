@@ -29,7 +29,7 @@ export function PainelLateral({
   return (
     <Dialog.Root open={aberto} onOpenChange={onAbertoChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-primaria/50" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-primaria/50" />
         <Dialog.Content
           onOpenAutoFocus={() => {
             origem.current = document.activeElement as HTMLElement | null;
@@ -39,7 +39,7 @@ export function PainelLateral({
             evento.preventDefault();
             origem.current.focus();
           }}
-          className="fixed inset-0 flex flex-col gap-4 overflow-y-auto bg-superficie p-6 shadow-lg xl:left-auto xl:w-[28rem] xl:border-l xl:border-borda-suave"
+          className="fixed inset-0 z-50 flex flex-col gap-4 overflow-y-auto bg-superficie p-6 shadow-lg xl:left-auto xl:w-[28rem] xl:border-l xl:border-borda-suave"
         >
           <div className="flex items-start justify-between gap-4">
             <Dialog.Title className="text-secao font-semibold text-texto">{titulo}</Dialog.Title>
