@@ -21,7 +21,6 @@ indicada e remove o item deste arquivo no mesmo PR.
 | ----------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------- |
 | #10 (3.1, login, refresh e bloqueio)            | Login e sessão reais (hoje sobre a simulação MSW) | [Sessão e acesso](#sessão-e-acesso)                       |
 | #11 (3.2, guard e catálogo de permissões)       | Permissões usadas em menu, home e telas           | [Sessão e acesso](#sessão-e-acesso)                       |
-| #12 (3.6, API de perfis)                        | Tela de perfis (W-05)                             | [Perfis](#perfis-w-05-36)                                 |
 | #13 e #14 (4.1, API dos cadastros base)         | Lista e formulário de cadastros (W-03, W-04)      | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)               |
 | #29 (9.4, consulta e exportação da trilha)      | Trilha de auditoria (W-18)                        | [Auditoria](#trilha-de-auditoria-w-18-50)                 |
 | #28 (9.3, alertas de SLA e escalonamento)       | Alertas de SLA (W-18)                             | [Alertas](#alertas-de-sla-w-18-49)                        |
@@ -77,11 +76,13 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 
 ## Perfis (W-05, #36)
 
-| Status | Provisório                                                                            | Onde                                                           | Destrava     | Troca a fazer                                                                                                                                               |
-| ------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 🔧     | API de perfis em memória (dados somem ao recarregar)                                  | `apps/web/src/lib/perfis/api-em-memoria.ts`                    | #12 entregue | Criar um cliente HTTP que implemente `PerfisApi` (`lib/perfis/tipos.ts`) e usá-lo em `app/(autenticado)/acesso/perfis/page.tsx`; apagar a versão em memória |
-| ⏳     | Aviso "muda as permissões de N usuários" usa `usuariosVinculados` do perfil carregado | `apps/web/src/components/perfis/tela-perfis.tsx`               | #12          | Usar `usuariosAfetados` do `PUT /perfis/{id}` (definido no contrato da #12) ou `usuariosVinculados` antes de salvar                                         |
-| ⏳     | Aviso de perfil sem consulta é calculado no front                                     | `apps/web/src/lib/perfis/regras.ts` (`semPermissaoDeConsulta`) | #12          | Preferir `avisos[]` da API, código `PERFIL_SEM_CONSULTA` (contrato da #12), e manter o cálculo só como pré-validação                                        |
+Integrada à API real na #133 (`apps/web/src/lib/perfis/api-http.ts`): catálogo (`GET /permissoes`),
+listar, criar, editar e excluir. O aviso "muda as permissões de N usuários" usa o
+`usuariosVinculados` real de cada perfil, que é o número antes de salvar. O aviso de perfil sem
+consulta segue calculado na tela, porque a confirmação acontece antes de enviar; a API devolve o
+mesmo aviso (`PERFIL_SEM_CONSULTA`) depois de gravar. Os erros `DUPLICIDADE`, `VINCULO_ATIVO` e
+`PERFIL_SISTEMA` aparecem com a mensagem do servidor. Na simulação (MSW), que não tem perfis, a
+página segue com `api-em-memoria.ts`, com os dados de `e2e/perfis.e2e.ts`.
 
 ## Home por perfil (W-02, #35)
 

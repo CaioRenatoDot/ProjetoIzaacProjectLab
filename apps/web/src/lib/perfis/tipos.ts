@@ -29,7 +29,7 @@ export interface PerfilEntrada {
   permissoes: string[];
 }
 
-export type CodigoErroPerfil = 'DUPLICIDADE' | 'VINCULO_ATIVO' | 'VALIDACAO';
+export type CodigoErroPerfil = 'DUPLICIDADE' | 'VINCULO_ATIVO' | 'PERFIL_SISTEMA' | 'VALIDACAO';
 
 export class ErroPerfil extends Error {
   constructor(
