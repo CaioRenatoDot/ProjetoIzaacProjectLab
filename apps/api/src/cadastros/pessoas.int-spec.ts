@@ -205,7 +205,7 @@ describe('cadastros de paciente, estudante e supervisor (#14)', () => {
       );
     });
 
-    it('duplicidade provisória: mesmo nome na mesma especialidade (#81)', async () => {
+    it('duplicidade por mesmo nome na mesma especialidade (#81)', async () => {
       const original = corpo<Estudante>(await novoEstudante());
 
       const resposta = await novoEstudante({ nome: original.nome.toLowerCase() }).expect(409);
