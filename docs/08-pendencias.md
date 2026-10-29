@@ -145,6 +145,7 @@ trocar agora (🔧 lá):
 | Login e sessão (W-01)                | Rodar com `NEXT_PUBLIC_API_MOCK=false`; ler `minutosRestantes` do bloqueio; apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login)             | #10      |
 | Menu, home e telas                   | Conferir as permissões contra `CATALOGO_PERMISSOES` de `@filas/contracts`                                                                           | #11      |
 | Cadastros (W-03, W-04)               | Trocar o MSW; importar os schemas de `@filas/contracts` (`cadastros.ts`, `pessoas.ts`); inativar com `PATCH`; listas de apoio pelos endpoints novos | #13, #14 |
+| Cadastros em uso (W-04)              | Trocar o aviso calculado em `lib/cadastros/formularios.ts` pelo 409 `IMPACTO_EM_USO`; reenviar com `?confirmar=true` (também ao inativar)           | #79      |
 | Trilha de auditoria (W-18)           | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                             | #29      |
 | Painel de fila (W-08)                | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                                          | #18      |
 | Alocação e atendimento (W-11 a W-13) | Trocar o MSW pelos endpoints de alocação e atendimento; `versao` é sempre a da senha; após `exigeEncaminhamento`, seguir para a W-14                | #21, #23 |
