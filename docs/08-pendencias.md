@@ -51,6 +51,13 @@ e bloqueio, e auditoria do bloqueio automático. A correção ainda precisa de r
 [relatório e evidências](entregas/revisao-final-backend-nathan.md). A RN-06 continua com a
 limitação de modelo descrita na seção 3; a verificação de nomes de testes não a resolve.
 
+### Aviso de impacto na edição de cadastro (#79)
+
+Decidido na #79: opção A, só para os campos que afetam alocações em curso (T-04). O `PUT` dos
+quatro cadastros sem `?confirmar=true` responde `409 IMPACTO_EM_USO` com o impacto, e a W-04
+reenvia depois da confirmação. Falta o PR de contrato, a API e a troca no front (#38); até lá, o
+formulário avisa sozinho com os campos de ocupação (opção C, provisória).
+
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
 Campos que o contrato já devolve, mas que hoje saem fixos porque a tabela de origem ainda não
@@ -116,8 +123,6 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 
 | Decisão                                                  | Onde           | Valor em uso                                                   |
 | -------------------------------------------------------- | -------------- | -------------------------------------------------------------- |
-| Aviso de impacto ao editar cadastro em uso               | #79            | O formulário avisa sozinho (W-04)                              |
-| Critério de duplicidade do estudante                     | #81            | Nome + especialidade, sem diferenciar maiúsculas               |
 | Política da RN-12 (devolver à fila ou marcar ausência)   | #107           | Volta à fila uma vez; na segunda expiração, ausência           |
 | Confirmação do modelo de navegação                       | ADR-002        | Modelo A, painel lateral só na fila                            |
 | Exigências da RN-06 (nível, habilitações, procedimentos) | §2 acima       | Só a especialidade                                             |
