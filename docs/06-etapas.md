@@ -262,11 +262,11 @@ identificou e corrigiu duas lacunas na #19; o merge dessa correção é acompanh
 
 Objetivo: garantir que o sistema funciona e está pronto para a demonstração.
 
-| Parte | Descrição                                                                                           | Responsável |
-| ----- | --------------------------------------------------------------------------------------------------- | ----------- |
-| 10.1  | Testes de unidade das regras de negócio e teste que garante que listas não expõem dado sensível     | Todos ✅    |
-| 10.2  | Teste de ponta a ponta (Playwright) do fluxo triagem → encerramento + verificação de acessibilidade | Thalita     |
-| 10.3  | README final com o "como rodar" e ensaio da demonstração                                            | Todos       |
+| Parte | Descrição                                                                                           | Responsável     |
+| ----- | --------------------------------------------------------------------------------------------------- | --------------- |
+| 10.1  | Testes de unidade das regras de negócio e teste que garante que listas não expõem dado sensível     | Todos ✅        |
+| 10.2  | Teste de ponta a ponta (Playwright) do fluxo triagem → encerramento + verificação de acessibilidade | Caio Gabriel ✅ |
+| 10.3  | README final com o "como rodar" e ensaio da demonstração                                            | Todos           |
 
 ---
 
@@ -275,7 +275,7 @@ Objetivo: garantir que o sistema funciona e está pronto para a demonstração.
 | Integrante   | Partes                                                                            |
 | ------------ | --------------------------------------------------------------------------------- |
 | Caio Renato  | 1.1–1.3 (1-A), 3.4, 7.4 · ⭐ 7.5, 9.1, 9.3, 9.4                                   |
-| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4, 6.4, 7.3 · ⭐ 3.6           |
-| Thalita      | 6.5, 8.3, 10.2 · ⭐ 9.2, 9.5                                                      |
+| Caio Gabriel | 0.1–0.3, 1.4–1.5 (1-B), 3.3, 3.5, 4.2, 4.3, 5.3, 5.4, 6.4, 7.3, 10.2 · ⭐ 3.6     |
+| Thalita      | 6.5, 8.3 · ⭐ 9.2, 9.5                                                            |
 | Rildo        | 2.1–2.4, 3.1, 3.2, 4.1, 5.1, 5.2, 6.1, 6.2, 7.1, 7.2, 8.1, 8.2 · ⭐ 3.6, 9.2, 9.4 |
 | Nathan       | 6.3 · ⭐ 7.5, 9.1, 9.3                                                            |
