@@ -34,7 +34,7 @@ export function Modal({
   return (
     <Dialog.Root open={aberto} onOpenChange={onAbertoChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-primaria/50" />
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-primaria/50" />
         <Dialog.Content
           onOpenAutoFocus={() => {
             origem.current = document.activeElement as HTMLElement | null;
@@ -46,10 +46,10 @@ export function Modal({
           }}
           className={
             lateral
-              ? 'fixed inset-y-0 right-0 flex w-full flex-col gap-4 overflow-y-auto border-l border-borda bg-superficie p-6 shadow-lg md:max-w-md'
+              ? 'fixed inset-y-0 right-0 z-50 flex w-full flex-col gap-4 overflow-y-auto border-l border-borda bg-superficie p-6 shadow-lg md:max-w-md'
               : telaCheiaNoCelular
-                ? 'fixed inset-0 flex flex-col gap-4 overflow-y-auto bg-superficie p-6 shadow-lg md:inset-auto md:top-1/2 md:left-1/2 md:max-h-[calc(100dvh-2rem)] md:w-[calc(100%-2rem)] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg'
-                : 'fixed top-1/2 left-1/2 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg bg-superficie p-6 shadow-lg'
+                ? 'fixed inset-0 z-50 flex flex-col gap-4 overflow-y-auto bg-superficie p-6 shadow-lg md:inset-auto md:top-1/2 md:left-1/2 md:max-h-[calc(100dvh-2rem)] md:w-[calc(100%-2rem)] md:max-w-md md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-lg'
+                : 'fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg bg-superficie p-6 shadow-lg'
           }
         >
           <Dialog.Title className="text-secao font-semibold text-texto">{titulo}</Dialog.Title>

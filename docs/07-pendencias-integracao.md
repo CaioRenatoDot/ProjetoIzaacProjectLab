@@ -103,8 +103,8 @@ integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handle
 ## Rotas ainda inexistentes
 
 Os links do menu (`apps/web/src/lib/modulos.ts`) e das ações da home apontam para rotas que
-outras issues criam: `/chamada` e `/indicadores` (#48; hoje só existe `/indicadores/alertas`). Até
-lá, respondem 404. `/encaminhamento` sem `?atendimento=` explica que o registro parte do encerramento.
+outras issues criam: nenhuma no momento. `/chamada` redireciona para o painel de fila, onde fica
+"Chamar próxima". `/encaminhamento` sem `?atendimento=` explica que o registro parte do encerramento.
 
 No painel de fila (W-08, #41), "Abrir atendimento" (em atendimento, pausado ou pendente) e
 "Iniciar atendimento" (chamada ou aguardando recurso) levam a `/atendimento?senha=<id>` (#44).

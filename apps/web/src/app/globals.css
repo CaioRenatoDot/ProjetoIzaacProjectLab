@@ -9,4 +9,22 @@
   html {
     font-size: 16px;
   }
+
+  /* O botão "Mostrar senha" já cumpre a função; o olho nativo do Edge duplicava o controle. */
+  input[type='password']::-ms-reveal,
+  input[type='password']::-ms-clear {
+    display: none;
+  }
+}
+
+/* Entrada do cartão de login. */
+@keyframes surgir {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
