@@ -10,6 +10,7 @@ import { Prisma } from '@prisma/client';
 import { deslocamento, montarRespostaPaginada } from '../common/pagination/paginacao';
 import { PrismaService } from '../prisma/prisma.service';
 import { duplicado, naoEncontrado, recursosInexistentes, vinculoAtivo } from './erros';
+import { exigirConfirmacao, usoPorSenhas } from './impacto';
 
 const DETALHE = {
   recursosExigidos: { select: { recurso: { select: { id: true, nome: true } } } },
@@ -102,8 +103,13 @@ export class EspecialidadesService {
     id: string,
     entrada: EspecialidadeEntrada,
     unidadeId: string,
+    confirmar = false,
   ): Promise<Especialidade> {
-    await this.buscar(id, unidadeId);
+    const atual = await this.buscar(id, unidadeId);
+    // exigeValidacaoEncerramento não entra: é copiado no início do atendimento (RN-11).
+    if (atual.exigeSupervisaoDocente !== entrada.exigeSupervisaoDocente) {
+      exigirConfirmacao(confirmar, await usoPorSenhas(this.prisma, id), ['exigeSupervisaoDocente']);
+    }
     await this.garantirNomeLivre(entrada.nome, id);
     await this.garantirRecursos(entrada.recursosExigidosIds);
     try {
@@ -129,8 +135,16 @@ export class EspecialidadesService {
     return this.consultar(id, unidadeId);
   }
 
-  async alterarSituacao(id: string, ativa: boolean, unidadeId: string): Promise<Especialidade> {
-    await this.buscar(id, unidadeId);
+  async alterarSituacao(
+    id: string,
+    ativa: boolean,
+    unidadeId: string,
+    confirmar = false,
+  ): Promise<Especialidade> {
+    const atual = await this.buscar(id, unidadeId);
+    if (atual.ativo && !ativa) {
+      exigirConfirmacao(confirmar, await usoPorSenhas(this.prisma, id), ['ativa']);
+    }
     await this.prisma.especialidade.update({ where: { id }, data: { ativo: ativa } });
     return this.consultar(id, unidadeId);
   }

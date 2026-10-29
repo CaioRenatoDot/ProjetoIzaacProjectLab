@@ -19,6 +19,7 @@ import {
   pessoaDuplicada,
   pessoaNaoEncontrada,
 } from './pessoas.util';
+import { exigirConfirmacao, mesmoConjunto, usoPorAlocacao } from './impacto';
 
 const DETALHE = {
   especialidade: { select: { nome: true } },
@@ -106,8 +107,42 @@ export class EstudantesService {
     return paraEstudante(estudante);
   }
 
-  async atualizar(id: string, entrada: EstudanteEntrada, unidadeId: string): Promise<Estudante> {
-    await this.buscar(id, unidadeId);
+  async atualizar(
+    id: string,
+    entrada: EstudanteEntrada,
+    unidadeId: string,
+    confirmar = false,
+  ): Promise<Estudante> {
+    const atual = paraEstudante(await this.buscar(id, unidadeId));
+    const campos = [
+      ...(atual.especialidadeId === entrada.especialidadeId ? [] : ['especialidadeId']),
+      ...(atual.nivelFormacao === entrada.nivelFormacao ? [] : ['nivelFormacao']),
+      ...(mesmoConjunto(
+        atual.habilitacoes.map((h) => h.id),
+        entrada.habilitacoesIds,
+      )
+        ? []
+        : ['habilitacoesIds']),
+      ...(mesmoConjunto(
+        atual.procedimentosAutorizados.map((p) => p.id),
+        entrada.procedimentosIds,
+      )
+        ? []
+        : ['procedimentosIds']),
+      ...(mesmoConjunto(
+        atual.disponibilidade.map((d) => `${d.diaSemana}-${d.turno}`),
+        entrada.disponibilidade.map((d) => `${d.diaSemana}-${d.turno}`),
+      )
+        ? []
+        : ['disponibilidade']),
+    ];
+    if (campos.length) {
+      exigirConfirmacao(
+        confirmar,
+        await usoPorAlocacao(this.prisma, 'Estudante', { estudanteId: id }),
+        campos,
+      );
+    }
     const nome = normalizarNome(entrada.nome);
     await this.validarReferencias(entrada, unidadeId);
     await this.garantirSemDuplicidade(nome, entrada.especialidadeId, id);
@@ -129,8 +164,20 @@ export class EstudantesService {
     return paraEstudante(estudante);
   }
 
-  async alterarSituacao(id: string, ativo: boolean, unidadeId: string): Promise<Estudante> {
-    await this.buscar(id, unidadeId);
+  async alterarSituacao(
+    id: string,
+    ativo: boolean,
+    unidadeId: string,
+    confirmar = false,
+  ): Promise<Estudante> {
+    const atual = await this.buscar(id, unidadeId);
+    if (atual.ativo && !ativo) {
+      exigirConfirmacao(
+        confirmar,
+        await usoPorAlocacao(this.prisma, 'Estudante', { estudanteId: id }),
+        ['ativo'],
+      );
+    }
     return paraEstudante(
       await this.prisma.estudante.update({ where: { id }, data: { ativo }, include: DETALHE }),
     );

@@ -14,6 +14,7 @@ import {
 import {
   AlteracaoAtiva,
   AlteracaoAtivo,
+  ConfirmarQuery,
   type Especialidade,
   EspecialidadeEntrada,
   ListarEspecialidadesQuery,
@@ -65,9 +66,10 @@ export class SalasController {
   atualizar(
     @Param('id', IdPipe) id: string,
     @Body(new ZodValidationPipe(SalaEntrada)) entrada: SalaEntrada,
+    @Query(new ZodValidationPipe(ConfirmarQuery)) { confirmar }: ConfirmarQuery,
     @Req() req: Requisicao,
   ): Promise<Sala> {
-    return this.salas.atualizar(id, entrada, req.usuario.unidadeId);
+    return this.salas.atualizar(id, entrada, req.usuario.unidadeId, confirmar);
   }
 
   @Patch(':id')
@@ -76,9 +78,10 @@ export class SalasController {
   alterarSituacao(
     @Param('id', IdPipe) id: string,
     @Body(new ZodValidationPipe(AlteracaoAtivo)) { ativo }: AlteracaoAtivo,
+    @Query(new ZodValidationPipe(ConfirmarQuery)) { confirmar }: ConfirmarQuery,
     @Req() req: Requisicao,
   ): Promise<Sala> {
-    return this.salas.alterarSituacao(id, ativo, req.usuario.unidadeId);
+    return this.salas.alterarSituacao(id, ativo, req.usuario.unidadeId, confirmar);
   }
 
   @Delete(':id')
@@ -125,9 +128,10 @@ export class EspecialidadesController {
   atualizar(
     @Param('id', IdPipe) id: string,
     @Body(new ZodValidationPipe(EspecialidadeEntrada)) entrada: EspecialidadeEntrada,
+    @Query(new ZodValidationPipe(ConfirmarQuery)) { confirmar }: ConfirmarQuery,
     @Req() req: Requisicao,
   ): Promise<Especialidade> {
-    return this.especialidades.atualizar(id, entrada, req.usuario.unidadeId);
+    return this.especialidades.atualizar(id, entrada, req.usuario.unidadeId, confirmar);
   }
 
   @Patch(':id')
@@ -136,9 +140,10 @@ export class EspecialidadesController {
   alterarSituacao(
     @Param('id', IdPipe) id: string,
     @Body(new ZodValidationPipe(AlteracaoAtiva)) { ativa }: AlteracaoAtiva,
+    @Query(new ZodValidationPipe(ConfirmarQuery)) { confirmar }: ConfirmarQuery,
     @Req() req: Requisicao,
   ): Promise<Especialidade> {
-    return this.especialidades.alterarSituacao(id, ativa, req.usuario.unidadeId);
+    return this.especialidades.alterarSituacao(id, ativa, req.usuario.unidadeId, confirmar);
   }
 
   @Delete(':id')
