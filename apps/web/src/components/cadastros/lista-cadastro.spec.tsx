@@ -85,6 +85,25 @@ describe('<ListaCadastro> (W-03 / T-03)', () => {
     expect(await screen.findByText('Ana Alves Cardoso foi inativado.')).toBeInTheDocument();
   });
 
+  it('RN-05: inativar estudante em uso pede a confirmação com o uso descrito pela API (#79)', async () => {
+    const { usuario } = abrir('estudantes');
+    // estudante-2 (Elisa Cardoso) tem vínculo ativo e está em atendimento na simulação.
+    await usuario.click((await naTabela()).getByRole('button', { name: 'Excluir Elisa Cardoso' }));
+    const confirmacao = await screen.findByRole('dialog', { name: 'Excluir estudante' });
+    await usuario.click(within(confirmacao).getByRole('button', { name: 'Excluir' }));
+    const aviso = await screen.findByRole('dialog', { name: 'Não é possível excluir' });
+    await usuario.click(within(aviso).getByRole('button', { name: 'Inativar' }));
+
+    const emUso = await screen.findByRole('dialog', {
+      name: 'A inativação afeta alocações em curso',
+    });
+    expect(emUso).toHaveTextContent(
+      'Estudante em uso nas senhas F013. A mudança afeta alocações em curso. Confirme para salvar.',
+    );
+    await usuario.click(within(emUso).getByRole('button', { name: 'Inativar mesmo assim' }));
+    expect(await screen.findByText('Elisa Cardoso foi inativado.')).toBeInTheDocument();
+  });
+
   it('excluir registro sem vínculo remove da lista', async () => {
     const { usuario } = abrir();
     await usuario.click(

@@ -171,6 +171,7 @@ Objetivo: cadastrar paciente, estudante, supervisor, sala e especialidade.
 | 4.1   | API das 5 entidades + tabelas de apoio (habilitação, procedimento, recurso), verificação de duplicidade, inativação no lugar de exclusão | Rildo ✅        |
 | 4.2   | Tela W-03 · Lista genérica paginada com filtros                                                                                          | Caio Gabriel ✅ |
 | 4.3   | Tela W-04 · Formulário genérico de cadastro e edição                                                                                     | Caio Gabriel ✅ |
+| 4.3   | W-04 · aviso de impacto pelo 409 da API e situação da sala com os valores do contrato (#140)                                             | Caio Gabriel ✅ |
 
 ### Etapa 5 · Triagem e emissão de senha
 

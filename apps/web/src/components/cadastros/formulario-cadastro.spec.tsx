@@ -131,7 +131,7 @@ describe('<TelaFormularioCadastro> (W-04 / T-04)', () => {
     expect(limite).toHaveAccessibleDescription(/inteiro positivo/);
   });
 
-  it('edição de supervisor em uso avisa o impacto antes de salvar', async () => {
+  it('RN-08: edição de supervisor em uso confirma o impacto descrito pela API (#79)', async () => {
     // supervisor-2 acompanha 1 estudante na simulação.
     const usuario = abrir('supervisores', { id: 'supervisor-2' });
     const limite = await screen.findByLabelText(/^Limite de estudantes simultâneos/);
@@ -144,6 +144,9 @@ describe('<TelaFormularioCadastro> (W-04 / T-04)', () => {
     const dialogo = await screen.findByRole('dialog', {
       name: 'A alteração afeta alocações em curso',
     });
+    expect(dialogo).toHaveTextContent(
+      'Supervisor em uso nas senhas F013. A mudança afeta alocações em curso. Confirme para salvar.',
+    );
     expect(push).not.toHaveBeenCalled();
     await usuario.click(within(dialogo).getByRole('button', { name: 'Salvar mesmo assim' }));
     await waitFor(() => expect(push).toHaveBeenCalledWith('/cadastros/supervisores'));

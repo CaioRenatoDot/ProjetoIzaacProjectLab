@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { type FormEvent, type ReactNode, useId, useState } from 'react';
 
 import { ErroApi } from '@/lib/api/cliente-http';
+import { descricaoDoImpacto } from '@/lib/cadastros/impacto';
 import {
   type Direcao,
   type EstadoLista,
@@ -70,6 +71,11 @@ function Lista({ entidade }: { entidade: Entidade }) {
   const [buscaDigitada, setBuscaDigitada] = useState(estado.busca);
   const [detalhe, setDetalhe] = useState<RegistroCadastro | null>(null);
   const [aExcluir, setAExcluir] = useState<RegistroCadastro | null>(null);
+  /** 409 IMPACTO_EM_USO ao inativar (#79): confirma e reenvia com `?confirmar=true`. */
+  const [inativarEmUso, setInativarEmUso] = useState<{
+    registro: RegistroCadastro;
+    descricao: string;
+  } | null>(null);
   const [comVinculo, setComVinculo] = useState<{
     registro: RegistroCadastro;
     motivo: string;
@@ -113,12 +119,18 @@ function Lista({ entidade }: { entidade: Entidade }) {
   });
 
   const inativar = useMutation({
-    mutationFn: (registro: RegistroCadastro) =>
-      cliente.requisitar(`${entidade.endpoint}/${registro.id}`, {
-        metodo: 'PATCH',
-        corpo: { [entidade.campoAtivo]: false },
-      }),
-    onSuccess: (_, registro) => {
+    mutationFn: ({
+      registro,
+      confirmar = false,
+    }: {
+      registro: RegistroCadastro;
+      confirmar?: boolean;
+    }) =>
+      cliente.requisitar(
+        `${entidade.endpoint}/${registro.id}${confirmar ? '?confirmar=true' : ''}`,
+        { metodo: 'PATCH', corpo: { [entidade.campoAtivo]: false } },
+      ),
+    onSuccess: (_, { registro }) => {
       setComVinculo(null);
       mostrarToast({
         tipo: 'sucesso',
@@ -126,7 +138,14 @@ function Lista({ entidade }: { entidade: Entidade }) {
       });
       void recarregar();
     },
-    onError: (erro) => mostrarToast({ tipo: 'erro', mensagem: mensagemDeErro(erro) }),
+    onError: (erro, { registro }) => {
+      if (erro instanceof ErroApi && erro.codigo === 'IMPACTO_EM_USO') {
+        setComVinculo(null);
+        setInativarEmUso({ registro, descricao: descricaoDoImpacto(erro) });
+        return;
+      }
+      mostrarToast({ tipo: 'erro', mensagem: mensagemDeErro(erro) });
+    },
   });
 
   function buscar(evento: FormEvent) {
@@ -330,13 +349,25 @@ function Lista({ entidade }: { entidade: Entidade }) {
           <Permitido permissao="cadastros:editar">
             <Button
               disabled={!podeEscrever || inativar.isPending}
-              onClick={() => comVinculo && inativar.mutate(comVinculo.registro)}
+              onClick={() => comVinculo && inativar.mutate({ registro: comVinculo.registro })}
             >
               Inativar
             </Button>
           </Permitido>
         </div>
       </Modal>
+
+      <ModalConfirmacao
+        aberto={inativarEmUso !== null}
+        onAbertoChange={(aberto) => !aberto && setInativarEmUso(null)}
+        titulo="A inativação afeta alocações em curso"
+        descricao={inativarEmUso?.descricao ?? ''}
+        rotuloConfirmar="Inativar mesmo assim"
+        onConfirmar={() => {
+          if (inativarEmUso) inativar.mutate({ registro: inativarEmUso.registro, confirmar: true });
+          setInativarEmUso(null);
+        }}
+      />
     </div>
   );
 }

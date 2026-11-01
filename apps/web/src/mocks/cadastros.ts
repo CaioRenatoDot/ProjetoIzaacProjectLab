@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 
 import { API_URL } from '@/lib/api/config';
 import { type SlugCadastro } from '@/lib/cadastros/entidades';
+import { formularioCadastro } from '@/lib/cadastros/formularios';
 import {
   type Especialidade,
   type Estudante,
@@ -133,7 +134,7 @@ function criarDados() {
     identificacao: `Sala ${String(i + 1).padStart(2, '0')}`,
     caracteristicas: i % 2 === 0 ? 'Térreo, acessível' : '1º andar',
     recursos: [RECURSOS[i % RECURSOS.length]!],
-    situacao: i === 5 ? 'Em manutenção' : 'Disponível',
+    situacao: i === 5 ? 'EM_MANUTENCAO' : 'DISPONIVEL',
     ocupada: i % 3 === 1,
     ativo: i !== 7,
   }));
@@ -320,7 +321,7 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
       identificacao: e.identificacao,
       caracteristicas: e.caracteristicas ?? '',
       recursos: referencias(e.recursosIds, RECURSOS),
-      situacao: e.situacao ?? 'Disponível',
+      situacao: e.situacao ?? 'DISPONIVEL',
     }),
   },
   especialidades: {
@@ -414,6 +415,69 @@ function duplicidade(regras: RegrasEntidade, existente: Registro) {
   );
 }
 
+/**
+ * Regra de "em uso" da API (#79, `apps/api/src/cadastros/impacto.ts`), com os campos da simulação.
+ * Paciente não tem aviso de impacto.
+ */
+const IMPACTO: Partial<
+  Record<SlugCadastro, { rotulo: string; emUso: (r: Registro) => boolean; campos: string[] }>
+> = {
+  estudantes: {
+    rotulo: 'Estudante',
+    emUso: (r) => r.ocupado === true,
+    campos: [
+      'especialidadeId',
+      'nivelFormacao',
+      'habilitacoesIds',
+      'procedimentosIds',
+      'disponibilidade',
+    ],
+  },
+  supervisores: {
+    rotulo: 'Supervisor',
+    emUso: (r) => Number(r.ocupacaoAtual) > 0,
+    campos: [
+      'especialidadesIds',
+      'procedimentosIds',
+      'disponibilidade',
+      'limiteEstudantesSimultaneos',
+    ],
+  },
+  salas: { rotulo: 'Sala', emUso: (r) => r.ocupada === true, campos: ['recursosIds', 'situacao'] },
+  especialidades: {
+    rotulo: 'Especialidade',
+    emUso: (r) => Number(r.filasVinculadas) > 0,
+    campos: ['exigeSupervisaoDocente'],
+  },
+};
+
+/** Compara listas sem depender da ordem (seleções múltiplas e disponibilidade). */
+const ordenado = (valor: unknown) =>
+  JSON.stringify(
+    Array.isArray(valor) ? (valor as unknown[]).map((v) => JSON.stringify(v)).sort() : valor,
+  );
+
+/** 409 IMPACTO_EM_USO como a API: só sem `?confirmar=true`, com registro em uso e campo alterado. */
+function impactoEmUso(slug: SlugCadastro, registro: Registro, campos: string[], url: URL) {
+  const regra = IMPACTO[slug];
+  if (!regra || url.searchParams.get('confirmar') === 'true' || !regra.emUso(registro)) return null;
+  if (!campos.length) return null;
+  return problema(
+    409,
+    'IMPACTO_EM_USO',
+    'Cadastro em uso',
+    'A mudança afeta alocações em curso. Confirme para salvar.',
+    { impacto: { emUso: `${regra.rotulo} em uso nas senhas F013`, campos } },
+  );
+}
+
+function camposAlterados(slug: SlugCadastro, registro: Registro, entrada: Entrada) {
+  const atuais = formularioCadastro(slug).deRegistro(registro);
+  return (IMPACTO[slug]?.campos ?? []).filter(
+    (campo) => campo in entrada && ordenado(atuais[campo]) !== ordenado(entrada[campo]),
+  );
+}
+
 export const handlersCadastros = (Object.keys(REGRAS) as SlugCadastro[]).flatMap((slug) => {
   const regras = REGRAS[slug];
   const base = `${API_URL}/${slug}`;
@@ -443,7 +507,15 @@ export const handlersCadastros = (Object.keys(REGRAS) as SlugCadastro[]).flatMap
       const entrada = (await request.json()) as Entrada;
       const existente = regras.duplicata?.(entrada, id);
       if (existente) return duplicidade(regras, existente);
-      lista[indice] = regras.montar(entrada, lista[indice]!, id);
+      const atual = lista[indice]!;
+      const recusa = impactoEmUso(
+        slug,
+        atual,
+        camposAlterados(slug, atual, entrada),
+        new URL(request.url),
+      );
+      if (recusa) return recusa;
+      lista[indice] = regras.montar(entrada, atual, id);
       return HttpResponse.json(lista[indice]);
     }),
 
@@ -463,11 +535,14 @@ export const handlersCadastros = (Object.keys(REGRAS) as SlugCadastro[]).flatMap
       return new HttpResponse(null, { status: 204 });
     }),
 
-    // Proposta: o contrato ainda não tem como inativar (docs/07-pendencias-integracao.md).
+    // Inativar (`PATCH` com `ativo`/`ativa`), com a mesma confirmação de registro em uso (#79).
     http.patch(`${base}/:id`, async ({ params, request }) => {
       const corpo = (await request.json()) as Record<string, unknown>;
       const registro = regras.registros().find((r) => r.id === String(params.id));
       if (!registro) return semPermissao();
+      const inativando = registro[regras.campoAtivo] === true && corpo[regras.campoAtivo] === false;
+      const recusa = inativando && impactoEmUso(slug, registro, ['ativo'], new URL(request.url));
+      if (recusa) return recusa;
       if (typeof corpo[regras.campoAtivo] === 'boolean') {
         registro[regras.campoAtivo] = corpo[regras.campoAtivo];
       }

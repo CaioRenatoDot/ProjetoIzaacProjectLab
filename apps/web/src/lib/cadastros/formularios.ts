@@ -1,7 +1,13 @@
-import { VinculoPaciente } from '@filas/contracts';
+import { SituacaoSala, VinculoPaciente } from '@filas/contracts';
 import { z } from 'zod';
 
-import { ROTULO_TURNO, ROTULO_VINCULO, type OpcaoFiltro, type SlugCadastro } from './entidades';
+import {
+  ROTULO_SITUACAO_SALA,
+  ROTULO_TURNO,
+  ROTULO_VINCULO,
+  type OpcaoFiltro,
+  type SlugCadastro,
+} from './entidades';
 import {
   type Disponibilidade,
   type Especialidade,
@@ -58,12 +64,10 @@ export interface FormularioCadastro<R = never> {
   vazio: Valores;
   deRegistro: (registro: R) => Valores;
   paraEntrada: (valores: Valores) => Valores;
-  /** Na edição, alterar estes campos de um registro em uso pede confirmação (T-04). */
-  impacto?: { campos: readonly string[]; emUso: (registro: R) => boolean; mensagem: string };
 }
 
-/** Situações da sala (Tabela 4, ID04). */
-export const SITUACOES_SALA = ['Disponível', 'Em manutenção', 'Indisponível'] as const;
+/** Situações da sala (Tabela 4, ID04), com os valores do contrato (`SituacaoSala`). */
+export const SITUACOES_SALA = SituacaoSala.options;
 
 /** Dias oferecidos na disponibilidade (`diaSemana` 1 a 6 do contrato). */
 export const DIAS_SEMANA: readonly (readonly [number, string])[] = [
@@ -307,12 +311,6 @@ const estudantes: FormularioCadastro<Estudante> = {
     disponibilidade: copiaDisponibilidade(e.disponibilidade),
   }),
   paraEntrada: (v) => v,
-  impacto: {
-    campos: ['especialidadeId', 'habilitacoesIds', 'procedimentosIds'],
-    emUso: (e) => e.ocupado,
-    mensagem:
-      'Este estudante está em atendimento agora. Mudar especialidade, habilitações ou procedimentos afeta a alocação em curso.',
-  },
 };
 
 const supervisores: FormularioCadastro<Supervisor> = {
@@ -383,12 +381,6 @@ const supervisores: FormularioCadastro<Supervisor> = {
     limiteEstudantesSimultaneos: s.limiteEstudantesSimultaneos,
   }),
   paraEntrada: (v) => v,
-  impacto: {
-    campos: ['especialidadesIds', 'procedimentosIds', 'limiteEstudantesSimultaneos'],
-    emUso: (s) => s.ocupacaoAtual > 0,
-    mensagem:
-      'Este supervisor acompanha estudantes agora. Mudar especialidades, procedimentos ou o limite afeta as alocações em curso.',
-  },
 };
 
 const salas: FormularioCadastro<Sala> = {
@@ -422,27 +414,21 @@ const salas: FormularioCadastro<Sala> = {
           rotulo: 'Situação',
           tipo: 'selecao',
           obrigatorio: true,
-          opcoes: SITUACOES_SALA.map((s) => ({ valor: s, rotulo: s })),
+          opcoes: SITUACOES_SALA.map((s) => ({ valor: s, rotulo: ROTULO_SITUACAO_SALA[s] })),
         },
       ],
     },
   ],
-  vazio: { identificacao: '', caracteristicas: '', recursosIds: [], situacao: 'Disponível' },
+  vazio: { identificacao: '', caracteristicas: '', recursosIds: [], situacao: 'DISPONIVEL' },
   deRegistro: (s) => ({
     identificacao: s.identificacao,
     caracteristicas: s.caracteristicas,
     recursosIds: idsDe(s.recursos),
     situacao: (SITUACOES_SALA as readonly string[]).includes(s.situacao)
       ? s.situacao
-      : 'Disponível',
+      : 'DISPONIVEL',
   }),
   paraEntrada: (v) => v,
-  impacto: {
-    campos: ['recursosIds', 'situacao'],
-    emUso: (s) => s.ocupada,
-    mensagem:
-      'Esta sala está ocupada agora. Mudar os recursos ou a situação afeta o atendimento em curso.',
-  },
 };
 
 const especialidades: FormularioCadastro<Especialidade> = {
@@ -510,12 +496,6 @@ const especialidades: FormularioCadastro<Especialidade> = {
     recursosExigidosIds: idsDe(e.recursosExigidos),
   }),
   paraEntrada: (v) => v,
-  impacto: {
-    campos: ['exigeSupervisaoDocente', 'exigeValidacaoEncerramento', 'recursosExigidosIds'],
-    emUso: (e) => e.filasVinculadas > 0,
-    mensagem:
-      'Esta especialidade tem filas ativas. Mudar supervisão, validação ou recursos exigidos afeta as alocações em curso.',
-  },
 };
 
 const FORMULARIOS = { pacientes, estudantes, supervisores, salas, especialidades } as const;

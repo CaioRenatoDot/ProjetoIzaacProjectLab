@@ -1,4 +1,4 @@
-import { type VinculoPaciente } from '@filas/contracts';
+import { type SituacaoSala, type VinculoPaciente } from '@filas/contracts';
 
 import {
   type Especialidade,
@@ -117,10 +117,17 @@ export function ocupacaoSupervisor(s: Supervisor) {
   return `${s.ocupacaoAtual} de ${s.limiteEstudantesSimultaneos}`;
 }
 
+/** Situações da sala (Tabela 4, ID04): valor do contrato e rótulo da tela. */
+export const ROTULO_SITUACAO_SALA: Record<SituacaoSala, string> = {
+  DISPONIVEL: 'Disponível',
+  EM_MANUTENCAO: 'Em manutenção',
+  INDISPONIVEL: 'Indisponível',
+};
+
 export function situacaoSala(s: Sala) {
   if (!s.ativo) return 'Inativa';
   if (s.ocupada) return 'Ocupada';
-  return s.situacao || 'Disponível';
+  return ROTULO_SITUACAO_SALA[s.situacao as SituacaoSala] ?? s.situacao;
 }
 
 const pacientes: EntidadeCadastro<Paciente> = {
