@@ -1,0 +1,5 @@
+Banco protegido: filas_test; AppModule compilado com rotina alertas-sla registrada.
+PASS critério 1: SLA_EXCEDIDO persistido e recebido em /alertas, sem dados de paciente.
+PASS critério 3: GET /alertas devolve escalonamento com autor/horário reais e auditoria única.
+PASS critério 2: saída real da espera normaliza o alerta e entrega sla.normalizado.
+PASS estado final: alerta normalizado recusa novas medidas com 409 TRANSICAO_INVALIDA.

@@ -6,8 +6,10 @@ node_modules/
 dist/
 build/
 .next/
+.next-e2e/
 out/
 *.tsbuildinfo
+.turbo/
 
 # Ambiente
 .env
@@ -38,3 +40,5 @@ prisma/*.db
 # Planejamento local (Claude Code) — não versionado
 CLAUDE.md
 planejamento/
+playwright-report-real/
+test-results-real/

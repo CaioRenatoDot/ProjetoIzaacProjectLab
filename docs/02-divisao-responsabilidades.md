@@ -99,7 +99,7 @@ conflito constante no mesmo agregado.
 | Entrega | Rastreabilidade |
 | --- | --- |
 | Schema e migrações de fila, chamada, alocação, atendimento e encaminhamento | RF-04 a RF-08 |
-| Máquina de estados da senha, com os oito status de P-01 e transições válidas | P-01 |
+| Máquina de estados da senha, com os nove status da Tabela 11 do Documento de Requisitos e transições válidas | P-01 |
 | CRUD de filas e consulta do quadro por status, com ordenação da RN-04 | RF-04, RN-04 |
 | "Chamar próxima" com transação e bloqueio de linha, rechamada, cancelamento | RF-05, UC-09 |
 | Bloqueio de fila por ausência de supervisor e desbloqueio automático | RN-10, P-04 |
@@ -132,7 +132,7 @@ Itens sem dono único, feitos em conjunto na Milestone M0:
 
 | Item | Quem |
 | --- | --- |
-| Bootstrap do monorepo, Docker Compose, CI | Caio Renato conduz; Rildo e Nathan revisam |
+| Bootstrap do monorepo, Docker Compose, CI | Caio Renato conduz a parte 1-A (base e API); Caio Gabriel conduz a parte 1-B (front, qualidade e CI) e fez o Docker Compose; Rildo e Nathan revisam (Ratificando Caio Gabriel e Caio Renato) |
 | Contrato OpenAPI inicial e geração de tipos | Rildo e Nathan escrevem; os três de front validam |
 | Seed de dados fictícios | Rildo |
 | Glossário e padrão de nomenclatura | Todos, em uma sessão |

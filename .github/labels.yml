@@ -1,0 +1,25 @@
+# Labels do projeto (docs/05-fluxo-github.md, seção 5). Já criadas no repositório.
+# Formato compatível com ferramentas de sincronização (ex.: github-label-sync, EndBug/label-sync).
+- { name: "tipo: feature", color: "0E8A16", description: "Funcionalidade nova" }
+- { name: "tipo: bug", color: "D73A4A", description: "Defeito" }
+- { name: "tipo: docs", color: "0075CA", description: "Documentação e contrato" }
+- { name: "tipo: chore", color: "FEF2C0", description: "Infraestrutura, CI, dependências" }
+- { name: "tipo: decisão", color: "5319E7", description: "Pendência que precisa de definição da unidade" }
+- { name: "camada: back-end", color: "1D76DB", description: "Trabalho na API" }
+- { name: "camada: front-end", color: "C5DEF5", description: "Trabalho em web ou publico" }
+- { name: "camada: banco", color: "006B75", description: "Migração ou schema" }
+- { name: "camada: infra", color: "BFD4F2", description: "Monorepo, Docker, CI" }
+- { name: "módulo: acesso", color: "E4E669", description: "Autenticação, perfis, permissões" }
+- { name: "módulo: cadastros", color: "E4E669", description: "Cinco entidades base" }
+- { name: "módulo: triagem", color: "E4E669", description: "Triagem e emissão de senha" }
+- { name: "módulo: fila", color: "E4E669", description: "Fila, chamada, telão" }
+- { name: "módulo: alocação", color: "E4E669", description: "Estudante, supervisor, sala" }
+- { name: "módulo: atendimento", color: "E4E669", description: "Ciclo do atendimento e encaminhamento" }
+- { name: "módulo: ausências", color: "E4E669", description: "Ausência e desistência" }
+- { name: "módulo: indicadores", color: "E4E669", description: "Indicadores, alertas, auditoria" }
+- { name: "prioridade: alta", color: "B60205", description: "Bloqueia outras issues" }
+- { name: "prioridade: média", color: "FBCA04", description: "Caminho normal" }
+- { name: "prioridade: baixa", color: "0E8A16", description: "Pode escorregar de milestone" }
+- { name: "acessibilidade", color: "7057FF", description: "Item com requisito de RNF-06" }
+- { name: "lgpd", color: "D4C5F9", description: "Toca dado sensível ou auditoria (RNF-02, RNF-07)" }
+- { name: "bloqueada", color: "000000", description: "Depende de outra issue ou de decisão externa" }

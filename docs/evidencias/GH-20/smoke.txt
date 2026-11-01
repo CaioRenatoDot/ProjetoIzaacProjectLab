@@ -1,0 +1,8 @@
+AppModule compilado, HTTP real e banco filas_test. Dados exclusivamente fictícios.
+Cron jobs parados somente no processo isolado de smoke.
+
+Critério 1: consulta sem token retornou posição/status e exatamente seis campos públicos.
+Critério 2: senha inexistente retornou 404 com mensagem neutra.
+Critério 4: telão retornou chamadas somente com número, especialidade e local.
+Critério 3: a 31ª requisição retornou 429 LIMITE_REQUISICOES e Retry-After.
+Smoke: quatro critérios confirmados no AppModule compilado, HTTP real e filas_test, com dados fictícios.

@@ -1,0 +1,4 @@
+Critério 1: HTTP 200, uma sugestão apta por bloco, sem repetição nas alternativas.
+Critério 2: estudante fora do turno nas alternativas com motivo em português.
+Regra compartilhada: os mesmos recursos sugeridos foram aceitos na confirmação HTTP 201.
+Smoke: AppModule compilado, autenticação real e PostgreSQL filas_test; dados fictícios e relógio fixado para um turno válido.

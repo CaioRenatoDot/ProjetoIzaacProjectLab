@@ -1,0 +1,173 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Lint, typecheck, testes, build e contrato
+    runs-on: ubuntu-latest
+    env:
+      # Variáveis mínimas para o build da API; os testes de integração usam banco próprio quando existirem.
+      DATABASE_URL: postgresql://filas:filas@localhost:5432/filas_dev?schema=public
+      DIRECT_URL: postgresql://filas:filas@localhost:5432/filas_dev?schema=public
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm lint
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      - run: pnpm build
+
+      - name: Testes de ponta a ponta e acessibilidade (apps/web)
+        run: |
+          pnpm --filter web exec playwright install --with-deps chromium
+          pnpm --filter web e2e
+
+      - name: Testes públicos e acessibilidade (apps/publico)
+        run: pnpm --filter publico e2e
+
+      - name: Relatório do Playwright
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            apps/web/playwright-report/
+            apps/publico/playwright-report/
+          retention-days: 7
+
+      - name: Validar contrato da API (docs/api/openapi.yaml)
+        run: pnpm contract:lint
+
+  ponta-a-ponta-real:
+    name: Fluxo de ponta a ponta com API e banco reais
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: filas
+          POSTGRES_PASSWORD: filas
+          POSTGRES_DB: filas_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U filas -d filas_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # apps/web/e2e-real/ambiente.ts lê estas variáveis; o banco é recriado com o seed a cada execução.
+      DATABASE_URL_TEST: postgresql://filas_app:filas_app@localhost:5432/filas_test?schema=public
+      DIRECT_URL_TEST: postgresql://filas:filas@localhost:5432/filas_test?schema=public
+      JWT_SEGREDO: segredo-ficticio-do-ci-com-mais-de-32-caracteres
+      SEED_SENHA_USUARIOS: senha-dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Criar o usuário da aplicação (filas_app)
+        env:
+          PGPASSWORD: filas
+        run: |
+          psql -h localhost -U filas -d filas_test -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE filas_app LOGIN PASSWORD 'filas_app'" \
+            -c "GRANT CONNECT ON DATABASE filas_test TO filas_app"
+
+      - run: pnpm turbo run build --filter=@filas/contracts --filter=@filas/ui
+
+      - name: Fluxo da demonstração (login → triagem → telão → atendimento, ausência e desistência)
+        run: |
+          pnpm --filter web exec playwright install --with-deps chromium
+          pnpm --filter web e2e:real
+
+      - name: Relatório e vídeos do fluxo real
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-fluxo-real
+          path: |
+            apps/web/playwright-report-real/
+            apps/web/test-results-real/
+          retention-days: 7
+
+  integracao:
+    name: Testes de integração da API (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: filas
+          POSTGRES_PASSWORD: filas
+          POSTGRES_DB: filas_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U filas -d filas_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      # Mesmo arranjo do docker compose: migrações com o administrador, testes com o filas_app.
+      DATABASE_URL_TEST: postgresql://filas_app:filas_app@localhost:5432/filas_test?schema=public
+      DIRECT_URL_TEST: postgresql://filas:filas@localhost:5432/filas_test?schema=public
+      DATABASE_URL: postgresql://filas_app:filas_app@localhost:5432/filas_test?schema=public
+      DIRECT_URL: postgresql://filas:filas@localhost:5432/filas_test?schema=public
+      JWT_SEGREDO: segredo-ficticio-do-ci-com-mais-de-32-caracteres
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # O serviço do Actions não roda docker/postgres/init/; o usuário da aplicação é criado aqui.
+      - name: Criar o usuário da aplicação (filas_app)
+        env:
+          PGPASSWORD: filas
+        run: |
+          psql -h localhost -U filas -d filas_test -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE filas_app LOGIN PASSWORD 'filas_app'" \
+            -c "GRANT CONNECT ON DATABASE filas_test TO filas_app"
+
+      - run: pnpm turbo run build --filter=@filas/contracts
+
+      - run: pnpm --filter api test:integracao
+
+      # Toda RN-01 a RN-13 precisa aparecer no nome de um caso de teste (DAS §2.2).
+      - name: Verificar RN-01 a RN-13 nos nomes dos testes
+        run: pnpm --filter api test:cobertura-rn

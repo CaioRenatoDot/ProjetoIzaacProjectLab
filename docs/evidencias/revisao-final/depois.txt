@@ -1,0 +1,3 @@
+Revisão em AppModule compilado; somente filas_test e dados fictícios.
+PASS CONCORRÊNCIA: lock compartilhado fez o bloqueio aguardar a chamada em andamento; depois do bloqueio, nova chamada recebeu 409 FILA_BLOQUEADA.
+PASS AUDITORIA: alteração automática do bloqueio registrou exatamente uma auditoria da fila.

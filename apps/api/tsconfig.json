@@ -1,0 +1,15 @@
+{
+  "extends": "@filas/tsconfig/nestjs.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "include": [
+    "src",
+    "prisma",
+    "test",
+    "vitest.config.mts",
+    "vitest.integracao.config.mts",
+    "vitest.cobertura.config.mts"
+  ]
+}

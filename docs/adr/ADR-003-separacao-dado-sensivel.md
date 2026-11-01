@@ -23,7 +23,7 @@ O contrato define três projeções distintas e mutuamente exclusivas para senha
 | --- | --- | --- | --- |
 | `SenhaPublica` | `GET /publico/*`, evento `chamada.exibir` | número, especialidade, local | nenhuma |
 | `SenhaResumo` | listagens, painel de fila, indicadores | número, iniciais do paciente, especialidade, tipo, prioridade, status, horários | nenhuma |
-| `SenhaDetalhe` | `GET /senhas/{id}`, tela de atendimento | resumo + triagem completa, motivo, justificativa, observações | evento `CONSULTA_SENSIVEL` |
+| `SenhaDetalhe` | `GET /senhas/{id}`, tela de atendimento | resumo + triagem completa, motivo, justificativa, observações | evento `CONSULTAR_SENSIVEL` |
 
 Regras de implementação:
 
@@ -37,11 +37,19 @@ Regras de implementação:
 4. Teste de contrato no CI falha se qualquer resposta de listagem contiver as chaves `motivo`,
    `justificativaClinica`, `observacoes` ou `nomeCompleto`.
 
+### Nota sobre o UC-09
+
+O passo 4 do UC-09 no Documento de Requisitos diz que o sistema "exibe a chamada (paciente, senha)
+no painel público". Isso contradiz o próprio documento: a seção 5.9 (Tabela 23), a premissa P-03 e o
+Apêndice A (Figura 6) determinam que **nenhum dado de paciente** aparece na tela pública, só o número
+da senha, a especialidade e o local. Prevalece a regra geral; o passo 4 do UC-09 é tratado como erro
+de redação.
+
 ## Consequências
 
 - Mais tipos para manter, e algumas telas precisam de duas requisições (resumo na lista, detalhe
   ao abrir a ficha). É um custo aceito.
-- A trilha de RNF-07 passa a ser verdadeira: um registro `CONSULTA_SENSIVEL` significa que alguém
+- A trilha de RNF-07 passa a ser verdadeira: um registro `CONSULTAR_SENSIVEL` significa que alguém
   de fato abriu o conteúdo clínico.
 - O item 4 dá ao requisito de privacidade uma verificação automática, em vez de depender de
   revisão humana em cada PR.

@@ -22,6 +22,10 @@ estados de um painel lateral dentro do painel de fila; no Modelo A, são telas p
 pelo menu de módulos lateral (Acesso, Cadastros, Triagem, Fila, Chamada, Atendimento,
 Encaminhamento, Ausências, Indicadores, Auditoria).
 
+O Documento de Requisitos (seção 7.5) registra as duas formulações e afirma que o **Documento de
+Arquitetura adota a série dos wireframes na versão 2, por ser o artefato mais recente, com painel
+lateral apenas na fila**. Esta decisão segue exatamente essa definição.
+
 ## Decisão
 
 Adotar o **Modelo A** como arquitetura de navegação, por ser a definição do artefato mais recente

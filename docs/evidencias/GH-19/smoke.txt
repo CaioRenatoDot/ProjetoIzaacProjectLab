@@ -1,0 +1,8 @@
+Validação local em 27/10/2026: AppModule completo, PostgreSQL filas_test, HTTP e Socket.IO reais.
+Dados exclusivamente fictícios. Cron jobs parados apenas no processo isolado de smoke.
+
+Critério 4: /filas sem token recusado.
+Critério 1: HTTP 409 FILA_BLOQUEADA e evento recebido por Socket.IO.
+Critério 2: consulta HTTP removeu o bloqueio e emitiu fila.desbloqueada.
+Critério 3: chamada.exibir recebido apenas com numero, especialidade, local, sequencia e em.
+Smoke independente: 4 critérios confirmados na API completa, com PostgreSQL de teste e sockets reais.

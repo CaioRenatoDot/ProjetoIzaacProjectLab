@@ -1,0 +1,3 @@
+PASS #30 negativo de RN: verificador real recusou coleção sem RN-13 no nome do caso, mesmo com RN-13 no describe e RN-130 em outro caso.
+PASS #30 negativo de privacidade: resposta HTTP real contendo motivo fez o teste global falhar, apontando a rota e $.motivo.
+Fonte restaurada integralmente; nenhuma alteração de produção para testar os gates.

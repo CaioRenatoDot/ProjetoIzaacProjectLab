@@ -1,0 +1,5 @@
+Critério 1: HTTP 201, nova senha AGUARDANDO na fila de destino, com senhaOrigemId e triagem original preservada.
+RN-10: destino bloqueado aceitou a emissão e devolveu aviso FILA_BLOQUEADA.
+Critério 2: HTTP 409 ESPECIALIDADE_INATIVA, sem gerar senha no destino inativo.
+Critério 3: HTTP 201 externo, sem nova senha, com um registro de auditoria.
+Smoke: AppModule compilado, autenticação e HTTP reais, PostgreSQL filas_test e dados fictícios. Relógio fixado para alocação e cron parado somente neste processo.
