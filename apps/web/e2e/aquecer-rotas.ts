@@ -5,6 +5,12 @@
 const ROTAS = [
   '/',
   '/login',
+  // Rotas do menu que redirecionam: frias, o redirecionamento passa do tempo do toHaveURL.
+  '/cadastros',
+  '/alocacao',
+  '/atendimento',
+  '/atendimento?senha=senha-f016',
+  '/encaminhamento',
   '/acesso/perfis',
   '/triagem',
   '/ausencias',

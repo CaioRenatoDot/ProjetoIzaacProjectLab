@@ -95,13 +95,6 @@ describe('formulário por entidade (T-04)', () => {
     ).toEqual({});
   });
 
-  it('paciente não tem aviso de impacto; as demais entidades têm', () => {
-    expect(formularioCadastro('pacientes').impacto).toBeUndefined();
-    for (const slug of ['estudantes', 'supervisores', 'salas', 'especialidades'] as const) {
-      expect(formularioCadastro(slug).impacto?.campos.length).toBeGreaterThan(0);
-    }
-  });
-
   it('paraEntrada omite contato vazio do paciente', () => {
     expect(formularioCadastro('pacientes').paraEntrada(PACIENTE_VALIDO)).not.toHaveProperty(
       'contatoEmail',
@@ -117,5 +110,38 @@ describe('vazio', () => {
 
   it.each([['a'], [['x']], [0], [false]])('%j não é vazio', (valor) => {
     expect(vazio(valor)).toBe(false);
+  });
+});
+
+describe('situação da sala (Tabela 4, ID04)', () => {
+  const sala = (situacao: string) => ({
+    id: 'sala-6',
+    identificacao: 'Sala 06',
+    caracteristicas: 'Box odontológico',
+    recursos: [],
+    situacao,
+    ocupada: false,
+    ativo: true,
+  });
+
+  it('usa os valores do contrato e mostra o rótulo', () => {
+    const campo = formularioCadastro('salas')
+      .secoes.flatMap((secao) => secao.campos)
+      .find((c) => c.nome === 'situacao');
+    expect(campo?.opcoes).toEqual([
+      { valor: 'DISPONIVEL', rotulo: 'Disponível' },
+      { valor: 'EM_MANUTENCAO', rotulo: 'Em manutenção' },
+      { valor: 'INDISPONIVEL', rotulo: 'Indisponível' },
+    ]);
+  });
+
+  it('sala em manutenção abre como em manutenção, e o envio passa no schema', () => {
+    const formulario = formularioCadastro('salas');
+    const valores = formulario.deRegistro(sala('EM_MANUTENCAO'));
+    expect(valores.situacao).toBe('EM_MANUTENCAO');
+    expect(formulario.schema.safeParse(valores).success).toBe(true);
+    expect(formulario.schema.safeParse({ ...valores, situacao: 'Em manutenção' }).success).toBe(
+      false,
+    );
   });
 });

@@ -19,6 +19,7 @@ import { type ReactNode, useId, useState } from 'react';
 import { Controller, type UseFormReturn, useForm } from 'react-hook-form';
 
 import { ErroApi } from '@/lib/api/cliente-http';
+import { descricaoDoImpacto } from '@/lib/cadastros/impacto';
 import { entidadeCadastro, type SlugCadastro } from '@/lib/cadastros/entidades';
 import {
   type CampoFormulario,
@@ -115,7 +116,6 @@ function Formulario({
     watch,
     setError,
     setFocus,
-    getFieldState,
     formState: { isDirty },
   } = form;
 
@@ -123,15 +123,18 @@ function Formulario({
     null,
   );
   const [descartar, setDescartar] = useState(false);
-  const [comImpacto, setComImpacto] = useState<Valores | null>(null);
+  /** 409 IMPACTO_EM_USO (#79): a API descreve o uso; a pessoa confirma e o envio se repete. */
+  const [comImpacto, setComImpacto] = useState<{ dados: Valores; descricao: string } | null>(null);
 
   const valores = watch();
   const faltaObrigatorio = camposObrigatorios(formulario).some((nome) => vazio(valores[nome]));
 
   const salvar = useMutation({
-    mutationFn: (dados: Valores) =>
+    mutationFn: ({ dados, confirmar = false }: { dados: Valores; confirmar?: boolean }) =>
       cliente.requisitar<Registro>(
-        registro ? `${entidade.endpoint}/${registro.id}` : entidade.endpoint,
+        registro
+          ? `${entidade.endpoint}/${registro.id}${confirmar ? '?confirmar=true' : ''}`
+          : entidade.endpoint,
         { metodo: registro ? 'PUT' : 'POST', corpo: formulario.paraEntrada(dados) },
       ),
     onSuccess: () => {
@@ -143,7 +146,11 @@ function Formulario({
       });
       router.push(destino);
     },
-    onError: (erro) => {
+    onError: (erro, { dados }) => {
+      if (erro instanceof ErroApi && erro.codigo === 'IMPACTO_EM_USO') {
+        setComImpacto({ dados, descricao: descricaoDoImpacto(erro) });
+        return;
+      }
       if (erro instanceof ErroApi && erro.codigo === 'DUPLICIDADE') {
         const existente = erro.extras.recursoExistenteId;
         setDuplicado({
@@ -171,16 +178,7 @@ function Formulario({
   const enviar = handleSubmit((dados) => {
     if (salvar.isPending || !podeEscrever) return;
     setDuplicado(null);
-    const impacto = formulario.impacto;
-    if (
-      registro &&
-      impacto?.emUso(registro) &&
-      impacto.campos.some((campo) => getFieldState(campo).isDirty)
-    ) {
-      setComImpacto(dados);
-      return;
-    }
-    salvar.mutate(dados);
+    salvar.mutate({ dados });
   });
 
   function cancelar() {
@@ -267,10 +265,10 @@ function Formulario({
         aberto={comImpacto !== null}
         onAbertoChange={(aberto) => !aberto && setComImpacto(null)}
         titulo="A alteração afeta alocações em curso"
-        descricao={`${formulario.impacto?.mensagem ?? ''} Deseja salvar mesmo assim?`}
+        descricao={comImpacto?.descricao ?? ''}
         rotuloConfirmar="Salvar mesmo assim"
         onConfirmar={() => {
-          if (comImpacto) salvar.mutate(comImpacto);
+          if (comImpacto) salvar.mutate({ dados: comImpacto.dados, confirmar: true });
           setComImpacto(null);
         }}
       />

@@ -56,8 +56,8 @@ limitação de modelo descrita na seção 3; a verificação de nomes de testes 
 Decidido na #79: opção A, só para os campos que afetam alocações em curso (T-04). O `PUT` dos
 quatro cadastros sem `?confirmar=true` responde `409 IMPACTO_EM_USO` com o impacto, e a W-04
 reenvia depois da confirmação. Contrato no #137 e API no PR da #79 (também no `PATCH` de inativar).
-Falta a troca no front (#38): trocar o aviso calculado no formulário pelo 409 e apagar a regra
-local.
+Front integrado na #140: o formulário e a inativação da lista tratam o 409, e a regra local foi
+apagada.
 
 ### Valores provisórios que as Etapas 6 a 8 precisam substituir
 
@@ -145,7 +145,6 @@ trocar agora (🔧 lá):
 | Login e sessão (W-01)                | Rodar com `NEXT_PUBLIC_API_MOCK=false`; ler `minutosRestantes` do bloqueio; apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login)             | #10      |
 | Menu, home e telas                   | Conferir as permissões contra `CATALOGO_PERMISSOES` de `@filas/contracts`                                                                           | #11      |
 | Cadastros (W-03, W-04)               | Trocar o MSW; importar os schemas de `@filas/contracts` (`cadastros.ts`, `pessoas.ts`); inativar com `PATCH`; listas de apoio pelos endpoints novos | #13, #14 |
-| Cadastros em uso (W-04)              | Trocar o aviso calculado em `lib/cadastros/formularios.ts` pelo 409 `IMPACTO_EM_USO`; reenviar com `?confirmar=true` (também ao inativar)           | #79      |
 | Trilha de auditoria (W-18)           | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                             | #29      |
 | Painel de fila (W-08)                | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                                          | #18      |
 | Alocação e atendimento (W-11 a W-13) | Trocar o MSW pelos endpoints de alocação e atendimento; `versao` é sempre a da senha; após `exigeEncaminhamento`, seguir para a W-14                | #21, #23 |

@@ -7,7 +7,13 @@ import tseslint from 'typescript-eslint';
  */
 export const base = tseslint.config(
   {
-    ignores: ['**/dist/**', '**/.next/**', '**/coverage/**', '**/node_modules/**'],
+    ignores: [
+      '**/dist/**',
+      '**/.next/**',
+      '**/.next-e2e/**',
+      '**/coverage/**',
+      '**/node_modules/**',
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommendedTypeChecked,
@@ -22,10 +28,7 @@ export const base = tseslint.config(
         'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
       ],
-      '@typescript-eslint/consistent-type-imports': [
-        'error',
-        { fixStyle: 'inline-type-imports' },
-      ],
+      '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
       'no-console': 'error',
     },
   },

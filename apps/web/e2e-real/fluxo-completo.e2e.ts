@@ -1,66 +1,16 @@
-import { expect, type APIRequestContext, type Page, test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
 import { semViolacoesDeAcessibilidade } from '../e2e/apoio';
-import { SENHA_DO_SEED } from './ambiente';
+import { abrirFilaDaNutricao, detalhes, emitirSenhaPelaApi, entrar } from './apoio';
 
 /**
  * Fluxo da demonstração do MVP (docs/06-etapas.md) com API e banco reais (#52). Nutrição não exige
  * supervisor nem validação do encerramento, e a API roda numa segunda às 14h, quando o seed tem
  * estudante de Nutrição no turno (relogio-deslocado.cjs).
  */
-const API = 'http://localhost:3333/api/v1';
 const TELAO = 'http://localhost:3001/telao';
-const ADMIN = 'admin@clinica.invalid';
-// IDs fixos do seed (apps/api/prisma/seed/dados.ts).
-const NUTRICAO = '01900000-0000-7000-8000-000600000003';
-const pacienteDoSeed = (n: number) => `01900000-0000-7000-8000-0010${String(n).padStart(8, '0')}`;
 
 test.describe.configure({ mode: 'serial' });
-
-async function entrar(page: Page) {
-  await page.goto('/login');
-  await page.getByLabel('Matrícula ou e-mail institucional').fill(ADMIN);
-  await page.getByRole('textbox', { name: 'Senha', exact: true }).fill(SENHA_DO_SEED);
-  await page.getByRole('button', { name: 'Entrar' }).click();
-  await expect(page.getByRole('heading', { name: /Olá/ })).toBeVisible();
-}
-
-async function abrirFilaDaNutricao(page: Page) {
-  await page.goto('/fila');
-  await page.getByLabel('Especialidade').selectOption({ label: 'Nutrição' });
-}
-
-async function detalhes(page: Page, numero: string) {
-  await page.getByRole('button', { name: `Detalhes da senha ${numero}`, exact: true }).click();
-  return page.getByRole('dialog', { name: `Detalhes da senha ${numero}`, exact: true });
-}
-
-/** Triagem e emissão direto pela API, para os fluxos alternativos começarem da fila. */
-async function emitirSenhaPelaApi(request: APIRequestContext, paciente: number) {
-  const login = await request.post(`${API}/auth/login`, {
-    data: { identificacao: ADMIN, senha: SENHA_DO_SEED },
-  });
-  expect(login.ok()).toBeTruthy();
-  const { accessToken } = (await login.json()) as { accessToken: string };
-  const headers = { Authorization: `Bearer ${accessToken}` };
-
-  const triagem = await request.post(`${API}/triagens`, {
-    headers,
-    data: {
-      pacienteId: pacienteDoSeed(paciente),
-      especialidadeDestinoId: NUTRICAO,
-      tipoAtendimento: 'PRIMEIRA_CONSULTA',
-      prioridade: 'NORMAL',
-      motivo: 'Acompanhamento nutricional (dado fictício)',
-    },
-  });
-  expect(triagem.status()).toBe(201);
-  const { id: triagemId } = (await triagem.json()) as { id: string };
-
-  const senha = await request.post(`${API}/senhas`, { headers, data: { triagemId } });
-  expect(senha.status()).toBe(201);
-  return ((await senha.json()) as { numero: string }).numero;
-}
 
 test('MVP: cadastro → triagem → senha → chamada no telão → alocação → atendimento encerrado', async ({
   page,
