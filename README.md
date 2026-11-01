@@ -85,13 +85,13 @@ Detalhes e justificativas em [docs/01-arquitetura.md](docs/01-arquitetura.md).
 
 ## Time
 
-| Integrante                              | Frente                                            |
-| --------------------------------------- | ------------------------------------------------- |
-| Caio Renato dos Santos Claudino         | Front-end — núcleo operacional + tech lead        |
-| Caio Gabriel Pereira de Menezes Correia | Front-end — acesso, cadastros e triagem           |
-| Thalita Pereira de Andrade              | Front-end — públicos e gestão + QA                |
-| Rildo Silva de Lima Junior              | Back-end — acesso, cadastros, triagem e registros |
-| Nathan Rodrigues da Costa Silva         | Back-end — fila, atendimento e tempo real         |
+| Integrante                              | Frente                                                                                                                     |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Caio Renato dos Santos Claudino         | Front-end — shell, home, perfis, triagem e senha, atendimento, encaminhamento, alertas e auditoria                         |
+| Caio Gabriel Pereira de Menezes Correia | Front-end — login, cadastros, painel de fila, alocação, ambiente e CI, integração com a API real e testes de ponta a ponta |
+| Thalita Pereira de Andrade              | Front-end — telão, consulta de senha, ausências, desistências e indicadores                                                |
+| Rildo Silva de Lima Junior              | Back-end — acesso, cadastros, triagem e registros                                                                          |
+| Nathan Rodrigues da Costa Silva         | Back-end — fila, atendimento e tempo real                                                                                  |
 
 Detalhamento em [docs/02-divisao-responsabilidades.md](docs/02-divisao-responsabilidades.md).
 
