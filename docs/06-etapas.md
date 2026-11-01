@@ -41,14 +41,14 @@ E, conforme a sua frente:
 | 0   | Ambiente local com Docker      | ✅     | Caio Gabriel                                                                                        |
 | 1   | Bootstrap do monorepo          | ✅     | 1-A Caio Renato → 1-B Caio Gabriel (Rildo e Nathan revisam, Ratificando Caio Gabriel e Caio Renato) |
 | 2   | Banco de dados e seed          | ✅     | Rildo                                                                                               |
-| 3   | Acesso, permissões e auditoria | ⬜     | Rildo (back), Caio Gabriel e Caio Renato (front)                                                    |
-| 4   | Cadastros base                 | ⬜     | Rildo (back), Caio Gabriel (front)                                                                  |
-| 5   | Triagem e emissão de senha     | ⬜     | Rildo (back), Caio Gabriel (front)                                                                  |
-| 6   | Fila, chamada e telão          | ⬜     | Rildo e Nathan (back), Caio Renato e Thalita (front)                                                |
-| 7   | Alocação e atendimento         | ⬜     | Rildo e Nathan (back), Caio Renato (front)                                                          |
-| 8   | Ausências e desistências       | ⬜     | Rildo (back), Thalita (front)                                                                       |
-| 9   | Funcionalidades extras         | ⭐     | conforme o tempo                                                                                    |
-| 10  | Qualidade e entrega            | ⬜     | Thalita (QA) e todos                                                                                |
+| 3   | Acesso, permissões e auditoria | ✅     | Rildo (back), Caio Gabriel e Caio Renato (front)                                                    |
+| 4   | Cadastros base                 | ✅     | Rildo (back), Caio Gabriel (front)                                                                  |
+| 5   | Triagem e emissão de senha     | ✅     | Rildo (back), Caio Gabriel (front)                                                                  |
+| 6   | Fila, chamada e telão          | ✅     | Rildo e Nathan (back), Caio Renato e Thalita (front)                                                |
+| 7   | Alocação e atendimento         | ✅     | Rildo e Nathan (back), Caio Renato (front)                                                          |
+| 8   | Ausências e desistências       | ✅     | Rildo (back), Thalita (front)                                                                       |
+| 9   | Funcionalidades extras         | ✅     | conforme o tempo                                                                                    |
+| 10  | Qualidade e entrega            | 🔄     | Thalita (QA) e todos                                                                                |
 
 ### Ordem de execução
 

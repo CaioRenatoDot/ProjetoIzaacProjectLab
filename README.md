@@ -10,18 +10,34 @@ e trilha de auditoria.
 | #   | Etapa                          | Status |
 | --- | ------------------------------ | ------ |
 | 0   | Ambiente local com Docker      | ✅     |
-| 1   | Bootstrap do monorepo          | ⬜     |
-| 2   | Banco de dados e seed          | ⬜     |
-| 3   | Acesso, permissões e auditoria | ⬜     |
-| 4   | Cadastros base                 | ⬜     |
-| 5   | Triagem e emissão de senha     | ⬜     |
-| 6   | Fila, chamada e telão          | ⬜     |
-| 7   | Alocação e atendimento         | ⬜     |
-| 8   | Ausências e desistências       | ⬜     |
-| 9   | Funcionalidades extras ⭐      | ⬜     |
-| 10  | Qualidade e entrega            | ⬜     |
+| 1   | Bootstrap do monorepo          | ✅     |
+| 2   | Banco de dados e seed          | ✅     |
+| 3   | Acesso, permissões e auditoria | ✅     |
+| 4   | Cadastros base                 | ✅     |
+| 5   | Triagem e emissão de senha     | ✅     |
+| 6   | Fila, chamada e telão          | ✅     |
+| 7   | Alocação e atendimento         | ✅     |
+| 8   | Ausências e desistências       | ✅     |
+| 9   | Funcionalidades extras ⭐      | ✅     |
+| 10  | Qualidade e entrega            | 🔄     |
 
-Partes, responsáveis e critérios de pronto em **[docs/06-etapas.md](docs/06-etapas.md)**.
+O MVP está na `main` desde 01/11/2026 (PR #144). Na Etapa 10 falta o ensaio da demonstração
+(parte 10.3). Partes, responsáveis e critérios de pronto em
+**[docs/06-etapas.md](docs/06-etapas.md)**; o que segue provisório, em
+[docs/07-pendencias-integracao.md](docs/07-pendencias-integracao.md) e
+[docs/08-pendencias.md](docs/08-pendencias.md).
+
+## O que o sistema faz
+
+Cadastro e triagem do paciente, emissão de senha com prioridade, painel de fila com
+"Chamar próxima", telão da sala de espera, alocação de estudante, supervisor e sala, condução do
+atendimento até o encerramento, ausências e desistências. Também: perfis e matriz de permissões
+(o menu mostra só o que o perfil pode), os cinco cadastros base com filtros, reclassificação de
+prioridade com justificativa, bloqueio da fila por falta de supervisor (RN-10), validação do
+encerramento pelo supervisor (RN-11), encaminhamento interno e externo, consulta da senha pelo
+paciente, sinal sonoro no telão, indicadores, alertas de tempo de espera e trilha de auditoria.
+Dado de saúde nunca aparece em listas, painéis ou no telão, e cada consulta a ele fica
+registrada (RNF-02, RNF-05).
 
 ## Documentação do projeto
 
@@ -34,6 +50,7 @@ Partes, responsáveis e critérios de pronto em **[docs/06-etapas.md](docs/06-et
 | [docs/api/openapi.yaml](docs/api/openapi.yaml)                               | Contrato formal da API (OpenAPI 3.1)                                                   |
 | [docs/05-fluxo-github.md](docs/05-fluxo-github.md)                           | Branches, commits, PRs, labels, milestones, Definition of Done                         |
 | [docs/06-etapas.md](docs/06-etapas.md)                                       | Etapas do MVP: o que está feito, o que falta e quem faz                                |
+| [docs/07-pendencias-integracao.md](docs/07-pendencias-integracao.md)         | O que segue provisório em cada tela do front                                           |
 | [docs/08-pendencias.md](docs/08-pendencias.md)                               | O que falta de back e de front, limitações conhecidas e decisões em aberto             |
 | [docs/adr/](docs/adr/)                                                       | Registros de decisão de arquitetura                                                    |
 | [especificacao/](especificacao/)                                             | Documentos originais entregues pelo cliente (requisitos, casos de uso, UI, wireframes) |
@@ -78,7 +95,7 @@ Detalhes e justificativas em [docs/01-arquitetura.md](docs/01-arquitetura.md).
 
 Detalhamento em [docs/02-divisao-responsabilidades.md](docs/02-divisao-responsabilidades.md).
 
-## Como rodar (após a issue de bootstrap)
+## Como rodar
 
 Pré-requisitos: Docker Desktop (no Windows, com WSL2), Node 22 ou superior e pnpm 10.
 
@@ -87,8 +104,12 @@ cp .env.example .env          # no PowerShell: Copy-Item .env.example .env
 docker compose up -d          # PostgreSQL e Adminer
 pnpm install                  # instala dependências e os hooks do Husky
 pnpm --filter api prisma migrate dev
+pnpm --filter api prisma db seed   # dados fictícios
 pnpm dev                      # sobe api, web e publico
 ```
+
+Se a porta 5432 já estiver em uso (por exemplo, um PostgreSQL instalado no Windows), troque
+`POSTGRES_PORT` e a porta das quatro URLs do `.env` (ex.: 5433).
 
 O banco tem dois usuários: o administrador (`filas`, dono das tabelas, usado pelas migrações via
 `DIRECT_URL`) e o da aplicação (`filas_app`, usado pela API via `DATABASE_URL`), que não altera
@@ -100,9 +121,15 @@ docker compose down -v && docker compose up -d
 pnpm --filter api prisma migrate dev
 ```
 
-Em desenvolvimento, o `apps/web` usa uma simulação da API (MSW, `apps/web/src/mocks/`) até o login
-real (#10). Entre com `admin@clinica.edu.br` e a senha `senha-dev`. Para usar a API real, defina
-`NEXT_PUBLIC_API_MOCK=false` em `apps/web/.env.local`.
+**Dois modos de rodar as telas:**
+
+- **Simulação (padrão do `pnpm dev`, sem `.env.local`):** o `web` e o `publico` usam uma
+  simulação da API com dados fictícios (MSW, `apps/*/src/mocks/`), sem precisar da API nem do
+  banco. No `web`, entre com `admin@clinica.edu.br` e a senha `senha-dev`.
+- **API e banco reais:** copie `apps/web/.env.example` e `apps/publico/.env.example` para
+  `.env.local` em cada app. No `publico`, use `NEXT_PUBLIC_API_MOCK=false` e
+  `NEXT_PUBLIC_UNIDADE_ID=01900000-0000-7000-8000-000000000001` (a unidade do seed). Entre com os
+  usuários do seed (tabela abaixo).
 
 Qualidade (o CI roda os mesmos comandos em todo PR):
 
@@ -125,10 +152,8 @@ pnpm --filter publico e2e     # telão e consulta de senha
 pnpm --filter web e2e:real    # fluxo da demonstração com API e banco reais
 ```
 
-O fluxo real (`apps/web/e2e-real/`) percorre login → cadastro → triagem → senha → chamada no telão
-→ alocação → atendimento encerrado, mais ausência e desistência, e a tela de perfis gravando de
-verdade. Ele precisa do banco no ar
-(`docker compose up -d`) e das portas 3000, 3001 e 3333 livres (pare o `pnpm dev` antes), e
+O fluxo real (`apps/web/e2e-real/`) roda contra a API e o banco reais. Ele precisa do banco no ar (`docker compose up -d`) e das portas
+3000, 3001 e 3333 livres (pare o `pnpm dev` antes), compila em `.next-e2e` e
 **recria o banco `filas_test`** a cada execução; o `filas_dev` não é tocado. A API roda com o
 relógio deslocado para uma segunda às 14h (`relogio-deslocado.cjs`), porque a alocação depende do
 dia e do turno.
@@ -153,8 +178,10 @@ Usuários de teste (senha `senha-dev`, ou o valor de `SEED_SENHA_USUARIOS` no `.
 | `inativo@clinica.invalid`    | Conta inativa (o login responde como credencial inválida) |
 
 O seed cria também 5 especialidades, salas, estudantes, supervisores, cadastros de apoio e 24
-pacientes fictícios (o segundo com restrição por reincidência). Cada especialidade tem uma fila ativa, com a letra da senha: Fisioterapia F, Psicologia P,
-Nutrição N, Odontologia O e Fonoaudiologia A.
+pacientes fictícios (o segundo com restrição por reincidência). Cada especialidade tem uma fila
+ativa, com a letra da senha: Fisioterapia F, Psicologia P, Nutrição N, Odontologia O e
+Fonoaudiologia A. Estudantes e supervisores só atendem em certos dias e turnos: para alocar ao
+vivo, confira a disponibilidade do seed (`apps/api/prisma/seed/dados.ts`) no dia e horário.
 
 Testes de integração (banco real, só no `filas_test`; recriam o banco de teste do zero a cada
 execução e exigem o `docker compose up -d`):

@@ -31,12 +31,11 @@ indicada e remove o item deste arquivo no mesmo PR.
 
 ## Sessão e acesso
 
-| Status | Provisório                                                                                                                                                                                          | Onde                                                     | Destrava                                                                                           | Troca a fazer                                                                                                                              |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| 🔧     | Login, refresh, logout e `/auth/me` sobre a simulação MSW, ligada por padrão no `pnpm dev` (`NEXT_PUBLIC_API_MOCK=false` desliga). Usuários simulados em `src/mocks/usuarios.ts`, senha `senha-dev` | `apps/web/src/mocks/`                                    | #10 (API, parte 3.1) entregue                                                                      | Rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e conferir os códigos de erro (lacunas abaixo); depois apagar os handlers de `/auth/*` |
-| 🔧     | Testes Playwright entram pela sessão simulada (cookie `filas-mock-refresh`) e trocam permissões pelo cookie `filas-dev-permissoes`                                                                  | `apps/web/e2e/apoio.ts`, `apps/web/src/mocks/cookies.ts` | #10 e seed da parte 2.4 entregues (usuários `<perfil>@clinica.invalid`, senha `senha-dev`, README) | Entrar por login real com usuários de seed de cada perfil; apagar os dois cookies                                                          |
-| ⏳     | Rota `/acesso` redireciona direto para `/acesso/perfis`                                                                                                                                             | `apps/web/src/app/(autenticado)/acesso/page.tsx`         | quando o módulo Acesso tiver outra tela                                                            | Trocar o redirect por uma página do módulo                                                                                                 |
-| 🔧     | Guard e catálogo de permissões                                                                                                                                                                      | —                                                        | #11 (API, parte 3.2) entregue; catálogo em `@filas/contracts` (`CATALOGO_PERMISSOES`)              | Conferir que as permissões usadas em `lib/modulos.ts`, `lib/home.ts` e na tela de perfis existem no catálogo real                          |
+| Status | Provisório                                                                                                                                                                                        | Onde                                                     | Destrava                                                                                           | Troca a fazer                                                                                             |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| ⏳     | Login, refresh e sessão conferidos com a API real no fluxo de ponta a ponta (#52). Falta usar `minutosRestantes` do 401 de bloqueio e apagar `MENSAGEM_SEM_PERFIL` (o login não devolve mais 403) | `apps/web/src/mocks/`                                    | #10 (API, parte 3.1) entregue                                                                      | Ler `minutosRestantes`; apagar `MENSAGEM_SEM_PERFIL`. A simulação de `/auth/*` segue para o modo simulado |
+| 🔧     | Testes Playwright entram pela sessão simulada (cookie `filas-mock-refresh`) e trocam permissões pelo cookie `filas-dev-permissoes`                                                                | `apps/web/e2e/apoio.ts`, `apps/web/src/mocks/cookies.ts` | #10 e seed da parte 2.4 entregues (usuários `<perfil>@clinica.invalid`, senha `senha-dev`, README) | Entrar por login real com usuários de seed de cada perfil; apagar os dois cookies                         |
+| ⏳     | Rota `/acesso` redireciona direto para `/acesso/perfis`                                                                                                                                           | `apps/web/src/app/(autenticado)/acesso/page.tsx`         | quando o módulo Acesso tiver outra tela                                                            | Trocar o redirect por uma página do módulo                                                                |
 
 ### Lacunas do contrato de `/auth/*` (decisão antes de integrar com a #10)
 
@@ -135,16 +134,15 @@ página segue usando `api-em-memoria.ts`, com os dados de `e2e/triagem.e2e.ts`.
 
 ## Painel de fila (W-08, #41)
 
-O painel (`apps/web/src/components/fila/`) consome a API pelo cliente HTTP; hoje quem responde é a
+O painel (`apps/web/src/components/fila/`) consome a API pelo cliente HTTP; no modo simulado, quem responde é a
 simulação única das filas (`apps/web/src/mocks/filas.ts`), que também atende a tela de Ausências.
 Especialidades de teste: Fisioterapia (cenários da #47), Fonoaudiologia (bloqueada, RN-10),
 Nutrição (RN-03, RN-04, SLA e todos os status) e Psicologia (vazia).
 
-| Status | Provisório                                                                                                                                   | Onde                                            | Destrava                                    | Troca a fazer                                           |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------------- |
-| 🔧     | `GET /filas`, quadro, chamada com `Idempotency-Key`, rechamada, reclassificação e `GET /senhas/{id}` sobre MSW, com dados fictícios          | `apps/web/src/mocks/filas.ts`                   | #17 a #19 (API) e #16 (reclassificação)     | Conferir o painel contra a API real; apagar os handlers |
-| ⏳     | O modal de reclassificação lê o mínimo da justificativa de `GET /parametros` (proposta, lacuna 1 da triagem)                                 | `apps/web/src/lib/fila/reclassificacao-http.ts` | decisão do back sobre parâmetros da unidade | Trocar pelo endpoint definido                           |
-| ⏳     | Visão consolidada multiespecialidade e seletor de turno (T-09) não implementados: o contrato só tem o quadro por fila e não filtra por turno | `apps/web/src/components/fila/tela-fila.tsx`    | contrato (lacunas 4 e 5)                    | Implementar quando o contrato tiver os parâmetros       |
+| Status | Provisório                                                                                                                                   | Onde                                            | Destrava                                    | Troca a fazer                                     |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------- |
+| ⏳     | O modal de reclassificação lê o mínimo da justificativa de `GET /parametros` (proposta, lacuna 1 da triagem)                                 | `apps/web/src/lib/fila/reclassificacao-http.ts` | decisão do back sobre parâmetros da unidade | Trocar pelo endpoint definido                     |
+| ⏳     | Visão consolidada multiespecialidade e seletor de turno (T-09) não implementados: o contrato só tem o quadro por fila e não filtra por turno | `apps/web/src/components/fila/tela-fila.tsx`    | contrato (lacunas 4 e 5)                    | Implementar quando o contrato tiver os parâmetros |
 
 ### Lacunas do contrato da fila (decisão antes de integrar com #17 a #19)
 
@@ -161,18 +159,16 @@ Nutrição (RN-03, RN-04, SLA e todos os status) e Psicologia (vazia).
 
 A tela (`apps/web/src/components/alocacao/`) consome a API pelo cliente HTTP e não deduz regra:
 quem está apto e o motivo de quem não está vêm prontos de `GET /senhas/{id}/alocacao/sugestoes`.
-O back-end da #22 está implementado e validado localmente, aguardando merge. O relatório
+O back-end da #22 foi mergeado no PR #124; o relatório
 [GH-22-aceite](entregas/GH-22-aceite.md) registra a projeção, os limites e as evidências.
-Hoje quem responde é a simulação `apps/web/src/mocks/alocacao.ts`, sobre as senhas de
+No modo simulado, quem responde é a simulação `apps/web/src/mocks/alocacao.ts`, sobre as senhas de
 `mocks/filas.ts`: Fisioterapia exige supervisor e tem inaptos de cada tipo; "Ana Ribeiro" fica
 indisponível na confirmação (409 `RECURSO_INDISPONIVEL`); Nutrição não exige supervisor; N106 não
 tem sala compatível.
 
-| Status | Provisório                                                                                                                      | Onde                                                  | Destrava                            | Troca a fazer                                                                                        |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| ⏳     | Sugestões, confirmação com `Idempotency-Key` e "Manter aguardando recurso" sobre MSW, com dados fictícios                       | `apps/web/src/mocks/alocacao.ts`                      | #21 (API, parte 7.1)                | Conferir a tela contra a API real; apagar os handlers                                                |
-| ⏳     | Sugestão do sistema destacada e pré-escolhida em cada bloco (#45): a tela usa `sugestao` como vem, sem reordenar nem recalcular | `apps/web/src/components/alocacao/bloco-alocacao.tsx` | #22 (API, parte 7.5)                | Conferir com a API real que `sugestao` vem apta e fora de `alternativas`; a tela já tolera repetição |
-| ⏳     | "Trocar recurso" de uma alocação já confirmada (`PUT /senhas/{id}/alocacao`, "Reavaliar alocação" da T-09) não tem tela         | —                                                     | decisão do time (não entrou na #44) | Definir onde a reavaliação acontece; ver também a lacuna 4 do atendimento                            |
+| Status | Provisório                                                                                                              | Onde | Destrava                            | Troca a fazer                                                             |
+| ------ | ----------------------------------------------------------------------------------------------------------------------- | ---- | ----------------------------------- | ------------------------------------------------------------------------- |
+| ⏳     | "Trocar recurso" de uma alocação já confirmada (`PUT /senhas/{id}/alocacao`, "Reavaliar alocação" da T-09) não tem tela | —    | decisão do time (não entrou na #44) | Definir onde a reavaliação acontece; ver também a lacuna 4 do atendimento |
 
 ### Lacunas do contrato da alocação (decisão antes de integrar com a #21)
 
@@ -193,10 +189,9 @@ quem responde é a simulação `apps/web/src/mocks/atendimentos.ts`, sobre as se
 atendimento, N108 pausado, N109 pendente de validação, N105 alocada pronta para iniciar e F018
 alocada a uma sala em manutenção (409 `RECURSO_INDISPONIVEL`).
 
-| Status | Provisório                                                                                       | Onde                                          | Destrava                 | Troca a fazer                                                                                        |
-| ------ | ------------------------------------------------------------------------------------------------ | --------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
-| 🔧     | Início, pausa, retomada, encerramento, validação, lista e detalhe sobre MSW, com dados fictícios | `apps/web/src/mocks/atendimentos.ts`          | #23 entregue             | Rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e conferir as lacunas abaixo; apagar os handlers |
-| ⏳     | Mudança feita por outra pessoa só aparece ao recarregar ou no 409 `VERSAO_DESATUALIZADA`         | `components/atendimento/tela-atendimento.tsx` | Etapa 6 (Socket.IO, #19) | Em `senha.status_alterado` da senha aberta, invalidar `[atendimento, senhaId]`                       |
+| Status | Provisório                                                                               | Onde                                          | Destrava                 | Troca a fazer                                                                  |
+| ------ | ---------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------ |
+| ⏳     | Mudança feita por outra pessoa só aparece ao recarregar ou no 409 `VERSAO_DESATUALIZADA` | `components/atendimento/tela-atendimento.tsx` | Etapa 6 (Socket.IO, #19) | Em `senha.status_alterado` da senha aberta, invalidar `[atendimento, senhaId]` |
 
 ### Lacunas do contrato do atendimento (decisão antes de integrar com a #23)
 
@@ -213,7 +208,7 @@ alocada a uma sala em manutenção (409 `RECURSO_INDISPONIVEL`).
 
 A tela (`apps/web/src/components/encaminhamento/`, rota `/encaminhamento?atendimento=<id>`) abre
 quando o encerramento devolve `exigeEncaminhamento` (#44); a variante sai do desfecho registrado.
-Consome a API pelo cliente HTTP (`lib/encaminhamento/api.ts`); hoje quem responde é a simulação
+Consome a API pelo cliente HTTP (`lib/encaminhamento/api.ts`); no modo simulado responde
 `apps/web/src/mocks/encaminhamentos.ts`: o interno gera senha AGUARDANDO na fila de destino de
 `mocks/filas.ts`, Fonoaudiologia aceita com o aviso `FILA_BLOQUEADA` (RN-10) e Psicologia é
 inativada no envio (409 `ESPECIALIDADE_INATIVA`).
@@ -296,7 +291,7 @@ Ainda faltam integração real, CI e revisão antes de concluir a issue.
 ## Trilha de auditoria (W-18, #50)
 
 A tela (`apps/web/src/components/auditoria/`, rota `/auditoria`) já consome a API pelo cliente
-HTTP; hoje quem responde é a simulação MSW (`apps/web/src/mocks/auditoria.ts`). Para integrar:
+HTTP; no modo simulado responde a simulação MSW (`apps/web/src/mocks/auditoria.ts`). Para integrar:
 rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de auditoria.
 
 | Status | Provisório                                                                                     | Onde                              | Destrava                                                       | Troca a fazer                                                                             |
@@ -318,7 +313,7 @@ rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de audi
 ## Alertas de SLA (W-18, #49)
 
 A tela (`apps/web/src/components/alertas/`, rota `/indicadores/alertas`) já consome a API pelo
-cliente HTTP; hoje quem responde é a simulação MSW (`apps/web/src/mocks/alertas.ts`). Para
+cliente HTTP; no modo simulado responde a simulação MSW (`apps/web/src/mocks/alertas.ts`). Para
 integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de alertas.
 
 | Status | Provisório                                                                            | Onde                                                                 | Destrava                               | Troca a fazer                                                                                                                                                                                                                                  |

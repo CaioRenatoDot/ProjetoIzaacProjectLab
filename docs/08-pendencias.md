@@ -45,9 +45,9 @@ integração da API (PostgreSQL)").
 
 ## 2. Back-end que falta
 
-As entregas #19, #20, #22, #26 e #28 foram mergeadas na `develop`. Na revisão final,
-duas lacunas da #19 foram reproduzidas e corrigidas localmente: concorrência entre chamada
-e bloqueio, e auditoria do bloqueio automático. A correção ainda precisa de revisão/CI/merge;
+As entregas #19, #20, #22, #26 e #28 foram mergeadas na `develop` e estão na `main` desde o
+PR #144. As duas lacunas da #19 encontradas na revisão final (concorrência entre chamada e
+bloqueio, e auditoria do bloqueio automático) foram corrigidas no PR #129;
 [relatório e evidências](entregas/revisao-final-backend-nathan.md). A RN-06 continua com a
 limitação de modelo descrita na seção 3; a verificação de nomes de testes não a resolve.
 
@@ -140,17 +140,17 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 Detalhe por tela em [`07-pendencias-integracao.md`](07-pendencias-integracao.md). Pronto para
 trocar agora (🔧 lá):
 
-| Tela                                 | Troca                                                                                                                                   | API      |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| Login e sessão (W-01)                | Rodar com `NEXT_PUBLIC_API_MOCK=false`; ler `minutosRestantes` do bloqueio; apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login) | #10      |
-| Menu, home e telas                   | Conferir as permissões contra `CATALOGO_PERMISSOES` de `@filas/contracts`                                                               | #11      |
-| Trilha de auditoria (W-18)           | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                 | #29      |
-| Painel de fila (W-08)                | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                              | #18      |
-| Alocação e atendimento (W-11 a W-13) | Trocar o MSW pelos endpoints de alocação e atendimento; `versao` é sempre a da senha; após `exigeEncaminhamento`, seguir para a W-14    | #21, #23 |
-| Ausências (W-15, W-16)               | Trocar o MSW por `POST /senhas/{id}/ausencia` e `/desistencia`; ligar `ausencia.registrada` (via #19) às ausências automáticas          | #24, #25 |
-| Indicadores (W-17)                   | `GET /indicadores/resumo`, `/volume-por-especialidade` e `/exportacao` (só csv); mostrar a nota quando `amostraPequena`                 | #27      |
+| Tela                       | Troca                                                                                                                                                      | API      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Login e sessão (W-01)      | Já conferido com a API real (#52); falta ler `minutosRestantes` do bloqueio e apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login)                  | #10      |
+| Trilha de auditoria (W-18) | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                                    | #29      |
+| Ausências (W-15, W-16)     | Registro manual de ausência e desistência já conferido com a API real (#52); falta ligar o evento `ausencia.registrada` (via #19) às ausências automáticas | #24, #25 |
 
-Ainda falta integrar no front o tempo real do painel/telão (W-08 a W-10), os alertas (W-18) e o estado da conexão Socket.IO; os endpoints e eventos de #19, #20 e #28 já foram entregues no back.
+Telas já conferidas com a API real no fluxo de ponta a ponta (`apps/web/e2e-real/`): login,
+menu por permissão, perfis, cadastros, triagem e senha, painel de fila (quadro e chamada), telão,
+alocação, início e encerramento do atendimento, ausência e desistência. No tempo real, o painel
+de fila e o telão usam o Socket.IO; falta o canal `/alertas` (W-18, que hoje revalida a cada
+30 s) e ligar o estado da conexão das demais telas, que no shell segue sempre "conectado".
 
 Também ficam com o front: rota `/acesso` com tela própria, TanStack Query na tela de perfis,
 formulário de perfil com React Hook Form e o schema do contrato, layout de impressão da senha,
