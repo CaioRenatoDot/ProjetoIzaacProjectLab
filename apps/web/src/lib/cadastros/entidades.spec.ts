@@ -1,3 +1,10 @@
+import {
+  ListarEspecialidadesQuery,
+  ListarEstudantesQuery,
+  ListarPacientesQuery,
+  ListarSalasQuery,
+  ListarSupervisoresQuery,
+} from '@filas/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { ESTADO_INICIAL, montarConsulta, temFiltroAtivo } from './consulta';
@@ -22,12 +29,13 @@ const COLUNAS_T03 = {
 };
 
 /** Parâmetros de filtro aceitos por `GET /<entidade>` no `openapi.yaml`. */
+/** Parâmetros de consulta de cada listagem, lidos do próprio contrato. */
 const PARAMETROS_DO_CONTRATO = {
-  pacientes: ['vinculo', 'comRestricao'],
-  estudantes: ['especialidadeId', 'turno', 'disponivel'],
-  supervisores: ['especialidadeId', 'turno'],
-  salas: ['recursoId', 'disponivel'],
-  especialidades: ['ativa', 'exigeSupervisao'],
+  pacientes: Object.keys(ListarPacientesQuery.shape),
+  estudantes: Object.keys(ListarEstudantesQuery.shape),
+  supervisores: Object.keys(ListarSupervisoresQuery.shape),
+  salas: Object.keys(ListarSalasQuery.shape),
+  especialidades: Object.keys(ListarEspecialidadesQuery.shape),
 };
 
 const supervisor = (s: Partial<Supervisor>): Supervisor => ({
