@@ -1,4 +1,12 @@
-import { SituacaoSala, VinculoPaciente } from '@filas/contracts';
+import {
+  EspecialidadeEntrada,
+  EstudanteEntrada,
+  PacienteEntrada,
+  SalaEntrada,
+  SituacaoSala,
+  SupervisorEntrada,
+  VinculoPaciente,
+} from '@filas/contracts';
 import { z } from 'zod';
 
 import {
@@ -81,80 +89,56 @@ export const DIAS_SEMANA: readonly (readonly [number, string])[] = [
 
 export const TURNOS = Object.keys(ROTULO_TURNO) as Turno[];
 
-const obrigatorio = (mensagem: string) => z.string().trim().min(1, mensagem);
-const opcional = z.string().trim();
+/*
+ * Schemas dos formulários a partir das entradas de `@filas/contracts` (fonte única: tamanhos,
+ * enums, limites e datas). Só muda o que o formulário entrega diferente do corpo da API:
+ * - IDs: basta ter escolhido; o formato (UUID) é conferido pela API, e a simulação usa IDs legíveis;
+ * - campo vazio chega como '' (texto) ou NaN (número) e vira "sem valor" antes do contrato;
+ * - telefone: o formulário pede o formato (00) 00000-0000, mais restrito que o contrato.
+ */
+const semValor = (valor: unknown) =>
+  valor === '' || (typeof valor === 'number' && Number.isNaN(valor)) ? undefined : valor;
+const idEscolhido = (mensagem: string) => z.string().min(1, mensagem);
+const idsEscolhidos = (mensagem: string) => z.array(z.string()).min(1, mensagem);
 const ids = z.array(z.string());
-const DisponibilidadeSchema = z.object({
-  diaSemana: z.number().int().min(0).max(6),
-  turno: z.enum(['MANHA', 'TARDE', 'NOITE']),
-});
-const simNao = z.boolean({ error: 'Escolha "Sim" ou "Não".' });
-/** Campo numérico vazio chega como `NaN` (`valueAsNumber`). */
-const semNaN = (valor: unknown) =>
-  typeof valor === 'number' && Number.isNaN(valor) ? undefined : valor;
 const inteiroPositivo = (vazio: string) =>
   z
     .number({ error: vazio })
     .int('Use um número inteiro, sem casas decimais.')
     .min(1, 'Use um número inteiro positivo (1 ou mais).');
 
-const hoje = () => new Date().toISOString().slice(0, 10);
 const somenteSeTiver = (texto: string) => (texto === '' ? undefined : texto);
 
-const PacienteSchema = z.object({
-  nomeCompleto: obrigatorio('Informe o nome completo.'),
-  documento: obrigatorio('Informe o documento.').regex(
-    /^[\d./-]+$/,
-    'Use só números; pontos, traço e barra são aceitos.',
-  ),
-  dataNascimento: obrigatorio('Informe a data de nascimento.').refine(
-    (data) => data <= hoje(),
-    'A data de nascimento não pode estar no futuro.',
-  ),
-  contatoTelefone: opcional.refine(
-    (v) => v === '' || /^\(\d{2}\) \d{4,5}-\d{4}$/.test(v),
-    'Use o formato (00) 00000-0000.',
-  ),
-  contatoEmail: opcional.refine(
-    (v) => v === '' || z.email().safeParse(v).success,
-    'Informe um e-mail válido, como nome@exemplo.com.',
-  ),
-  vinculo: z.enum(VinculoPaciente.options, { error: 'Escolha o vínculo com a instituição.' }),
+const PacienteSchema = PacienteEntrada.extend({
+  contatoTelefone: z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === '' || /^\(\d{2}\) \d{4,5}-\d{4}$/.test(v),
+      'Use o formato (00) 00000-0000.',
+    ),
+  contatoEmail: z.preprocess(semValor, PacienteEntrada.shape.contatoEmail),
 });
 
-const EstudanteSchema = z.object({
-  nome: obrigatorio('Informe o nome.'),
-  especialidadeId: obrigatorio('Escolha a especialidade.'),
-  nivelFormacao: obrigatorio('Informe o nível de formação.'),
-  habilitacoesIds: ids.min(1, 'Escolha ao menos uma habilitação.'),
-  procedimentosIds: ids.min(1, 'Escolha ao menos um procedimento autorizado.'),
-  disponibilidade: z.array(DisponibilidadeSchema).min(1, 'Marque ao menos um dia e turno.'),
+const EstudanteSchema = EstudanteEntrada.extend({
+  especialidadeId: idEscolhido('Escolha a especialidade.'),
+  habilitacoesIds: idsEscolhidos('Escolha ao menos uma habilitação.'),
+  procedimentosIds: idsEscolhidos('Escolha ao menos um procedimento autorizado.'),
 });
 
-const SupervisorSchema = z.object({
-  nome: obrigatorio('Informe o nome.'),
-  especialidadesIds: ids.min(1, 'Escolha ao menos uma especialidade.'),
+const SupervisorSchema = SupervisorEntrada.extend({
+  especialidadesIds: idsEscolhidos('Escolha ao menos uma especialidade.'),
   procedimentosIds: ids,
-  disponibilidade: z.array(DisponibilidadeSchema),
   limiteEstudantesSimultaneos: z.preprocess(
-    semNaN,
+    semValor,
     inteiroPositivo('Informe o limite de estudantes simultâneos.'),
   ),
 });
 
-const SalaSchema = z.object({
-  identificacao: obrigatorio('Informe a identificação da sala.'),
-  caracteristicas: opcional,
-  recursosIds: ids,
-  situacao: z.enum(SITUACOES_SALA, { error: 'Escolha a situação da sala.' }),
-});
+const SalaSchema = SalaEntrada.extend({ recursosIds: ids });
 
-const EspecialidadeSchema = z.object({
-  nome: obrigatorio('Informe o nome.'),
-  descricao: opcional,
-  exigeSupervisaoDocente: simNao,
-  exigeValidacaoEncerramento: simNao,
-  toleranciaMinutos: z.preprocess(semNaN, inteiroPositivo('').optional()),
+const EspecialidadeSchema = EspecialidadeEntrada.extend({
+  toleranciaMinutos: z.preprocess(semValor, EspecialidadeEntrada.shape.toleranciaMinutos),
   recursosExigidosIds: ids,
 });
 

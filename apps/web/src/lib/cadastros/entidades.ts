@@ -34,8 +34,11 @@ export interface FiltroCadastro {
   /** Nome do parâmetro de consulta no contrato. */
   parametro: string;
   rotulo: string;
-  /** `especialidades` carrega as opções de `GET /especialidades`. */
-  opcoes: readonly OpcaoFiltro[] | 'especialidades';
+  /**
+   * Opções fixas, ou carregadas da API: `especialidades` e `recursos` pelos catálogos, e
+   * `niveisFormacao` pelos níveis já cadastrados (a API filtra o nível pelo valor exato).
+   */
+  opcoes: readonly OpcaoFiltro[] | 'especialidades' | 'recursos' | 'niveisFormacao';
 }
 
 export interface EntidadeCadastro<T> {
@@ -127,7 +130,7 @@ export const ROTULO_SITUACAO_SALA: Record<SituacaoSala, string> = {
 export function situacaoSala(s: Sala) {
   if (!s.ativo) return 'Inativa';
   if (s.ocupada) return 'Ocupada';
-  return ROTULO_SITUACAO_SALA[s.situacao as SituacaoSala] ?? s.situacao;
+  return ROTULO_SITUACAO_SALA[s.situacao] ?? s.situacao;
 }
 
 const pacientes: EntidadeCadastro<Paciente> = {
@@ -204,6 +207,7 @@ const estudantes: EntidadeCadastro<Estudante> = {
   ],
   filtros: [
     { parametro: 'especialidadeId', rotulo: 'Especialidade', opcoes: 'especialidades' },
+    { parametro: 'nivelFormacao', rotulo: 'Nível de formação', opcoes: 'niveisFormacao' },
     { parametro: 'turno', rotulo: 'Turno', opcoes: OPCOES_TURNO },
     {
       parametro: 'disponivel',
@@ -250,6 +254,15 @@ const supervisores: EntidadeCadastro<Supervisor> = {
   filtros: [
     { parametro: 'especialidadeId', rotulo: 'Especialidade', opcoes: 'especialidades' },
     { parametro: 'turno', rotulo: 'Turno', opcoes: OPCOES_TURNO },
+    {
+      // A API trata `disponivel` como cadastro ativo; a ocupação vem da alocação (docs/07).
+      parametro: 'disponivel',
+      rotulo: 'Disponibilidade',
+      opcoes: [
+        { valor: 'true', rotulo: 'Disponível' },
+        { valor: 'false', rotulo: 'Indisponível' },
+      ],
+    },
   ],
   nomeRegistro: (s) => s.nome,
   detalhes: (s) => [
@@ -290,6 +303,7 @@ const salas: EntidadeCadastro<Sala> = {
     { id: 'situacao', rotulo: 'Situação', valor: situacaoSala, essencial: true },
   ],
   filtros: [
+    { parametro: 'recursoId', rotulo: 'Recurso', opcoes: 'recursos' },
     {
       parametro: 'disponivel',
       rotulo: 'Situação',

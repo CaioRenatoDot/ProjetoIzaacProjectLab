@@ -104,6 +104,31 @@ describe('<ListaCadastro> (W-03 / T-03)', () => {
     expect(await screen.findByText('Elisa Cardoso foi inativado.')).toBeInTheDocument();
   });
 
+  it('T-03: filtro de nível de formação oferece os níveis cadastrados e filtra a lista', async () => {
+    const { usuario } = abrir('estudantes');
+    await naTabela();
+    const nivel = screen.getByLabelText('Nível de formação');
+    // Na simulação os níveis vão do 6º ao 9º período, em ordem numérica.
+    await waitFor(() =>
+      expect(
+        within(nivel)
+          .getAllByRole('option')
+          .map((o) => o.textContent),
+      ).toEqual(['Todos', '6º período', '7º período', '8º período', '9º período']),
+    );
+    await usuario.selectOptions(nivel, '8º período');
+    await waitFor(() => expect(anuncio()).toHaveTextContent('3 estudantes encontrados'));
+  });
+
+  it('T-03: filtro de recurso da sala usa o catálogo de recursos', async () => {
+    const { usuario } = abrir('salas');
+    await naTabela();
+    const recurso = screen.getByLabelText('Recurso');
+    await waitFor(() => expect(within(recurso).getByRole('option', { name: 'Maca' })).toBeTruthy());
+    await usuario.selectOptions(recurso, 'Maca');
+    await waitFor(() => expect(anuncio()).toHaveTextContent('2 salas encontradas'));
+  });
+
   it('excluir registro sem vínculo remove da lista', async () => {
     const { usuario } = abrir();
     await usuario.click(

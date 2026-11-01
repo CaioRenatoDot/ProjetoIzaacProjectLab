@@ -140,16 +140,15 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 Detalhe por tela em [`07-pendencias-integracao.md`](07-pendencias-integracao.md). Pronto para
 trocar agora (🔧 lá):
 
-| Tela                                 | Troca                                                                                                                                               | API      |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| Login e sessão (W-01)                | Rodar com `NEXT_PUBLIC_API_MOCK=false`; ler `minutosRestantes` do bloqueio; apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login)             | #10      |
-| Menu, home e telas                   | Conferir as permissões contra `CATALOGO_PERMISSOES` de `@filas/contracts`                                                                           | #11      |
-| Cadastros (W-03, W-04)               | Trocar o MSW; importar os schemas de `@filas/contracts` (`cadastros.ts`, `pessoas.ts`); inativar com `PATCH`; listas de apoio pelos endpoints novos | #13, #14 |
-| Trilha de auditoria (W-18)           | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                             | #29      |
-| Painel de fila (W-08)                | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                                          | #18      |
-| Alocação e atendimento (W-11 a W-13) | Trocar o MSW pelos endpoints de alocação e atendimento; `versao` é sempre a da senha; após `exigeEncaminhamento`, seguir para a W-14                | #21, #23 |
-| Ausências (W-15, W-16)               | Trocar o MSW por `POST /senhas/{id}/ausencia` e `/desistencia`; ligar `ausencia.registrada` (via #19) às ausências automáticas                      | #24, #25 |
-| Indicadores (W-17)                   | `GET /indicadores/resumo`, `/volume-por-especialidade` e `/exportacao` (só csv); mostrar a nota quando `amostraPequena`                             | #27      |
+| Tela                                 | Troca                                                                                                                                   | API      |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- | -------- |
+| Login e sessão (W-01)                | Rodar com `NEXT_PUBLIC_API_MOCK=false`; ler `minutosRestantes` do bloqueio; apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login) | #10      |
+| Menu, home e telas                   | Conferir as permissões contra `CATALOGO_PERMISSOES` de `@filas/contracts`                                                               | #11      |
+| Trilha de auditoria (W-18)           | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                 | #29      |
+| Painel de fila (W-08)                | Trocar o MSW por `GET /filas`, quadro e chamada; ler `chamadaId` do `SenhaResumo` para rechamar e cancelar                              | #18      |
+| Alocação e atendimento (W-11 a W-13) | Trocar o MSW pelos endpoints de alocação e atendimento; `versao` é sempre a da senha; após `exigeEncaminhamento`, seguir para a W-14    | #21, #23 |
+| Ausências (W-15, W-16)               | Trocar o MSW por `POST /senhas/{id}/ausencia` e `/desistencia`; ligar `ausencia.registrada` (via #19) às ausências automáticas          | #24, #25 |
+| Indicadores (W-17)                   | `GET /indicadores/resumo`, `/volume-por-especialidade` e `/exportacao` (só csv); mostrar a nota quando `amostraPequena`                 | #27      |
 
 Ainda falta integrar no front o tempo real do painel/telão (W-08 a W-10), os alertas (W-18) e o estado da conexão Socket.IO; os endpoints e eventos de #19, #20 e #28 já foram entregues no back.
 

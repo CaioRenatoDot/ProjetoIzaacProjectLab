@@ -41,7 +41,12 @@ import {
   textoNenhum,
   textoTotal,
 } from '@/lib/cadastros/entidades';
-import { type Especialidade, type Pagina } from '@/lib/cadastros/tipos';
+import {
+  type Especialidade,
+  type Estudante,
+  type ItemReferencia,
+  type Pagina,
+} from '@/lib/cadastros/tipos';
 import { useSessao } from '@/lib/sessao/sessao';
 
 import { Paginacao } from '../paginacao';
@@ -411,16 +416,36 @@ function CampoFiltro({
   );
 }
 
+/** Opções carregadas da API, por origem (`FiltroCadastro.opcoes`). */
+const ORIGENS_FILTRO = {
+  especialidades: {
+    caminho: '/especialidades?tamanho=100',
+    opcoes: (dados: Especialidade[]) => dados.map((e) => ({ valor: e.id, rotulo: e.nome })),
+  },
+  recursos: {
+    caminho: '/recursos?tamanho=100',
+    opcoes: (dados: ItemReferencia[]) => dados.map((r) => ({ valor: r.id, rotulo: r.nome })),
+  },
+  niveisFormacao: {
+    caminho: '/estudantes?tamanho=100',
+    opcoes: (dados: Estudante[]) =>
+      [...new Set(dados.map((e) => e.nivelFormacao))]
+        .sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true }))
+        .map((nivel) => ({ valor: nivel, rotulo: nivel })),
+  },
+} as const;
+
 function useOpcoesFiltro(filtro: FiltroCadastro): readonly OpcaoFiltro[] {
   const { cliente } = useSessao();
-  const especialidades = useQuery({
-    queryKey: ['cadastros', 'opcoes-especialidades'],
-    queryFn: () => cliente.requisitar<Pagina<Especialidade>>('/especialidades?tamanho=100'),
-    enabled: filtro.opcoes === 'especialidades',
+  const origem = typeof filtro.opcoes === 'string' ? ORIGENS_FILTRO[filtro.opcoes] : null;
+  const consulta = useQuery({
+    queryKey: ['cadastros', 'opcoes-filtro', filtro.opcoes],
+    queryFn: () => cliente.requisitar<Pagina<never>>(origem!.caminho),
+    enabled: origem !== null,
     staleTime: 5 * 60_000,
   });
-  if (filtro.opcoes !== 'especialidades') return filtro.opcoes;
-  return (especialidades.data?.dados ?? []).map((e) => ({ valor: e.id, rotulo: e.nome }));
+  if (typeof filtro.opcoes !== 'string') return filtro.opcoes;
+  return ORIGENS_FILTRO[filtro.opcoes].opcoes(consulta.data?.dados ?? []);
 }
 
 function Tabela({

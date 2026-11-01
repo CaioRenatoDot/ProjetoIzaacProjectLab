@@ -207,7 +207,7 @@ const turnoEm = (registro: Registro, turno: string | null) =>
 
 const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
   pacientes: {
-    registros: () => dados.pacientes as unknown as Registro[],
+    registros: () => dados.pacientes,
     busca: ['nomeCompleto', 'documento'],
     ordenar: { nome: 'nomeCompleto' },
     filtrar(p, q) {
@@ -237,7 +237,7 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
     // Duplicidade por documento, ou por nome completo e data de nascimento (docs/03 §3.2).
     duplicata: (e, ignorarId) =>
       procurarDuplicata(
-        dados.pacientes as unknown as Registro[],
+        dados.pacientes,
         ignorarId,
         (p) =>
           digitos(p.documento) === digitos(e.documento) ||
@@ -245,14 +245,16 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
       ),
   },
   estudantes: {
-    registros: () => dados.estudantes as unknown as Registro[],
+    registros: () => dados.estudantes,
     busca: ['nome'],
     ordenar: { nome: 'nome' },
     filtrar(e, q) {
       const especialidade = q.get('especialidadeId');
+      const nivel = q.get('nivelFormacao');
       const disponivel = bool(q, 'disponivel');
       return (
         (!especialidade || e.especialidadeId === especialidade) &&
+        (!nivel || mesmoTexto(e.nivelFormacao, nivel)) &&
         turnoEm(e, q.get('turno')) &&
         (disponivel === null || (e.ativo === true && e.ocupado === false) === disponivel)
       );
@@ -273,20 +275,21 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
       disponibilidade: e.disponibilidade ?? [],
     }),
     duplicata: (e, ignorarId) =>
-      procurarDuplicata(dados.estudantes as unknown as Registro[], ignorarId, (x) =>
-        mesmoTexto(x.nome, e.nome),
-      ),
+      procurarDuplicata(dados.estudantes, ignorarId, (x) => mesmoTexto(x.nome, e.nome)),
   },
   supervisores: {
-    registros: () => dados.supervisores as unknown as Registro[],
+    registros: () => dados.supervisores,
     busca: ['nome'],
     ordenar: { nome: 'nome' },
     filtrar(s, q) {
       const especialidade = q.get('especialidadeId');
+      // Como a API: `disponivel` filtra o cadastro ativo.
+      const disponivel = bool(q, 'disponivel');
       return (
         (!especialidade ||
           (s.especialidades as ItemReferencia[]).some((e) => e.id === especialidade)) &&
-        turnoEm(s, q.get('turno'))
+        turnoEm(s, q.get('turno')) &&
+        (disponivel === null || s.ativo === disponivel)
       );
     },
     campoAtivo: 'ativo',
@@ -304,12 +307,16 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
     }),
   },
   salas: {
-    registros: () => dados.salas as unknown as Registro[],
+    registros: () => dados.salas,
     busca: ['identificacao'],
     ordenar: { identificacao: 'identificacao' },
     filtrar(s, q) {
+      const recurso = q.get('recursoId');
       const disponivel = bool(q, 'disponivel');
-      return disponivel === null || (s.ativo === true && s.ocupada === false) === disponivel;
+      return (
+        (!recurso || (s.recursos as ItemReferencia[]).some((r) => r.id === recurso)) &&
+        (disponivel === null || (s.ativo === true && s.ocupada === false) === disponivel)
+      );
     },
     campoAtivo: 'ativo',
     rotulo: 'sala',
@@ -325,7 +332,7 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
     }),
   },
   especialidades: {
-    registros: () => dados.especialidades as unknown as Registro[],
+    registros: () => dados.especialidades,
     busca: ['nome'],
     ordenar: { nome: 'nome' },
     filtrar(e, q) {
@@ -351,9 +358,7 @@ const REGRAS: Record<SlugCadastro, RegrasEntidade> = {
       recursosExigidos: referencias(e.recursosExigidosIds, RECURSOS),
     }),
     duplicata: (e, ignorarId) =>
-      procurarDuplicata(dados.especialidades as unknown as Registro[], ignorarId, (x) =>
-        mesmoTexto(x.nome, e.nome),
-      ),
+      procurarDuplicata(dados.especialidades, ignorarId, (x) => mesmoTexto(x.nome, e.nome)),
   },
 };
 
