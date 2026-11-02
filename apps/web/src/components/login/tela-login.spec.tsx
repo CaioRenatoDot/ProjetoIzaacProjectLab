@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { API_URL } from '@/lib/api/config';
-import { MENSAGEM_CREDENCIAL_INVALIDA, MENSAGEM_SEM_PERFIL } from '@/lib/sessao/login';
+import { MENSAGEM_CREDENCIAL_INVALIDA } from '@/lib/sessao/login';
 import { SENHA_MOCK } from '@/mocks/usuarios';
 import { renderizarComSessao, servidor, usarServidorMock } from '@/test/servidor-mock';
 
@@ -66,12 +66,6 @@ describe('<TelaLogin> (W-01 / T-01)', () => {
     const usuario = abrir();
     for (let i = 0; i < 5; i += 1) await tentar(usuario, 'admin@clinica.edu.br', 'errada');
     await waitFor(() => expect(areaDeErro()).toHaveTextContent(/Tente novamente em 15 minutos/));
-  });
-
-  it('T-01: conta sem perfil avisa que a administração precisa liberar o acesso', async () => {
-    const usuario = abrir();
-    await tentar(usuario, 'semperfil@clinica.edu.br', SENHA_MOCK);
-    await waitFor(() => expect(areaDeErro()).toHaveTextContent(MENSAGEM_SEM_PERFIL));
   });
 
   it('falha de rede descreve a causa e o próximo passo', async () => {

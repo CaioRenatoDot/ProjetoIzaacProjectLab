@@ -17,25 +17,21 @@ indicada e remove o item deste arquivo no mesmo PR.
 
 ## Índice por issue do back-end
 
-| Issue (back-end)                                | O que destrava no front                           | Seção                                                     |
-| ----------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------- |
-| #10 (3.1, login, refresh e bloqueio)            | Login e sessão reais (hoje sobre a simulação MSW) | [Sessão e acesso](#sessão-e-acesso)                       |
-| #11 (3.2, guard e catálogo de permissões)       | Permissões usadas em menu, home e telas           | [Sessão e acesso](#sessão-e-acesso)                       |
-| #13 e #14 (4.1, API dos cadastros base)         | Lista e formulário de cadastros (W-03, W-04)      | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)               |
-| #29 (9.4, consulta e exportação da trilha)      | Trilha de auditoria (W-18)                        | [Auditoria](#trilha-de-auditoria-w-18-50)                 |
-| #28 (9.3, alertas de SLA e escalonamento)       | Alertas de SLA (W-18)                             | [Alertas](#alertas-de-sla-w-18-49)                        |
-| #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                             | [Painel de fila](#painel-de-fila-w-08-41)                 |
-| #21 (7.1, API de alocação)                      | Alocação de recursos (W-11)                       | [Alocação](#alocação-de-recursos-w-11-43)                 |
-| #23 (7.2, ciclo do atendimento)                 | Atendimento e encerramento (W-12, W-13)           | [Atendimento](#atendimento-e-encerramento-w-12-e-w-13-44) |
-| #26 (9.1, API de encaminhamento)                | Encaminhamento interno e externo (W-14)           | [Encaminhamento](#encaminhamento-w-14-46)                 |
+| Issue (back-end)                                | O que destrava no front                      | Seção                                                     |
+| ----------------------------------------------- | -------------------------------------------- | --------------------------------------------------------- |
+| #11 (3.2, guard e catálogo de permissões)       | Permissões usadas em menu, home e telas      | [Sessão e acesso](#sessão-e-acesso)                       |
+| #13 e #14 (4.1, API dos cadastros base)         | Lista e formulário de cadastros (W-03, W-04) | [Cadastros](#cadastros-w-03-e-w-04-37-e-38)               |
+| #17 a #19 (6.1 a 6.3, fila, chamada e bloqueio) | Painel de fila (W-08)                        | [Painel de fila](#painel-de-fila-w-08-41)                 |
+| #21 (7.1, API de alocação)                      | Alocação de recursos (W-11)                  | [Alocação](#alocação-de-recursos-w-11-43)                 |
+| #23 (7.2, ciclo do atendimento)                 | Atendimento e encerramento (W-12, W-13)      | [Atendimento](#atendimento-e-encerramento-w-12-e-w-13-44) |
+| #26 (9.1, API de encaminhamento)                | Encaminhamento interno e externo (W-14)      | [Encaminhamento](#encaminhamento-w-14-46)                 |
 
 ## Sessão e acesso
 
-| Status | Provisório                                                                                                                                                                                        | Onde                                                     | Destrava                                                                                           | Troca a fazer                                                                                             |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| ⏳     | Login, refresh e sessão conferidos com a API real no fluxo de ponta a ponta (#52). Falta usar `minutosRestantes` do 401 de bloqueio e apagar `MENSAGEM_SEM_PERFIL` (o login não devolve mais 403) | `apps/web/src/mocks/`                                    | #10 (API, parte 3.1) entregue                                                                      | Ler `minutosRestantes`; apagar `MENSAGEM_SEM_PERFIL`. A simulação de `/auth/*` segue para o modo simulado |
-| 🔧     | Testes Playwright entram pela sessão simulada (cookie `filas-mock-refresh`) e trocam permissões pelo cookie `filas-dev-permissoes`                                                                | `apps/web/e2e/apoio.ts`, `apps/web/src/mocks/cookies.ts` | #10 e seed da parte 2.4 entregues (usuários `<perfil>@clinica.invalid`, senha `senha-dev`, README) | Entrar por login real com usuários de seed de cada perfil; apagar os dois cookies                         |
-| ⏳     | Rota `/acesso` redireciona direto para `/acesso/perfis`                                                                                                                                           | `apps/web/src/app/(autenticado)/acesso/page.tsx`         | quando o módulo Acesso tiver outra tela                                                            | Trocar o redirect por uma página do módulo                                                                |
+| Status | Provisório                                                                                                                         | Onde                                                     | Destrava                                                                                           | Troca a fazer                                                                     |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 🔧     | Testes Playwright entram pela sessão simulada (cookie `filas-mock-refresh`) e trocam permissões pelo cookie `filas-dev-permissoes` | `apps/web/e2e/apoio.ts`, `apps/web/src/mocks/cookies.ts` | #10 e seed da parte 2.4 entregues (usuários `<perfil>@clinica.invalid`, senha `senha-dev`, README) | Entrar por login real com usuários de seed de cada perfil; apagar os dois cookies |
+| ⏳     | Rota `/acesso` redireciona direto para `/acesso/perfis`                                                                            | `apps/web/src/app/(autenticado)/acesso/page.tsx`         | quando o módulo Acesso tiver outra tela                                                            | Trocar o redirect por uma página do módulo                                        |
 
 ### Lacunas do contrato de `/auth/*` (decisão antes de integrar com a #10)
 
@@ -82,18 +78,22 @@ página segue com `api-em-memoria.ts`, com os dados de `e2e/perfis.e2e.ts`.
 
 ## Home por perfil (W-02, #35)
 
-| Status | Provisório                                                | Onde                                      | Destrava                                                                         | Troca a fazer                                                                           |
-| ------ | --------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| ⏳     | Todos os blocos mostram o estado vazio                    | `apps/web/src/app/(autenticado)/page.tsx` | APIs de fila (Etapa 6), triagem (Etapa 5), atendimento (Etapa 7) e alertas (#49) | Buscar os dados de cada bloco e implementar os estados de carregamento e erro por bloco |
-| ⏳     | Cartões de indicador mostram "—" e "sem dados no momento" | `apps/web/src/app/(autenticado)/page.tsx` | mesmas APIs acima                                                                | Passar o valor real para `rotuloIndicador` (`lib/home.ts`)                              |
+Integrada à API real na #146 (`apps/web/src/lib/home-fontes.ts`): cada cartão e bloco consulta só
+o que a sessão pode ler, com carregamento e erro por bloco, e revalida a cada 30 s. `GET /filas` não
+traz contagem, então o total de aguardando soma as métricas do quadro de cada fila (uma requisição
+por fila). "Atendimentos em andamento" lista os da unidade: ver a lacuna 7 do atendimento.
 
 ## Tempo real
 
-| Status | Provisório                                                                                                                                                                                                                                                                                   | Onde                                                                  | Destrava                          | Troca a fazer                                                                                                                                    |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| ⏳     | Conexão sempre "conectada" (`<ConexaoProvider conectado>`)                                                                                                                                                                                                                                   | `apps/web/src/components/shell.tsx`                                   | Etapa 6 (Socket.IO)               | Ligar ao estado real do socket; o banner e o `podeEscrever` já reagem (`docs/04` §7)                                                             |
-| ⏳     | Painel de fila com cliente Socket.IO de `/filas` (`socket.io-client` 4.8.4): conecta com o token no `auth` do handshake, invalida o quadro a cada evento do `docs/04` §7 e liga o banner e o congelamento de escrita ao estado da conexão. Na simulação (MSW) não conecta e fica "conectado" | `apps/web/src/components/fila/use-tempo-real-fila.ts`                 | Etapa 6 (servidor Socket.IO, #24) | Com o servidor no ar, rodar com `NEXT_PUBLIC_API_MOCK=false` e conferir conexão, sala e eventos (lacuna 2 do painel de fila)                     |
-| ⏳     | Alertas sem o canal `/alertas`: a tela revalida por HTTP a cada 30 s e detecta alerta novo e normalizado comparando leituras                                                                                                                                                                 | `apps/web/src/components/alertas/tela-alertas.tsx` (`REVALIDACAO_MS`) | Etapa 6 (Socket.IO) e #28         | Com `socket.io-client` (issue própria, AGENTS §3), em `sla.excedido` e `sla.normalizado` invalidar `['alertas']`; o anúncio já sai da comparação |
+Integrado na #146 pelo hook `useCanalTempoReal` (`apps/web/src/lib/tempo-real/use-canal.ts`), usado
+pelo painel de fila, por alertas (`/alertas`), ausências e atendimento (`/filas`). Cada uma dessas
+telas informa o estado da própria conexão, com banner e escrita congelada (RNF-04), e continua
+revalidando por HTTP a cada 30 s (`docs/04` §7). O `<ConexaoProvider>` do shell fica sempre
+conectado de propósito: as demais telas não dependem de socket.
+
+O servidor encerra a conexão quando o access token expira, e nesse caso, como na recusa do
+handshake, o Socket.IO não reconecta sozinho: o hook tenta de novo a cada 5 s, até valer o token
+renovado pelas requisições HTTP da tela. Na simulação (MSW) nenhum canal conecta.
 
 ## Rotas ainda inexistentes
 
@@ -110,11 +110,11 @@ a alocação quando recebe `?senha=<id>` e, sem senha, para a fila.
 
 Pontos do [plano de implementação](.ref/SPECS/frontend/plano-implementacao.md) e da [spec](.ref/SPECS/frontend/spec.md) ainda não atendidos nas etapas O0 e O1.
 
-| Status | O plano pede                                                                            | Situação atual                                                                                                                   | Destrava                                                                     | Troca a fazer                                                                                               |
-| ------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| ⏳     | TanStack Query para estado de servidor                                                  | Configurado em `components/providers.tsx` e usado no login (#33); a tela de perfis ainda busca com `useState`/`useEffect`        | #12 (primeira API real consumida)                                            | Usar `useQuery`/`useMutation` com o `cliente` de `useSessao()` ao trocar a API em memória pelo cliente HTTP |
-| ⏳     | React Hook Form + Zod reaproveitando `packages/contracts`; simulação gerada dos schemas | Login usa React Hook Form + Zod com schema local (`lib/sessao/login.ts`); formulário de perfil manual; simulações escritas à mão | PR de contrato com o schema de perfil em `packages/contracts` (AGENTS.md §6) | Validar o formulário com o schema do contrato e gerar a simulação a partir dele                             |
-| ⏳     | Barra superior com seletor de contexto de perfil                                        | Só mostra o perfil ativo                                                                                                         | Decisão: `UsuarioSessao` (`openapi.yaml`) tem um único perfil                | Abrir issue `tipo: decisão` se um usuário puder ter mais de um perfil                                       |
+| Status | O plano pede                                                                            | Situação atual                                                                                                                   | Destrava                                                                     | Troca a fazer                                                                   |
+| ------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| ⏳     | TanStack Query para estado de servidor                                                  | Configurado em `components/providers.tsx` e usado nas telas; a tela de perfis ainda busca com `useState`/`useEffect`             | nada (#12 entregue)                                                          | Usar `useQuery`/`useMutation` na tela de perfis, sobre o `PerfisApi`            |
+| ⏳     | React Hook Form + Zod reaproveitando `packages/contracts`; simulação gerada dos schemas | Login usa React Hook Form + Zod com schema local (`lib/sessao/login.ts`); formulário de perfil manual; simulações escritas à mão | PR de contrato com o schema de perfil em `packages/contracts` (AGENTS.md §6) | Validar o formulário com o schema do contrato e gerar a simulação a partir dele |
+| ⏳     | Barra superior com seletor de contexto de perfil                                        | Só mostra o perfil ativo                                                                                                         | Decisão: `UsuarioSessao` (`openapi.yaml`) tem um único perfil                | Abrir issue `tipo: decisão` se um usuário puder ter mais de um perfil           |
 
 ## Triagem e senha (W-06 e W-07, #39 e #40)
 
@@ -189,9 +189,8 @@ quem responde é a simulação `apps/web/src/mocks/atendimentos.ts`, sobre as se
 atendimento, N108 pausado, N109 pendente de validação, N105 alocada pronta para iniciar e F018
 alocada a uma sala em manutenção (409 `RECURSO_INDISPONIVEL`).
 
-| Status | Provisório                                                                               | Onde                                          | Destrava                 | Troca a fazer                                                                  |
-| ------ | ---------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------ | ------------------------------------------------------------------------------ |
-| ⏳     | Mudança feita por outra pessoa só aparece ao recarregar ou no 409 `VERSAO_DESATUALIZADA` | `components/atendimento/tela-atendimento.tsx` | Etapa 6 (Socket.IO, #19) | Em `senha.status_alterado` da senha aberta, invalidar `[atendimento, senhaId]` |
+Mudança feita por outra pessoa na senha aberta chega por `senha.status_alterado` (#146), para quem
+tem `fila:consultar`; sem essa permissão, a tela não abre o canal e só revalida por HTTP.
 
 ### Lacunas do contrato do atendimento (decisão antes de integrar com a #23)
 
@@ -202,7 +201,8 @@ alocada a uma sala em manutenção (409 `RECURSO_INDISPONIVEL`).
 | 3   | **Recursos alocados antes do início**: só vêm em `SenhaDetalhe` (`incluirTriagem`, exige `triagem:consultar_sensivel`)                                                                                    | Mostra os recursos e a triagem só depois de iniciar (vêm em `AtendimentoResumo`/`AtendimentoDetalhe`)                                             | Expor a alocação vigente sem a triagem (por exemplo `GET /senhas/{id}/alocacao`)                   |
 | 4   | **Recurso indisponível na retomada**: a T-13 pede nova alocação, mas `PUT /senhas/{id}/alocacao` só vale antes do início (`CHAMADA`, `AGUARDANDO_RECURSO`)                                                | Mostra o `detail` e orienta avisar a recepção, sem link para a alocação                                                                           | Definir a realocação de atendimento pausado                                                        |
 | 5   | **Motivo de pausa obrigatório pelo protocolo**: o modelo ainda não tem onde configurar (o `openapi.yaml` registra a pendência)                                                                            | Campo opcional com a orientação; trata o 422 mostrando a mensagem abaixo do campo                                                                 | Nenhuma até existir o parâmetro                                                                    |
-| 6   | **Senha alocada aguardando início** na home do estudante (W-02): `GET /atendimentos` só lista atendimentos já iniciados                                                                                   | O bloco "Atendimento atual" da home segue vazio; o início parte do painel de fila                                                                 | Definir a fonte (por exemplo `GET /senhas?estudanteId=&status=CHAMADA` com alocação)               |
+| 6   | **Senha alocada aguardando início** na home do estudante (W-02): `GET /atendimentos` só lista atendimentos já iniciados                                                                                   | O bloco da home não a mostra; o início parte do painel de fila                                                                                    | Definir a fonte (por exemplo `GET /senhas?estudanteId=&status=CHAMADA` com alocação)               |
+| 7   | **"Atendimento atual" da pessoa logada** (W-02): o modelo não liga `usuario` a `estudante`, e `UsuarioSessao` não traz o id do estudante, então não há como usar o filtro `estudanteId`                   | O bloco se chama "Atendimentos em andamento" e lista os da unidade (**proposta**, até a decisão)                                                  | Decidir o vínculo entre usuário e estudante (issue `tipo: decisão`)                                |
 
 ## Encaminhamento (W-14, #46)
 
@@ -232,8 +232,10 @@ revisão/CI/merge. Decisões e evidências em [GH-26-aceite](entregas/GH-26-acei
 
 ## Ausência e desistência (W-15 e W-16, #47)
 
-O front pode ser usado em `/ausencias` com a API simulada do projeto (MSW). A parte 8.3
-permanece em andamento até integrar as dependências reais e concluir a revisão.
+Registro manual conferido com a API real (#52). A ausência automática chega por
+`ausencia.registrada` no canal `/filas` (#146), e só a automática gera o aviso: a manual já avisa
+quem a registrou, pela resposta do `POST`. Fora da simulação, a tela também usa esse canal para
+atualizar o quadro e o estado da conexão.
 
 ### Como testar agora
 
@@ -267,10 +269,9 @@ Não representam os parâmetros da unidade nem executam regras no servidor real.
   "Detalhes", e a simulação das senhas passou para `mocks/filas.ts`, compartilhada pelas duas
   telas (os cenários F013 a F018 continuam iguais, na fila de Fisioterapia).
   As capturas e o checklist estão em [entregas/GH-47-validacao.md](entregas/GH-47-validacao.md).
-- **RN-12, evento real:** ligar a fonte de registros automáticos do back à prop
-  `assinarAusenciasAutomaticas` de `TelaAusencias` ou a `NotificacaoAusencia` do painel.
-  O adaptador local em MSW é provisório. Não inferir ausência no componente pelo relógio:
-  a política pode devolver a senha à fila. Transporte e payload real seguem dependentes de #24/#41.
+- **RN-12:** não inferir ausência no componente pelo relógio: a política pode devolver a senha à
+  fila. O evento `ausencia.registrada` não traz `recursosLiberados`, e o aviso não menciona a
+  liberação de recursos. Falta exibir o aviso também no painel de fila (`NotificacaoAusencia`).
 - **RN-13:** exibir `restricaoAplicada.tipo`, `descricao` e `ate`, inclusive no evento
   automático. Sem limites ou prazos de política fixos no código de produção.
 - **Divergência do OpenAPI (resolvida no #97):** a descrição da desistência ficou só com
@@ -286,40 +287,34 @@ A suíte cobre os dois fluxos por HTTP, RN-12/RN-13, permissões, contraste com 
 retorno ao gatilho e dimensões do modal a 390 px. As capturas ficam em
 `apps/web/test-results/ausencia-desktop.png` e `ausencia-celular.png` para anexar ao PR.
 
-Ainda faltam integração real, CI e revisão antes de concluir a issue.
-
 ## Trilha de auditoria (W-18, #50)
 
-A tela (`apps/web/src/components/auditoria/`, rota `/auditoria`) já consome a API pelo cliente
-HTTP; no modo simulado responde a simulação MSW (`apps/web/src/mocks/auditoria.ts`). Para integrar:
-rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de auditoria.
-
-| Status | Provisório                                                                                     | Onde                              | Destrava                                                       | Troca a fazer                                                                             |
-| ------ | ---------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| 🔧     | `GET /auditoria`, `/auditoria/{id}` e `/auditoria/exportacao` sobre MSW, com eventos fictícios | `apps/web/src/mocks/auditoria.ts` | #29 entregue (a exportação exige `de` e `ate`)                 | Conferir filtros, detalhe e exportação contra a API real; apagar os handlers de auditoria |
-| 🔧     | `GET /usuarios` (filtro por usuário) sobre MSW                                                 | `apps/web/src/mocks/auditoria.ts` | #29: usar `GET /auditoria/usuarios` (só `auditoria:consultar`) | Conferir contra a API real e mover o handler para junto da simulação de perfis, se houver |
+A tela (`apps/web/src/components/auditoria/`, rota `/auditoria`) foi conferida com a API real na
+#146: o filtro de usuário usa `GET /auditoria/usuarios` (basta `auditoria:consultar`) e a exportação
+explica o período obrigatório, de até 366 dias, antes de chamar a API. No modo simulado responde
+`apps/web/src/mocks/auditoria.ts`.
 
 ### Lacunas do contrato da auditoria (decisão antes de integrar com a #29)
 
-| #   | Lacuna                                                                                                                                                                                                     | O que o front faz hoje                                                                                                                     | Pedido ao back-end                                                                                                                                               |
-| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Exportação sem todos os filtros**: `GET /auditoria/exportacao` só aceita `de`, `ate` e `usuarioId`, mas a T-18 pede "exportar resultado filtrado" e a tela também filtra por operação, módulo e registro | Envia os mesmos filtros da tela (`operacao`, `modulo` e `entidadeId` incluídos)                                                            | **Resolvida no contrato (#29):** a exportação aceita os seis filtros; `de` e `ate` passam a ser obrigatórios, com no máximo 366 dias                             |
-| 2   | **Valores de `modulo` não enumerados**: o parâmetro e o campo são texto livre                                                                                                                              | Oferece os módulos do catálogo de permissões (`docs/04` §3) e `auth` para entrada e saída (proposta); valor desconhecido aparece como veio | **Resolvida no contrato (#29):** `ModuloAuditoria` enum: módulos do catálogo e `auth` (LOGIN e LOGOUT), como a tela já oferece                                   |
-| 3   | **Registro afetado só por UUID**: `entidadeId` é `uuid`, mas o W-18 mostra o registro pelo identificador de negócio (ex.: senha F014)                                                                      | Valida UUID no campo e oferece "Filtrar por este registro" no detalhe do evento; a tabela mostra `entidade` e o início do UUID             | **Decidido (#29):** sem rótulo legível nesta versão; o filtro continua por `entidadeId`                                                                          |
-| 4   | **Permissão do filtro por usuário**: `GET /usuarios` é da tag de perfis; quem tem só `auditoria:consultar` pode receber 403                                                                                | Se a lista falhar, o filtro fica só com "Todos" e um aviso; os demais filtros seguem                                                       | **Resolvida no contrato (#29):** `GET /auditoria/usuarios` (só `id` e `nome`) com `auditoria:consultar`. Ao integrar, trocar o `GET /usuarios` do filtro por ele |
-| 5   | **Ordenação**: a T-18 pede "ordenação anunciada", e o contrato fixa a ordem cronológica decrescente                                                                                                        | Anuncia a ordem fixa (`aria-sort` e região `aria-live`), sem alternar                                                                      | Nenhuma, se a ordem fixa bastar; senão, incluir `ordenar`/`direcao`                                                                                              |
-| 6   | **Perfil no evento**: o contrato traz `perfilNoMomento` já na listagem, e a T-18 o põe só no detalhe                                                                                                       | Mostra o perfil abaixo do nome do usuário, como no W-18                                                                                    | Nenhuma                                                                                                                                                          |
+| #   | Lacuna                                                                                                                                                                                                     | O que o front faz hoje                                                                                                                     | Pedido ao back-end                                                                                                                   |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | **Exportação sem todos os filtros**: `GET /auditoria/exportacao` só aceita `de`, `ate` e `usuarioId`, mas a T-18 pede "exportar resultado filtrado" e a tela também filtra por operação, módulo e registro | Envia os mesmos filtros da tela (`operacao`, `modulo` e `entidadeId` incluídos)                                                            | **Resolvida no contrato (#29):** a exportação aceita os seis filtros; `de` e `ate` passam a ser obrigatórios, com no máximo 366 dias |
+| 2   | **Valores de `modulo` não enumerados**: o parâmetro e o campo são texto livre                                                                                                                              | Oferece os módulos do catálogo de permissões (`docs/04` §3) e `auth` para entrada e saída (proposta); valor desconhecido aparece como veio | **Resolvida no contrato (#29):** `ModuloAuditoria` enum: módulos do catálogo e `auth` (LOGIN e LOGOUT), como a tela já oferece       |
+| 3   | **Registro afetado só por UUID**: `entidadeId` é `uuid`, mas o W-18 mostra o registro pelo identificador de negócio (ex.: senha F014)                                                                      | Valida UUID no campo e oferece "Filtrar por este registro" no detalhe do evento; a tabela mostra `entidade` e o início do UUID             | **Decidido (#29):** sem rótulo legível nesta versão; o filtro continua por `entidadeId`                                              |
+| 4   | **Permissão do filtro por usuário**: `GET /usuarios` é da tag de perfis; quem tem só `auditoria:consultar` pode receber 403                                                                                | Se a lista falhar, o filtro fica só com "Todos" e um aviso; os demais filtros seguem                                                       | **Integrado (#146):** o filtro usa `GET /auditoria/usuarios` (só `id` e `nome`), com `auditoria:consultar`                           |
+| 5   | **Ordenação**: a T-18 pede "ordenação anunciada", e o contrato fixa a ordem cronológica decrescente                                                                                                        | Anuncia a ordem fixa (`aria-sort` e região `aria-live`), sem alternar                                                                      | Nenhuma, se a ordem fixa bastar; senão, incluir `ordenar`/`direcao`                                                                  |
+| 6   | **Perfil no evento**: o contrato traz `perfilNoMomento` já na listagem, e a T-18 o põe só no detalhe                                                                                                       | Mostra o perfil abaixo do nome do usuário, como no W-18                                                                                    | Nenhuma                                                                                                                              |
 
 ## Alertas de SLA (W-18, #49)
 
-A tela (`apps/web/src/components/alertas/`, rota `/indicadores/alertas`) já consome a API pelo
-cliente HTTP; no modo simulado responde a simulação MSW (`apps/web/src/mocks/alertas.ts`). Para
-integrar: rodar com `NEXT_PUBLIC_API_MOCK=false` contra a API e apagar os handlers de alertas.
+A tela (`apps/web/src/components/alertas/`, rota `/indicadores/alertas`) consome a API pelo cliente
+HTTP e o canal `/alertas` (#146): `sla.excedido` e `sla.normalizado` atualizam a lista e o anúncio,
+e a queda da conexão mostra o banner e pausa as ações. No modo simulado responde
+`apps/web/src/mocks/alertas.ts`.
 
-| Status | Provisório                                                                            | Onde                                                                 | Destrava                               | Troca a fazer                                                                                                                                                                                                                                  |
-| ------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ⏳     | `GET /alertas`, `/reconhecimento` e `/escalonamento` sobre MSW, com alertas fictícios | `apps/web/src/mocks/alertas.ts`                                      | #28 (API, parte 9.3)                   | Conferir contra a API real; apagar os handlers                                                                                                                                                                                                 |
-| ⏳     | Rota `/indicadores/alertas`, alcançada pelo cartão da home; não há item de menu       | `apps/web/src/app/(autenticado)/indicadores/alertas/`, `lib/home.ts` | Decisão (`tipo: decisão`) e #48 (W-17) | O W-18 junta alertas e auditoria, mas o supervisor tem `alertas:consultar` sem `auditoria:consultar`. Confirmar onde fica o acesso (aba em Indicadores, item próprio no menu ou junto da Auditoria) e, se for aba, a W-17 ligar para esta rota |
+| Status | Provisório                                                                      | Onde                                                                 | Destrava                               | Troca a fazer                                                                                                                                                                                                                                  |
+| ------ | ------------------------------------------------------------------------------- | -------------------------------------------------------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ⏳     | Rota `/indicadores/alertas`, alcançada pelo cartão da home; não há item de menu | `apps/web/src/app/(autenticado)/indicadores/alertas/`, `lib/home.ts` | Decisão (`tipo: decisão`) e #48 (W-17) | O W-18 junta alertas e auditoria, mas o supervisor tem `alertas:consultar` sem `auditoria:consultar`. Confirmar onde fica o acesso (aba em Indicadores, item próprio no menu ou junto da Auditoria) e, se for aba, a W-17 ligar para esta rota |
 
 ### Contrato dos alertas e integração da #28
 
@@ -338,8 +333,7 @@ na validação local; aguardar o merge da implementação para integrar a tela.
 
 A T-17 pede espera atual, mas a Tabela 20 do PDF principal define valores do disparo.
 O contrato preserva esse retrato; a integração deve identificá-los como verificados no
-momento do disparo, seguindo a precedência do PDF. A tela ainda usa polling HTTP; o canal
-`/alertas` já emite `sla.excedido` e `sla.normalizado` e deve invalidar a consulta na integração.
+momento do disparo, seguindo a precedência do PDF.
 
 ## Telão e consulta pública (W-09 / W-10, #42)
 

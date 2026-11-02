@@ -7,7 +7,7 @@ ponto. Complementa dois documentos:
 - [`07-pendencias-integracao.md`](07-pendencias-integracao.md): troca do MSW pela API, tela por
   tela, e lacunas do contrato.
 
-**Quem fechar um item daqui atualiza este arquivo no mesmo PR.** Situação conferida em 28/10/2026.
+**Quem fechar um item daqui atualiza este arquivo no mesmo PR.** Situação conferida em 02/11/2026.
 
 ## 1. Back-end pronto
 
@@ -126,6 +126,7 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 | -------------------------------------------------------- | -------------- | -------------------------------------------------------------- |
 | Política da RN-12 (devolver à fila ou marcar ausência)   | #107           | Volta à fila uma vez; na segunda expiração, ausência           |
 | Confirmação do modelo de navegação                       | ADR-002        | Modelo A, painel lateral só na fila                            |
+| Vínculo entre usuário e estudante ("Atendimento atual")  | `docs/07`      | A home lista os atendimentos em andamento da unidade           |
 | Exigências da RN-06 (nível, habilitações, procedimentos) | §2 acima       | Só a especialidade                                             |
 | Horário dos turnos (RN-05, RN-07)                        | `docs/03` §3.2 | 07-12, 12-18, 18-22 (provisório)                               |
 | Quem valida o encerramento (RN-11)                       | #103           | Quem tem `atendimento:validar`                                 |
@@ -137,25 +138,21 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 
 ## 5. Front-end: o que fazer ao integrar com a API real
 
-Detalhe por tela em [`07-pendencias-integracao.md`](07-pendencias-integracao.md). Pronto para
-trocar agora (🔧 lá):
-
-| Tela                       | Troca                                                                                                                                                      | API      |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| Login e sessão (W-01)      | Já conferido com a API real (#52); falta ler `minutosRestantes` do bloqueio e apagar `MENSAGEM_SEM_PERFIL` (não existe mais 403 no login)                  | #10      |
-| Trilha de auditoria (W-18) | Exportação passa a exigir `de` e `ate`; filtro de usuário por `GET /auditoria/usuarios`                                                                    | #29      |
-| Ausências (W-15, W-16)     | Registro manual de ausência e desistência já conferido com a API real (#52); falta ligar o evento `ausencia.registrada` (via #19) às ausências automáticas | #24, #25 |
+Detalhe por tela em [`07-pendencias-integracao.md`](07-pendencias-integracao.md).
 
 Telas já conferidas com a API real no fluxo de ponta a ponta (`apps/web/e2e-real/`): login,
-menu por permissão, perfis, cadastros, triagem e senha, painel de fila (quadro e chamada), telão,
-alocação, início e encerramento do atendimento, ausência e desistência. No tempo real, o painel
-de fila e o telão usam o Socket.IO; falta o canal `/alertas` (W-18, que hoje revalida a cada
-30 s) e ligar o estado da conexão das demais telas, que no shell segue sempre "conectado".
+home, menu por permissão, perfis, cadastros, triagem e senha, painel de fila (quadro e chamada),
+telão, alocação, início e encerramento do atendimento, ausência e desistência, e o filtro e a
+exportação da auditoria. No tempo real, painel de fila, telão, alertas, ausências e atendimento
+usam o Socket.IO (#146). A entrega de `sla.excedido` e da ausência automática só tem teste de
+unidade: no fluxo real, o teste confere a conexão ao canal de alertas e o evento do atendimento.
 
 Também ficam com o front: rota `/acesso` com tela própria, TanStack Query na tela de perfis,
 formulário de perfil com React Hook Form e o schema do contrato, layout de impressão da senha,
-visão consolidada e seletor de turno do painel (dependem das lacunas 4 e 5 da fila) e o local da
-tela de alertas no menu.
+handlers MSW de triagem e perfis no lugar das APIs em memória, schemas locais (triagem,
+encaminhamento, alertas) trocados pelos de `@filas/contracts`, testes simulados entrando pelo login
+real, visão consolidada e seletor de turno do painel (dependem das lacunas 4 e 5 da fila) e o local
+da tela de alertas no menu.
 
 ## Entrega da #19
 

@@ -38,6 +38,10 @@ describe('rotuloIndicador', () => {
     expect(rotuloIndicador(fila!, 7)).toBe('Aguardando na fila: 7 senhas');
   });
 
+  it('usa o singular quando o valor é 1', () => {
+    expect(rotuloIndicador(fila!, 1)).toBe('Aguardando na fila: 1 senha');
+  });
+
   it('anuncia a falta de dados sem inventar valor', () => {
     expect(rotuloIndicador(fila!, null)).toBe('Aguardando na fila: sem dados no momento');
   });

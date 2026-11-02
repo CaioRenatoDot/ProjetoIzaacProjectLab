@@ -67,7 +67,7 @@ test.describe('home por perfil (#35)', () => {
   test('cartão de indicador anuncia rótulo completo', async ({ page }) => {
     await page.goto('/');
     await expect(
-      page.getByRole('link', { name: 'Aguardando na fila: sem dados no momento' }),
+      page.getByRole('link', { name: /^Aguardando na fila: \d+ senhas?$/ }),
     ).toBeVisible();
   });
 

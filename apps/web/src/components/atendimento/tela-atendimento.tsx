@@ -8,9 +8,11 @@ import {
 } from '@filas/contracts';
 import {
   APRESENTACAO_STATUS,
+  BannerConexao,
   Button,
   classeCampo,
   classesBotao,
+  ConexaoProvider,
   ErroCampo,
   EstadoCarregando,
   EstadoErro,
@@ -34,15 +36,20 @@ import {
   duracaoTexto,
   ROTULO_DESFECHO,
 } from '@/lib/atendimento/estado';
+import { criarFilaApi } from '@/lib/fila/api';
 import { horaCurta } from '@/lib/fila/quadro';
 import { type SenhaResumo } from '@/lib/fila/tipos';
 import { useSessao } from '@/lib/sessao/sessao';
+import { useCanalTempoReal } from '@/lib/tempo-real/use-canal';
 
 import { ModalEncerramento, ModalPausa } from './modais-atendimento';
 
 type Api = ReturnType<typeof criarAtendimentoApi>;
 
 const rotuloStatus = (status: StatusSenha) => APRESENTACAO_STATUS[status].rotulo;
+
+/** Tela com canal também revalida por HTTP, o que renova o token do socket (`docs/04` §7). */
+const REVALIDACAO_MS = 30_000;
 
 const ROTULO_PRIORIDADE = { NORMAL: 'Normal', PREFERENCIAL: 'Preferencial', URGENTE: 'Urgente' };
 
@@ -57,10 +64,12 @@ function Atendimento({ senhaId }: { senhaId: string }) {
   const { cliente } = useSessao();
   const { tem } = usePermissoes();
   const api = useMemo(() => criarAtendimentoApi(cliente), [cliente]);
+  const queryClient = useQueryClient();
 
   const senha = useQuery({
     queryKey: ['atendimento', senhaId, 'senha'],
     queryFn: () => api.senha(senhaId),
+    refetchInterval: REVALIDACAO_MS,
   });
   const comAtendimento = Boolean(senha.data && COM_ATENDIMENTO.includes(senha.data.status));
   const resumo = useQuery({
@@ -76,6 +85,30 @@ function Atendimento({ senhaId }: { senhaId: string }) {
     enabled: Boolean(atendimentoId) && tem('atendimento:consultar_sensivel'),
     placeholderData: keepPreviousData,
   });
+  // A sala do canal é a especialidade, e a senha só traz a fila.
+  const podeOuvir = tem('fila:consultar');
+  const filas = useQuery({
+    queryKey: ['fila', 'lista'],
+    queryFn: () => criarFilaApi(cliente).listarFilas(),
+    enabled: podeOuvir,
+  });
+  const especialidadeId = filas.data?.dados.find(
+    (f) => f.id === senha.data?.filaId,
+  )?.especialidadeId;
+  const recarregar = () =>
+    void queryClient.invalidateQueries({ queryKey: ['atendimento', senhaId] });
+  const { conectado } = useCanalTempoReal({
+    namespace: '/filas',
+    ativo: podeOuvir && Boolean(especialidadeId),
+    query: especialidadeId ? { especialidadeId } : undefined,
+    aoConectar: recarregar,
+    eventos: {
+      'senha.status_alterado': (corpo: { senhaId: string }) => {
+        if (corpo.senhaId === senhaId) recarregar();
+      },
+    },
+  });
+
   // Ficam aqui, e não na condução, para sobreviver à recarga que segue cada ação.
   const [aviso, setAviso] = useState<Aviso | null>(null);
   const [anuncio, setAnuncio] = useState('');
@@ -130,10 +163,11 @@ function Atendimento({ senhaId }: { senhaId: string }) {
   }
 
   return (
-    <>
+    <ConexaoProvider conectado={conectado}>
+      <BannerConexao />
       {regiaoAnuncio}
       {conteudo}
-    </>
+    </ConexaoProvider>
   );
 }
 

@@ -4,6 +4,7 @@ import {
   ESTADO_INICIAL,
   FILTROS_VAZIOS,
   lerEstadoSalvo,
+  impedimentoExportacao,
   montarConsulta,
   montarConsultaExportacao,
   nomeArquivoExportacao,
@@ -50,6 +51,19 @@ describe('montarConsulta', () => {
     const filtros = { ...FILTROS_VAZIOS, operacao: 'EXPORTAR' as const };
     expect(montarConsultaExportacao(filtros)).toBe('?operacao=EXPORTAR');
     expect(montarConsultaExportacao(FILTROS_VAZIOS)).toBe('');
+  });
+});
+
+describe('impedimentoExportacao', () => {
+  it('exige data inicial e final, como a API', () => {
+    expect(impedimentoExportacao(FILTROS_VAZIOS)).toMatch(/data inicial e a final/);
+    expect(impedimentoExportacao({ ...FILTROS_VAZIOS, de: '2026-10-01' })).toMatch(/data inicial/);
+  });
+
+  it('aceita até 366 dias entre o início do primeiro dia e o fim do último', () => {
+    const filtros = { ...FILTROS_VAZIOS, de: '2025-10-01', ate: '2026-10-01' };
+    expect(impedimentoExportacao(filtros)).toBeNull();
+    expect(impedimentoExportacao({ ...filtros, ate: '2026-10-03' })).toMatch(/no máximo 366 dias/);
   });
 });
 

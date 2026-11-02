@@ -20,6 +20,7 @@ import {
   type FiltrosAuditoria,
   FILTROS_VAZIOS,
   formatarDataHora,
+  impedimentoExportacao,
   lerEstadoSalvo,
   montarConsulta,
   montarConsultaExportacao,
@@ -118,6 +119,12 @@ function Trilha() {
       }),
   });
 
+  function pedirExportacao() {
+    const impedimento = impedimentoExportacao(estado.filtros);
+    if (impedimento) mostrarToast({ tipo: 'erro', mensagem: impedimento });
+    else exportar.mutate();
+  }
+
   const pagina = lista.data;
   const filtrando = temFiltroAtivo(estado.filtros);
   const total = pagina?.meta.total ?? 0;
@@ -133,7 +140,7 @@ function Trilha() {
           <Button
             variante="secundario"
             disabled={exportar.isPending || total === 0}
-            onClick={() => exportar.mutate()}
+            onClick={pedirExportacao}
           >
             {exportar.isPending ? 'Exportando…' : 'Exportar resultado'}
           </Button>

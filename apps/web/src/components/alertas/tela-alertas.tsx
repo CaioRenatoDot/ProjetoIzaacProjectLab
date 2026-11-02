@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  BannerConexao,
+  ConexaoProvider,
   EstadoCarregando,
   EstadoErro,
   EstadoSemPermissao,
@@ -24,12 +26,13 @@ import {
 import { type AcaoEscalonamento, type Alerta } from '@/lib/alertas/tipos';
 import { type Pagina } from '@/lib/cadastros/tipos';
 import { useSessao } from '@/lib/sessao/sessao';
+import { useCanalTempoReal } from '@/lib/tempo-real/use-canal';
 
 import { Paginacao } from '../paginacao';
 import { CartaoAlerta, idTituloAlerta } from './cartao-alerta';
 import { ModalEscalonamento, type PedidoEscalonamento } from './modal-escalonamento';
 
-/** Sem o canal `/alertas` conectado, a tela revalida por HTTP a cada 30 s (`docs/04` §7). */
+/** Mesmo com o canal `/alertas` conectado, a tela revalida por HTTP a cada 30 s (`docs/04` §7). */
 export const REVALIDACAO_MS = 30_000;
 
 const CHAVE_ABERTOS = ['alertas', 'abertos'] as const;
@@ -39,7 +42,24 @@ const CONSULTA_ABERTOS = '/alertas?status=ATIVO&status=RECONHECIDO&pagina=1&tama
 export function TelaAlertas() {
   const { tem } = usePermissoes();
   if (!tem('alertas:consultar')) return <EstadoSemPermissao />;
-  return <Alertas />;
+  return <AlertasEmTempoReal />;
+}
+
+function AlertasEmTempoReal() {
+  const queryClient = useQueryClient();
+  const invalidar = () => void queryClient.invalidateQueries({ queryKey: ['alertas'] });
+  const { conectado } = useCanalTempoReal({
+    namespace: '/alertas',
+    ativo: true,
+    aoConectar: invalidar,
+    eventos: { 'sla.excedido': invalidar, 'sla.normalizado': invalidar },
+  });
+  return (
+    <ConexaoProvider conectado={conectado}>
+      <BannerConexao />
+      <Alertas />
+    </ConexaoProvider>
+  );
 }
 
 function Alertas() {
