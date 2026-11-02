@@ -139,6 +139,12 @@ simulação única das filas (`apps/web/src/mocks/filas.ts`), que também atende
 Especialidades de teste: Fisioterapia (cenários da #47), Fonoaudiologia (bloqueada, RN-10),
 Nutrição (RN-03, RN-04, SLA e todos os status) e Psicologia (vazia).
 
+Com `alocacao:criar` (#149, em teste), "Chamar próxima" abre um modal com as sugestões de
+`GET /filas/{id}/chamadas/sugestoes` e envia os recursos junto na chamada: a senha já sai alocada e
+o telão mostra a sala. Recurso tomado entre a prévia e a confirmação volta 409 sem chamar ninguém,
+e o modal recarrega as sugestões. O UC-10 do PDF tem como pré-condição a senha já chamada; a
+divergência está em `docs/08` §4.
+
 | Status | Provisório                                                                                                                                   | Onde                                            | Destrava                                    | Troca a fazer                                     |
 | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------------------------------------------- | ------------------------------------------------- |
 | ⏳     | O modal de reclassificação lê o mínimo da justificativa de `GET /parametros` (proposta, lacuna 1 da triagem)                                 | `apps/web/src/lib/fila/reclassificacao-http.ts` | decisão do back sobre parâmetros da unidade | Trocar pelo endpoint definido                     |

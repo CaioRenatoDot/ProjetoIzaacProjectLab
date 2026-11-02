@@ -50,6 +50,12 @@ export function escolhaInicial(bloco: BlocoAlocacao) {
   return bloco.sugestao?.apto ? bloco.sugestao.id : null;
 }
 
+/** Mantém a escolha se ela continua apta; senão, volta para a sugestão (após recarga, T-10). */
+export function manterOuSugestao(anterior: string | null, bloco: BlocoAlocacao) {
+  const ainda = candidatosDoBloco(bloco).find((c) => c.id === anterior && c.apto);
+  return ainda ? ainda.id : escolhaInicial(bloco);
+}
+
 /** O bloco tem algum recurso apto? Sem nenhum, a senha deve ficar aguardando esse recurso. */
 export function temApto(bloco: BlocoAlocacao) {
   return candidatosDoBloco(bloco).some((c) => c.apto);

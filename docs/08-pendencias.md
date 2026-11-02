@@ -122,19 +122,20 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 
 ## 4. Decisões em aberto
 
-| Decisão                                                  | Onde           | Valor em uso                                                   |
-| -------------------------------------------------------- | -------------- | -------------------------------------------------------------- |
-| Política da RN-12 (devolver à fila ou marcar ausência)   | #107           | Volta à fila uma vez; na segunda expiração, ausência           |
-| Confirmação do modelo de navegação                       | ADR-002        | Modelo A, painel lateral só na fila                            |
-| Vínculo entre usuário e estudante ("Atendimento atual")  | `docs/07`      | A home lista os atendimentos em andamento da unidade           |
-| Exigências da RN-06 (nível, habilitações, procedimentos) | §2 acima       | Só a especialidade                                             |
-| Horário dos turnos (RN-05, RN-07)                        | `docs/03` §3.2 | 07-12, 12-18, 18-22 (provisório)                               |
-| Quem valida o encerramento (RN-11)                       | #103           | Quem tem `atendimento:validar`                                 |
-| Efeito e prazo da restrição (RN-13)                      | #107           | Temporária até hoje + `janela_reincidencia_dias`; só aviso     |
-| Exportação de indicadores em xlsx                        | #109           | Só csv                                                         |
-| Fórmulas dos indicadores e limite de amostra pequena     | #109           | Coorte pela chegada; amostra pequena abaixo de 10 atendimentos |
-| Valores definitivos dos parâmetros da unidade            | `docs/01` §4.7 | 5, 25, 3, 90, 3 e 20 (Tabela 8)                                |
-| Base legal e prazo de retenção de triagem e atendimento  | `docs/03` §6   | Sem rotina de retenção                                         |
+| Decisão                                                   | Onde            | Valor em uso                                                                                                                                                       |
+| --------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Política da RN-12 (devolver à fila ou marcar ausência)    | #107            | Volta à fila uma vez; na segunda expiração, ausência                                                                                                               |
+| Confirmação do modelo de navegação                        | ADR-002         | Modelo A, painel lateral só na fila                                                                                                                                |
+| Vínculo entre usuário e estudante ("Atendimento atual")   | `docs/07`       | A home lista os atendimentos em andamento da unidade                                                                                                               |
+| Exigências da RN-06 (nível, habilitações, procedimentos)  | §2 acima        | Só a especialidade                                                                                                                                                 |
+| Horário dos turnos (RN-05, RN-07)                         | `docs/03` §3.2  | 07-12, 12-18, 18-22 (provisório)                                                                                                                                   |
+| Quem valida o encerramento (RN-11)                        | #103            | Quem tem `atendimento:validar`                                                                                                                                     |
+| Efeito e prazo da restrição (RN-13)                       | #107            | Temporária até hoje + `janela_reincidencia_dias`; só aviso                                                                                                         |
+| Exportação de indicadores em xlsx                         | #109            | Só csv                                                                                                                                                             |
+| Fórmulas dos indicadores e limite de amostra pequena      | #109            | Coorte pela chegada; amostra pequena abaixo de 10 atendimentos                                                                                                     |
+| Valores definitivos dos parâmetros da unidade             | `docs/01` §4.7  | 5, 25, 3, 90, 3 e 20 (Tabela 8)                                                                                                                                    |
+| Base legal e prazo de retenção de triagem e atendimento   | `docs/03` §6    | Sem rotina de retenção                                                                                                                                             |
+| Alocar antes de chamar (diverge da pré-condição do UC-10) | #149 (em teste) | Quem tem `alocacao:criar` escolhe os recursos no "Chamar próxima" e o telão mostra a sala; sem recurso apto, não chama. Sem essa permissão, a chamada segue direta |
 
 ## 5. Front-end: o que fazer ao integrar com a API real
 

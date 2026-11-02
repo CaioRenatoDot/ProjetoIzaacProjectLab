@@ -13,6 +13,6 @@ import { SugestoesService } from './sugestoes.service';
   imports: [ParametrosModule, SenhasModule, AuditoriaModule],
   controllers: [AlocacaoController],
   providers: [AlocacaoService, AlocacaoRepository, AptidaoAlocacaoService, SugestoesService],
-  exports: [AlocacaoService],
+  exports: [AlocacaoService, SugestoesService],
 })
 export class AlocacaoModule {}

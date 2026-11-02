@@ -34,6 +34,7 @@ const TODAS = [
   'fila:chamar',
   'senha:consultar',
   'senha:reclassificar',
+  'alocacao:consultar',
   'alocacao:criar',
   'ausencia:criar',
 ];
@@ -65,6 +66,9 @@ async function escolherFila(usuario: ReturnType<typeof userEvent.setup>, especia
 }
 
 const chamarProxima = () => screen.getByRole('button', { name: /^Chamar próxima|^Chamando/ });
+
+/** Quem chama sem alocar (ex.: Recepção): a chamada segue direta, sem modal de recursos. */
+const SEM_ALOCAR = TODAS.filter((p) => p !== 'alocacao:criar');
 
 describe('<TelaFila> (W-08 / T-09)', () => {
   it('cada coluna é uma região rotulada, com o estado vazio próprio', async () => {
@@ -114,7 +118,7 @@ describe('<TelaFila> (W-08 / T-09)', () => {
   });
 
   it('duplo clique em "Chamar próxima" chama uma senha só', async () => {
-    const usuario = abrir();
+    const usuario = abrir(SEM_ALOCAR);
     // Fisioterapia tem uma só senha aguardando (F015): uma segunda chamada daria FILA_VAZIA.
     await waitFor(() => expect(numerosEm(coluna(/^Aguardando/))).toEqual(['F015']));
     await usuario.dblClick(chamarProxima());
@@ -125,7 +129,7 @@ describe('<TelaFila> (W-08 / T-09)', () => {
   });
 
   it('RN-03: chamar urgente que fura a fila pede confirmação', async () => {
-    const usuario = abrir();
+    const usuario = abrir(SEM_ALOCAR);
     await escolherFila(usuario, /^Nutrição/);
     await waitFor(() => expect(chamarProxima()).toBeEnabled());
     await usuario.click(chamarProxima());
@@ -137,6 +141,60 @@ describe('<TelaFila> (W-08 / T-09)', () => {
     expect(screen.getByRole('status', { name: 'Atualizações da fila' })).toHaveTextContent(
       'Nova chamada: senha N103.',
     );
+  });
+
+  it('#149: com alocação, o modal traz as sugestões e a senha sai chamada para a sala', async () => {
+    const usuario = abrir();
+    await escolherFila(usuario, /^Nutrição/);
+    await waitFor(() => expect(chamarProxima()).toBeEnabled());
+    await usuario.click(chamarProxima());
+
+    const dialogo = await screen.findByRole('dialog', { name: 'Chamar próxima senha · Nutrição' });
+    expect(await within(dialogo).findByText(/Próxima pela ordem da fila/)).toHaveTextContent(
+      'N103',
+    );
+    expect(dialogo).toHaveTextContent(/N103, é urgente e passa à frente/);
+    expect(within(dialogo).getByRole('radio', { name: /Heitor Prado/ })).toBeChecked();
+    expect(within(dialogo).getByRole('radio', { name: /Sala 02/ })).toBeChecked();
+    expect(within(dialogo).queryByRole('group', { name: /Supervisor/ })).not.toBeInTheDocument();
+    expect(dialogo).toHaveTextContent('No telão: senha e Sala 02.');
+
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Confirmar e chamar' }));
+
+    expect(
+      await screen.findByText('Senha N103 chamada para a Sala 02 por urgência clínica (RN-03).', {
+        selector: 'div',
+      }),
+    ).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await waitFor(() => expect(numerosEm(coluna(/^Chamada/))).toContain('N103'));
+  });
+
+  it('#149: recurso tomado antes de confirmar não chama ninguém e o modal atualiza a sugestão', async () => {
+    const usuario = abrir();
+    await waitFor(() => expect(numerosEm(coluna(/^Aguardando/))).toEqual(['F015']));
+    await usuario.click(chamarProxima());
+
+    const dialogo = await screen.findByRole('dialog', {
+      name: 'Chamar próxima senha · Fisioterapia',
+    });
+    await usuario.click(await within(dialogo).findByRole('radio', { name: /Ana Ribeiro/ }));
+    expect(within(dialogo).getByRole('radio', { name: /Prof\. Elisa Nunes/ })).toBeChecked();
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Confirmar e chamar' }));
+
+    expect(await within(dialogo).findByRole('alert')).toHaveTextContent(
+      /Ana Ribeiro acabou de iniciar outro atendimento. Nenhuma senha foi chamada/,
+    );
+    await waitFor(() =>
+      expect(within(dialogo).getByRole('radio', { name: /Ana Ribeiro/ })).toBeDisabled(),
+    );
+    expect(within(dialogo).getByRole('radio', { name: /Bruno Lima/ })).toBeChecked();
+
+    // F015 é a única aguardando: se a recusa tivesse chamado, esta segunda daria FILA_VAZIA.
+    await usuario.click(within(dialogo).getByRole('button', { name: 'Confirmar e chamar' }));
+    expect(
+      await screen.findByText('Senha F015 chamada para a Sala 03.', { selector: 'div' }),
+    ).toBeInTheDocument();
   });
 
   it('sem fila:chamar o botão não aparece; sem fila:consultar, estado de sem permissão', async () => {

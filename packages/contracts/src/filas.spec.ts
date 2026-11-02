@@ -28,6 +28,20 @@ describe('filas', () => {
     expect(ChamarProximaEntrada.parse({ localExibicao: ' ' })).toEqual({});
   });
 
+  it('chamar já alocado: supervisor opcional e sem versão', () => {
+    const alocacao = {
+      estudanteId: '01900000-0000-7000-8000-000900000005',
+      salaId: '01900000-0000-7000-8000-000700000003',
+    };
+    expect(ChamarProximaEntrada.parse({ alocacao }).alocacao).toEqual({
+      ...alocacao,
+      supervisorId: null,
+    });
+    expect(ChamarProximaEntrada.safeParse({ alocacao: { salaId: alocacao.salaId } }).success).toBe(
+      false,
+    );
+  });
+
   it('SenhaResumo traz a chamada vigente para rechamar', () => {
     expect(SenhaResumo.shape).toHaveProperty('chamadaId');
   });

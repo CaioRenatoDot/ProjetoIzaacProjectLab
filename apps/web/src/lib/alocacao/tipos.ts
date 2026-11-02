@@ -32,12 +32,23 @@ export interface SugestoesAlocacao {
   sala: BlocoAlocacao;
 }
 
+/**
+ * Prévia de "Chamar próxima" com recursos (#149): sugestões pela especialidade da fila e a senha
+ * que vem a seguir pela RN-04, só para exibição. Nada é reservado.
+ */
+export interface SugestoesChamada extends Omit<SugestoesAlocacao, 'senhaId'> {
+  proxima: { numero: string; prioridade: string } | null;
+}
+
 export interface AlocacaoEntrada {
   estudanteId: string;
   supervisorId: string | null;
   salaId: string;
   versao: number;
 }
+
+/** Recursos que vão junto na chamada (#149): os mesmos da alocação, sem a versão da senha. */
+export type RecursosChamada = Omit<AlocacaoEntrada, 'versao'>;
 
 export interface Alocacao {
   id: string;
