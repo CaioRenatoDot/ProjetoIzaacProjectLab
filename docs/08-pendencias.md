@@ -135,6 +135,7 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 | Fórmulas dos indicadores e limite de amostra pequena     | #109           | Coorte pela chegada; amostra pequena abaixo de 10 atendimentos |
 | Valores definitivos dos parâmetros da unidade            | `docs/01` §4.7 | 5, 25, 3, 90, 3 e 20 (Tabela 8)                                |
 | Base legal e prazo de retenção de triagem e atendimento  | `docs/03` §6   | Sem rotina de retenção                                         |
+| Recepcionista e atendente (UC-01, UC-09, UC-10)          | #150           | Mesmo perfil, Recepção: cadastra, chama e aloca                |
 
 ## 5. Front-end: o que fazer ao integrar com a API real
 
