@@ -1,3 +1,5 @@
+import { DIAS_MAXIMOS_EXPORTACAO } from '@filas/contracts';
+
 import { PREFIXO_ESTADO_LOCAL } from '@/lib/sessao/estado-local';
 
 import { type OperacaoAuditoria } from './tipos';
@@ -109,6 +111,17 @@ export function montarConsulta(estado: EstadoAuditoria): string {
   parametros.set('pagina', String(estado.pagina));
   parametros.set('tamanho', String(TAMANHO_PAGINA));
   return `?${parametros.toString()}`;
+}
+
+/** O que impede a exportação com estes filtros, pelo mesmo critério da API (`docs/api/openapi.yaml`). */
+export function impedimentoExportacao(filtros: FiltrosAuditoria): string | null {
+  if (!filtros.de || !filtros.ate) {
+    return `Para exportar, informe a data inicial e a final e aplique os filtros. O período pode ter até ${DIAS_MAXIMOS_EXPORTACAO} dias.`;
+  }
+  const duracao = Date.parse(fimDoDia(filtros.ate)) - Date.parse(inicioDoDia(filtros.de));
+  return duracao > DIAS_MAXIMOS_EXPORTACAO * 86_400_000
+    ? `Exporte no máximo ${DIAS_MAXIMOS_EXPORTACAO} dias por vez. Reduza o período e aplique os filtros.`
+    : null;
 }
 
 /** Query string de `GET /auditoria/exportacao`: os mesmos filtros da tela, sem paginação. */

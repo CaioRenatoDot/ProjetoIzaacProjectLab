@@ -60,6 +60,12 @@ test.describe('trilha de auditoria (#50)', () => {
 
   test('exportar baixa o CSV e registra a exportação na trilha', async ({ page }) => {
     await abrirTrilha(page);
+    await page.getByRole('button', { name: 'Exportar resultado' }).click();
+    await expect(page.getByText(/informe a data inicial e a final/).first()).toBeVisible();
+
+    await page.getByLabel('De', { exact: true }).fill('2026-10-01');
+    await page.getByLabel('Até', { exact: true }).fill('2026-12-31');
+    await page.getByRole('button', { name: 'Aplicar filtros' }).click();
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Exportar resultado' }).click();
 
