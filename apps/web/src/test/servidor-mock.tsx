@@ -17,6 +17,7 @@ import { handlersAlocacao, reiniciarMockAlocacao } from '@/mocks/alocacao';
 import { handlersAtendimentos, reiniciarMockAtendimentos } from '@/mocks/atendimentos';
 import { handlersEncaminhamentos, reiniciarMockEncaminhamentos } from '@/mocks/encaminhamentos';
 import { handlersFilas } from '@/mocks/filas';
+import { handlersTriagens } from '@/mocks/triagens';
 
 export const servidor = setupServer(
   ...handlers,
@@ -24,6 +25,7 @@ export const servidor = setupServer(
   ...handlersCadastros,
   ...handlersCatalogos,
   ...handlersFilas,
+  ...handlersTriagens,
   ...handlersAlocacao,
   ...handlersAtendimentos,
   ...handlersEncaminhamentos,

@@ -25,7 +25,7 @@ export interface EventoAuditoriaDetalhe extends EventoAuditoria {
   requestId: string;
 }
 
-/** `Usuario` de `GET /usuarios`, usado só para o filtro por usuário. */
+/** Item de `GET /auditoria/usuarios`, usado só para o filtro por usuário. */
 export interface UsuarioResumo {
   id: string;
   nome: string;

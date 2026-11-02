@@ -10,7 +10,7 @@ import {
 
 /**
  * Simulação de `GET /auditoria`, `/auditoria/{id}`, `/auditoria/exportacao` (#29) e de
- * `GET /usuarios` (#12), usado no filtro por usuário. Dados fictícios (RNF-07).
+ * `GET /auditoria/usuarios` (#29), usado no filtro por usuário. Dados fictícios (RNF-07).
  */
 
 const uuid = (prefixo: number, n: number) =>
@@ -280,8 +280,20 @@ export const handlersAuditoria = [
   }),
 
   // Antes de `/auditoria/:id`, senão "exportacao" seria lido como id.
+  http.get(`${API_URL}/auditoria/usuarios`, ({ request }) => {
+    const q = new URL(request.url).searchParams;
+    return HttpResponse.json(paginar([...USUARIOS_AUDITORIA], q));
+  }),
+
   http.get(`${API_URL}/auditoria/exportacao`, ({ request }) => {
-    const resultado = filtrar(new URL(request.url).searchParams);
+    const q = new URL(request.url).searchParams;
+    if (!q.get('de') || !q.get('ate')) {
+      return HttpResponse.json(
+        { title: 'Dados inválidos', status: 422, codigo: 'VALIDACAO', campos: [] },
+        { status: 422, headers: { 'Content-Type': 'application/problem+json' } },
+      );
+    }
+    const resultado = filtrar(q);
     // A própria exportação vira evento na trilha (T-18).
     const n = eventos.length + 1;
     eventos = [
@@ -310,10 +322,5 @@ export const handlersAuditoria = [
     if (!evento) return semPermissao();
     const { usuarioId: _usuarioId, ...detalhe } = evento;
     return HttpResponse.json(detalhe);
-  }),
-
-  http.get(`${API_URL}/usuarios`, ({ request }) => {
-    const q = new URL(request.url).searchParams;
-    return HttpResponse.json(paginar([...USUARIOS_AUDITORIA], q));
   }),
 ];

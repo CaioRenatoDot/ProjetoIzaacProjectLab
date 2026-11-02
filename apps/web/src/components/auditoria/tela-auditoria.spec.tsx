@@ -186,6 +186,21 @@ describe('<TelaAuditoria> (W-18 / T-18)', () => {
     });
     afterEach(() => vi.restoreAllMocks());
 
+    it('sem período, explica que ele é obrigatório e não chama a API', async () => {
+      let exportou = false;
+      servidor.events.on('request:start', ({ request }) => {
+        if (request.url.includes('/exportacao')) exportou = true;
+      });
+      const { usuario } = abrir();
+      await waitFor(() => expect(linhas()).toHaveLength(20));
+
+      await usuario.click(screen.getByRole('button', { name: 'Exportar resultado' }));
+
+      expect(await screen.findByText(/informe a data inicial e a final/)).toBeInTheDocument();
+      expect(exportou).toBe(false);
+      servidor.events.removeAllListeners();
+    });
+
     it('exporta com os filtros aplicados e a exportação entra na trilha', async () => {
       let consultaExportada = '';
       servidor.events.on('request:start', ({ request }) => {
@@ -194,13 +209,18 @@ describe('<TelaAuditoria> (W-18 / T-18)', () => {
       const { usuario } = abrir();
       await waitFor(() => expect(linhas()).toHaveLength(20));
       await usuario.selectOptions(screen.getByLabelText('Módulo'), 'Triagem');
+      await usuario.type(screen.getByLabelText('De'), '2026-10-01');
+      await usuario.type(screen.getByLabelText('Até'), '2026-12-31');
       await aplicar(usuario);
       await waitFor(() => expect(anuncio()).toHaveTextContent('5 registros encontrados'));
 
       await usuario.click(screen.getByRole('button', { name: 'Exportar resultado' }));
 
       expect(await screen.findByText(/Exportação concluída/)).toBeInTheDocument();
-      expect(consultaExportada).toBe('?modulo=triagem');
+      const exportada = new URLSearchParams(consultaExportada);
+      expect(exportada.get('modulo')).toBe('triagem');
+      expect(exportada.get('de')).toBeTruthy();
+      expect(exportada.get('ate')).toBeTruthy();
       expect(clique).toHaveBeenCalledTimes(1);
 
       await usuario.click(screen.getAllByRole('button', { name: 'Limpar filtros' })[0]!);

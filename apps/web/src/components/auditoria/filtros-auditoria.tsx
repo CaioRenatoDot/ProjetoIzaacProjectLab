@@ -218,7 +218,7 @@ function useUsuarios() {
   const { cliente } = useSessao();
   return useQuery({
     queryKey: ['auditoria', 'usuarios'],
-    queryFn: () => cliente.requisitar<Pagina<UsuarioResumo>>('/usuarios?tamanho=100'),
+    queryFn: () => cliente.requisitar<Pagina<UsuarioResumo>>('/auditoria/usuarios?tamanho=100'),
     staleTime: 5 * 60_000,
   });
 }
