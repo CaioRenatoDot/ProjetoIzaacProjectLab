@@ -27,6 +27,20 @@ export async function detalhes(page: Page, numero: string) {
   return page.getByRole('dialog', { name: `Detalhes da senha ${numero}`, exact: true });
 }
 
+/**
+ * "Chamar próxima" já com os recursos sugeridos (#149): a senha sai chamada e alocada, e o telão
+ * mostra a sala.
+ */
+export async function chamarComRecursos(page: Page, numero: string) {
+  await page.getByRole('button', { name: 'Chamar próxima' }).click();
+  const modal = page.getByRole('dialog', { name: 'Chamar próxima senha · Nutrição' });
+  await expect(modal.getByText(/Próxima pela ordem da fila/)).toContainText(numero);
+  await modal.getByRole('button', { name: 'Confirmar e chamar' }).click();
+  await expect(
+    page.getByText(new RegExp(`^Senha ${numero} chamada para a Sala \\d+\\.$`)).first(),
+  ).toBeVisible();
+}
+
 /** Triagem e emissão direto pela API, para o teste começar da fila. */
 export async function emitirSenhaPelaApi(request: APIRequestContext, paciente: number) {
   const login = await request.post(`${API}/auth/login`, {
