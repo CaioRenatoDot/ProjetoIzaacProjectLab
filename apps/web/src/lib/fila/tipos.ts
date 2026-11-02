@@ -1,5 +1,7 @@
 import { type Prioridade, type StatusSenha, type TipoAtendimento } from '@filas/contracts';
 
+import { type Alocacao } from '@/lib/alocacao/tipos';
+
 /** Tipos conforme `docs/api/openapi.yaml` (tag "Filas e chamadas"). */
 
 export interface BloqueioFila {
@@ -78,4 +80,6 @@ export interface ResultadoChamada {
   chamada: Chamada;
   furouFilaPorUrgencia: boolean;
   toleranciaAte: string;
+  /** Só quando a chamada levou os recursos (#149). */
+  alocacao?: Alocacao;
 }

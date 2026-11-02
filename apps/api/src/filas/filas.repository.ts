@@ -18,7 +18,7 @@ export const CHAMADA_COMPLETA = {
 export type ChamadaCompleta = Prisma.ChamadaGetPayload<{ include: typeof CHAMADA_COMPLETA }>;
 
 /** Ordem da RN-04 (o enum Prioridade está em ordem crescente; o id desempata). */
-const ORDEM_RN04: Prisma.SenhaOrderByWithRelationInput[] = [
+export const ORDEM_RN04: Prisma.SenhaOrderByWithRelationInput[] = [
   { prioridade: 'desc' },
   { chegadaEm: 'asc' },
   { temAgendamentoPrevio: 'desc' },

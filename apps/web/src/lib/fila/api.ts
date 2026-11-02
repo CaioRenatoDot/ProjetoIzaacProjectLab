@@ -1,5 +1,6 @@
 import { type TipoAtendimento } from '@filas/contracts';
 
+import { type RecursosChamada, type SugestoesChamada } from '@/lib/alocacao/tipos';
 import { type ClienteHttp } from '@/lib/api/cliente-http';
 import { type Pagina } from '@/lib/cadastros/tipos';
 
@@ -21,14 +22,21 @@ export function criarFilaApi(cliente: ClienteHttp) {
       );
     },
 
+    /** Recursos sugeridos para a próxima senha, antes de chamar (#149). Nada é reservado. */
+    sugestoesChamada: (filaId: string) =>
+      cliente.requisitar<SugestoesChamada>(
+        `/filas/${encodeURIComponent(filaId)}/chamadas/sugestoes`,
+      ),
+
     /**
      * "Chamar próxima" (UC-09). A mesma `chaveIdempotencia` em duplo clique ou reenvio devolve a
-     * mesma chamada, sem chamar outra senha (`docs/04` §6).
+     * mesma chamada, sem chamar outra senha (`docs/04` §6). Com `alocacao` (#149), a senha já sai
+     * alocada e o telão mostra a sala; se a alocação for recusada, nada é chamado.
      */
-    chamarProxima: (filaId: string, chaveIdempotencia: string) =>
+    chamarProxima: (filaId: string, chaveIdempotencia: string, alocacao?: RecursosChamada) =>
       cliente.requisitar<ResultadoChamada>(`/filas/${encodeURIComponent(filaId)}/chamadas`, {
         metodo: 'POST',
-        corpo: {},
+        corpo: alocacao ? { alocacao } : {},
         cabecalhos: { 'Idempotency-Key': chaveIdempotencia },
       }),
 

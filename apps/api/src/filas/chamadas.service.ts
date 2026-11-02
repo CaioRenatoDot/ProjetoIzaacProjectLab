@@ -6,6 +6,7 @@ import {
   type SenhaResumo,
 } from '@filas/contracts';
 
+import { AlocacaoService } from '../alocacao/alocacao.service';
 import { ErroDominio } from '../common/errors/erro-dominio';
 import { EventosDominio } from '../common/eventos/eventos-dominio';
 import { IdempotenciaService } from '../common/idempotencia/idempotencia.service';
@@ -48,7 +49,8 @@ const chamadaEncerrada = () =>
 /**
  * Chamar a próxima senha (UC-09, RF-05), rechamar e cancelar. A seleção usa
  * `FOR UPDATE SKIP LOCKED` numa única transação (DAS §6.1) e a mudança de status passa pela
- * máquina de estados.
+ * máquina de estados. Com recursos na entrada (#149), a alocação entra na mesma transação e o
+ * telão mostra a sala: se ela for recusada, nenhuma senha é chamada.
  */
 @Injectable()
 export class ChamadasService {
@@ -61,12 +63,13 @@ export class ChamadasService {
     private readonly idempotencia: IdempotenciaService,
     private readonly eventos: EventosDominio,
     private readonly bloqueio: BloqueioService,
+    private readonly alocacao: AlocacaoService,
   ) {}
 
   async chamarProxima(
     filaId: string,
     entrada: ChamarProximaEntrada,
-    usuario: { id: string; unidadeId: string },
+    usuario: { id: string; unidadeId: string; perfilNome?: string },
     chaveIdempotencia: string | undefined,
   ): Promise<ResultadoChamada> {
     await this.bloqueio.atualizar(filaId, usuario.unidadeId);
@@ -107,10 +110,13 @@ export class ChamadasService {
           versao: proxima.versao,
           para: 'CHAMADA',
         });
+        const alocacao = entrada.alocacao
+          ? await this.alocacao.alocarNaChamada(tx, proxima.id, entrada.alocacao, usuario)
+          : undefined;
         const chamada = await this.repositorio.criarChamada(tx, {
           senhaId: proxima.id,
           usuarioId: usuario.id,
-          localExibicao: entrada.localExibicao ?? fila.nome,
+          localExibicao: alocacao?.sala.nome ?? entrada.localExibicao ?? fila.nome,
           sequencia: await this.repositorio.proximaSequencia(tx, proxima.id),
         });
         const senha = await this.resumo(tx, proxima.id, usuario.unidadeId);
@@ -119,6 +125,7 @@ export class ChamadasService {
           chamada: paraChamada(chamada),
           furouFilaPorUrgencia,
           toleranciaAte: senha.toleranciaAte!,
+          ...(alocacao && { alocacao }),
         };
         return {
           corpo: resultado,

@@ -1,6 +1,12 @@
 import { expect, type Page, test } from '@playwright/test';
 
-import { abrirFilaDaNutricao, detalhes, emitirSenhaPelaApi, entrar } from './apoio';
+import {
+  abrirFilaDaNutricao,
+  chamarComRecursos,
+  detalhes,
+  emitirSenhaPelaApi,
+  entrar,
+} from './apoio';
 
 /**
  * Aviso de impacto da W-04 pelo 409 IMPACTO_EM_USO da API (#79, #140). Aloca uma senha da
@@ -21,10 +27,7 @@ test('T-04: editar sala alocada pede a confirmação da API; sem uso, grava dire
   const numero = await emitirSenhaPelaApi(request, 7);
   await entrar(page);
   await abrirFilaDaNutricao(page);
-  await page.getByRole('button', { name: 'Chamar próxima' }).click();
-  await (await detalhes(page, numero)).getByRole('link', { name: 'Alocar recursos' }).click();
-  await page.getByRole('button', { name: 'Confirmar alocação' }).click();
-  await expect(page.getByText(`Recursos alocados à senha ${numero}:`).first()).toBeVisible();
+  await chamarComRecursos(page, numero);
 
   // Em uso: a API recusa sem `?confirmar=true` e a tela mostra o uso que ela descreveu.
   await mudarSituacaoDaSala04(page, 'Indisponível');

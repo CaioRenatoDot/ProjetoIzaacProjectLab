@@ -5,6 +5,7 @@ import { API_URL } from '@/lib/api/config';
 import { type Chamada, type Fila, type SenhaResumo } from '@/lib/fila/tipos';
 import { type Reclassificacao } from '@/lib/triagem/tipos';
 
+import { alocarNaChamada } from './alocacao';
 import { usuarioMockDaRequisicao } from './handlers';
 
 /**
@@ -31,6 +32,8 @@ let filas: Fila[] = [];
 let senhas: SenhaSimulada[] = [];
 let sequencia = 0;
 const respostasIdempotentes = new Map<string, Record<string, unknown>>();
+/** Local exibido no telão por chamada (#149); sem recursos na chamada, o nome da fila. */
+const locais = new Map<string, string>();
 const antesDoQuadro = new Set<() => void>();
 
 /** Estado compartilhado: a simulação de ausências registra sobre as mesmas senhas. */
@@ -145,6 +148,7 @@ function senha(filaBase: Fila, agora: number, s: SementeSenha): SenhaSimulada {
 
 export function reiniciarMockFilas() {
   const agora = Date.now();
+  locais.clear();
   const fisioterapia = fila('fila-ausencias-dev', 'especialidade-1', 'Fisioterapia');
   const fonoaudiologia = fila('fila-fonoaudiologia', 'especialidade-2', 'Fonoaudiologia', {
     ativo: true,
@@ -304,7 +308,7 @@ export function reiniciarMockFilas() {
 reiniciarMockFilas();
 
 /** Ordem da RN-04: prioridade, depois chegada, depois agendamento prévio. */
-function ordemRn04(a: SenhaResumo, b: SenhaResumo) {
+export function ordemRn04(a: SenhaResumo, b: SenhaResumo) {
   return (
     PESO_PRIORIDADE[a.prioridade] - PESO_PRIORIDADE[b.prioridade] ||
     Date.parse(a.chegadaEm) - Date.parse(b.chegadaEm) ||
@@ -358,7 +362,7 @@ function chamadaDe(s: SenhaSimulada, f: Fila): Chamada {
     id: s.chamadaId ?? '',
     senhaId: s.id,
     numero: s.numero,
-    local: f.especialidade,
+    local: (s.chamadaId && locais.get(s.chamadaId)) ?? f.especialidade,
     sequencia: s.sequenciaChamada,
     chamadoEm: s.chamadaEm ?? new Date().toISOString(),
     chamadoPor: 'Usuário de desenvolvimento',
@@ -416,7 +420,7 @@ export const handlersFilas = [
     });
   }),
 
-  http.post(`${API_URL}/filas/:id/chamadas`, ({ request, cookies, params }) => {
+  http.post(`${API_URL}/filas/:id/chamadas`, async ({ request, cookies, params }) => {
     const erro = autorizar(request, cookies, 'fila:chamar');
     if (erro) return erro;
     // Mesma chave em até 10 minutos devolve a resposta original (docs/04 §6).
@@ -450,6 +454,23 @@ export const handlersFilas = [
         (s) =>
           s.prioridade !== 'URGENTE' && Date.parse(s.chegadaEm) < Date.parse(proxima.chegadaEm),
       );
+    // #149: os recursos vão junto; recusa da alocação não chama ninguém.
+    const { alocacao: recursos } = ((await request.json().catch(() => ({}))) ?? {}) as {
+      alocacao?: { estudanteId?: string; supervisorId?: string | null; salaId?: string };
+    };
+    let alocacao;
+    if (recursos) {
+      const semAlocar = autorizar(request, cookies, 'alocacao:criar');
+      if (semAlocar) return semAlocar;
+      const resultado = alocarNaChamada(proxima, recursos, request, cookies);
+      if ('falha' in resultado) {
+        return HttpResponse.json(resultado.falha.corpo, {
+          status: resultado.falha.status,
+          headers: { 'Content-Type': 'application/problem+json' },
+        });
+      }
+      alocacao = resultado.alocacao;
+    }
     const agora = Date.now();
     sequencia += 1;
     proxima.status = 'CHAMADA';
@@ -457,13 +478,15 @@ export const handlersFilas = [
     proxima.toleranciaAte = new Date(agora + f.toleranciaMinutos * 60_000).toISOString();
     proxima.chamadaId = `chamada-simulada-${sequencia}`;
     proxima.sequenciaChamada = 1;
-    proxima.versao += 1;
+    proxima.versao += alocacao ? 2 : 1;
+    if (alocacao) locais.set(proxima.chamadaId, alocacao.sala.nome);
 
     const corpo = {
       senha: resumo(proxima, f, agora),
       chamada: chamadaDe(proxima, f),
       furouFilaPorUrgencia,
       toleranciaAte: proxima.toleranciaAte,
+      ...(alocacao && { alocacao }),
     };
     if (chave) respostasIdempotentes.set(chave, corpo);
     return HttpResponse.json(corpo, { status: 201 });

@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  ForbiddenException,
   Headers,
   HttpCode,
   Param,
@@ -25,6 +26,8 @@ import {
 } from '@filas/contracts';
 import { type Request } from 'express';
 
+import { SugestoesChamada } from '../alocacao/dto/sugestoes.dto';
+import { SugestoesService } from '../alocacao/sugestoes.service';
 import { type UsuarioAutenticado } from '../auth/usuario-autenticado';
 import { Auditar, Requer } from '../common/autorizacao/decorators';
 import { IdPipe } from '../common/validation/id.pipe';
@@ -39,6 +42,7 @@ export class FilasController {
   constructor(
     private readonly filas: FilasService,
     private readonly chamadas: ChamadasService,
+    private readonly sugestoes: SugestoesService,
   ) {}
 
   @Get()
@@ -95,6 +99,16 @@ export class FilasController {
     return this.filas.quadro(id, query, req.usuario.unidadeId);
   }
 
+  /** Prévia de "Chamar próxima" com recursos (#149); nada é reservado. */
+  @Get(':id/chamadas/sugestoes')
+  @Requer('alocacao:consultar')
+  sugerirParaChamada(
+    @Param('id', IdPipe) id: string,
+    @Req() req: Requisicao,
+  ): Promise<SugestoesChamada> {
+    return this.sugestoes.paraChamada(id, req.usuario.unidadeId);
+  }
+
   @Post(':id/chamadas')
   @Requer('fila:chamar')
   @Auditar({ entidade: 'chamada', operacao: 'CRIAR' })
@@ -104,6 +118,10 @@ export class FilasController {
     @Headers('idempotency-key') chave: string | undefined,
     @Req() req: Requisicao,
   ): Promise<ResultadoChamada> {
+    // Levar os recursos é alocar: exige também a permissão de alocação.
+    if (entrada.alocacao && !req.usuario.permissoes.includes('alocacao:criar')) {
+      throw new ForbiddenException();
+    }
     return this.chamadas.chamarProxima(id, entrada, req.usuario, chave);
   }
 }
