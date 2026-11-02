@@ -37,3 +37,14 @@ export const SugestoesAlocacao = z
   })
   .strict();
 export type SugestoesAlocacao = z.infer<typeof SugestoesAlocacao>;
+
+/**
+ * Prévia do "Chamar próxima" (#149): sugestões pela especialidade da fila e a senha que vem a
+ * seguir pela RN-04. Nada é reservado; a senha só é escolhida, com trava, na chamada.
+ */
+export const SugestoesChamada = SugestoesAlocacao.omit({ senhaId: true })
+  .extend({
+    proxima: z.object({ numero: z.string(), prioridade: z.string() }).strict().nullable(),
+  })
+  .strict();
+export type SugestoesChamada = z.infer<typeof SugestoesChamada>;
