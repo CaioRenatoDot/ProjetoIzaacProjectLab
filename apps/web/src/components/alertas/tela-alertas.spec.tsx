@@ -3,13 +3,16 @@ import { focusManager } from '@tanstack/react-query';
 import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { API_URL } from '@/lib/api/config';
 import { dispararAlertaMock, normalizarAlertaMock } from '@/mocks/alertas';
 import { renderizarComSessao, servidor, usarServidorMock } from '@/test/servidor-mock';
+import { socketFalso } from '@/test/socket-falso';
 
 import { TelaAlertas } from './tela-alertas';
+
+vi.mock('socket.io-client', async () => (await import('@/test/socket-falso')).moduloSocketFalso);
 
 usarServidorMock();
 
@@ -184,6 +187,32 @@ describe('<TelaAlertas> (W-18 / T-17)', () => {
       'href',
       '/fila?filaId=fila-1',
     );
+  });
+
+  it('T-17: evento do canal /alertas atualiza a lista e anuncia, sem esperar a revalidação', async () => {
+    abrir();
+    await carregado();
+    await waitFor(() => expect(socketFalso.ouvindo('sla.excedido')).toBe(true));
+
+    dispararAlertaMock({ especialidade: 'Odontologia' });
+    act(() => socketFalso.emitir('sla.excedido', {}));
+
+    await waitFor(() => expect(cartoes()).toHaveLength(4));
+    expect(avisos()).toHaveTextContent(/Odontologia/);
+  });
+
+  it('RNF-04: perda do canal mostra o banner e pausa as ações até voltar', async () => {
+    abrir();
+    await carregado();
+    const reconhecer = screen.getByRole('button', { name: 'Reconhecer alerta de Fisioterapia' });
+    expect(reconhecer).toBeEnabled();
+
+    act(() => socketFalso.emitir('connect_error', new Error('sem rede')));
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Conexão perdida/);
+    expect(reconhecer).toBeDisabled();
+
+    act(() => socketFalso.emitir('connect'));
+    await waitFor(() => expect(reconhecer).toBeEnabled());
   });
 
   it('sem alertas:consultar, mostra o estado sem permissão neutro', () => {

@@ -36,7 +36,7 @@ export function Shell({ sessao, children }: ShellProps) {
 
   return (
     <PermissoesProvider permissoes={sessao.permissoes}>
-      {/* Conexão sempre ativa até o tempo real entrar (Etapa 6). */}
+      {/* Só as telas com canal dependem do socket: cada uma informa o próprio estado (use-canal). */}
       <ConexaoProvider conectado>
         <ToastProvider>
           <a

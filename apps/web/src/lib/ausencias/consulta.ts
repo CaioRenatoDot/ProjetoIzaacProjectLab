@@ -6,6 +6,7 @@ import { type SenhaOcorrencia } from './api';
 export interface FilaAusencias {
   id: string;
   nome: string;
+  especialidadeId: string;
   especialidade: string;
 }
 

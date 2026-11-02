@@ -1,16 +1,23 @@
 import { PermissoesProvider, ToastProvider } from '@filas/ui';
-import { screen, waitFor, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { senhasDaSimulacao } from '@/mocks/filas';
-import { comSessaoAnterior, renderizarComSessao, usarServidorMock } from '@/test/servidor-mock';
+import {
+  comSessaoAnterior,
+  renderizarComSessao,
+  servidor,
+  usarServidorMock,
+} from '@/test/servidor-mock';
+import { socketFalso } from '@/test/socket-falso';
 
 import { ListaAtendimentos } from './lista-atendimentos';
 import { TelaAtendimento } from './tela-atendimento';
 
 const push = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push, replace: vi.fn() }) }));
+vi.mock('socket.io-client', async () => (await import('@/test/socket-falso')).moduloSocketFalso);
 
 usarServidorMock();
 beforeEach(() => push.mockClear());
@@ -47,6 +54,48 @@ const status = (texto: string) =>
   waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(texto));
 
 describe('<TelaAtendimento> (W-12 / W-13 / T-13)', () => {
+  describe('tempo real (canal /filas)', () => {
+    const COM_CANAL = [...ESTUDANTE, 'fila:consultar'];
+
+    it('mudança feita por outra pessoa na senha aberta recarrega; em outra senha, não', async () => {
+      let leituras = 0;
+      servidor.events.on('request:start', ({ request }) => {
+        if (new URL(request.url).pathname.endsWith('/senhas/senha-n107')) leituras += 1;
+      });
+      abrir('senha-n107', COM_CANAL);
+      await titulo('N107');
+      await waitFor(() => expect(socketFalso.ouvindo('senha.status_alterado')).toBe(true));
+      await waitFor(() => expect(leituras).toBeGreaterThan(0));
+      const antes = leituras;
+
+      act(() => socketFalso.emitir('senha.status_alterado', { senhaId: 'senha-f016' }));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      expect(leituras).toBe(antes);
+
+      act(() => socketFalso.emitir('senha.status_alterado', { senhaId: 'senha-n107' }));
+      await waitFor(() => expect(leituras).toBeGreaterThan(antes));
+      servidor.events.removeAllListeners();
+    });
+
+    it('RNF-04: perda do canal mostra o banner e pausa as ações', async () => {
+      abrir('senha-n107', COM_CANAL);
+      await titulo('N107');
+      await waitFor(() => expect(socketFalso.ouvindo('connect_error')).toBe(true));
+
+      act(() => socketFalso.emitir('connect_error', new Error('sem rede')));
+
+      expect(await screen.findByText(/Conexão perdida/)).toBeInTheDocument();
+      expect(botao('Encerrar atendimento')).toBeDisabled();
+    });
+
+    it('sem fila:consultar, não abre o canal e as ações seguem liberadas', async () => {
+      abrir('senha-n107');
+      await titulo('N107');
+      expect(socketFalso.ouvindo('senha.status_alterado')).toBe(false);
+      expect(botao('Encerrar atendimento')).toBeEnabled();
+    });
+  });
+
   it('em atendimento: cabeçalho com recursos e duração, triagem com aviso de acesso registrado', async () => {
     abrir('senha-f016');
     expect(await titulo('F016')).toHaveTextContent('Sala 01');

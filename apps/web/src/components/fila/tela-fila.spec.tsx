@@ -12,6 +12,8 @@ const socketFalso = vi.hoisted(() => {
   const ouvintes = new Map<string, ((...args: unknown[]) => void)[]>();
   return {
     ouvintes,
+    active: true,
+    connect() {},
     on(evento: string, ouvinte: (...args: unknown[]) => void) {
       ouvintes.set(evento, [...(ouvintes.get(evento) ?? []), ouvinte]);
     },
