@@ -10,6 +10,7 @@ import { handlersAlocacao } from './alocacao';
 import { handlersAtendimentos } from './atendimentos';
 import { handlersEncaminhamentos } from './encaminhamentos';
 import { handlersFilas } from './filas';
+import { handlersTriagens } from './triagens';
 
 export const worker = setupWorker(
   ...handlers,
@@ -17,6 +18,7 @@ export const worker = setupWorker(
   ...handlersCadastros,
   ...handlersCatalogos,
   ...handlersFilas,
+  ...handlersTriagens,
   ...handlersAlocacao,
   ...handlersAtendimentos,
   ...handlersEncaminhamentos,

@@ -1,5 +1,7 @@
 import { type Permissao } from '@filas/ui';
 
+import { type FonteHome } from './home-fontes';
+
 export interface AcaoPrimaria {
   rotulo: string;
   rota: string;
@@ -9,18 +11,22 @@ export interface AcaoPrimaria {
 export interface BlocoHome {
   id: string;
   titulo: string;
-  /** Texto do estado vazio enquanto não há dados (ou a API do bloco ainda não existe). */
+  /** Texto do estado vazio, quando a consulta não traz dados (ou o bloco não tem consulta). */
   vazio: string;
   permissao: Permissao;
+  /** De onde vêm os itens do bloco (`lib/home-fontes.ts`). */
+  fonte?: FonteHome;
   acao?: AcaoPrimaria;
 }
 
 export interface IndicadorHome {
   rotulo: string;
   unidade: string;
+  unidadeNoSingular: string;
   /** Tela de destino, já filtrada. */
   rota: string;
   permissao: Permissao;
+  fonte: FonteHome;
 }
 
 /**
@@ -33,6 +39,7 @@ export const BLOCOS: readonly BlocoHome[] = [
     titulo: 'Fila resumida',
     vazio: 'Nenhuma senha aguardando agora.',
     permissao: 'fila:consultar',
+    fonte: 'filas',
     acao: { rotulo: 'Chamar próxima', rota: '/chamada', permissao: 'fila:chamar' },
   },
   {
@@ -40,13 +47,16 @@ export const BLOCOS: readonly BlocoHome[] = [
     titulo: 'Triagens do dia',
     vazio: 'Nenhuma triagem registrada hoje.',
     permissao: 'triagem:criar',
+    fonte: 'triagens',
     acao: { rotulo: 'Nova triagem', rota: '/triagem', permissao: 'triagem:criar' },
   },
   {
     id: 'estudante',
-    titulo: 'Atendimento atual',
-    vazio: 'Você não tem atendimento em andamento.',
+    // O modelo não liga o usuário ao estudante (docs/07, Atendimento): a lista é a da unidade.
+    titulo: 'Atendimentos em andamento',
+    vazio: 'Nenhum atendimento em andamento na unidade.',
     permissao: 'atendimento:criar',
+    fonte: 'atendimentos',
     acao: { rotulo: 'Iniciar atendimento', rota: '/atendimento', permissao: 'atendimento:criar' },
   },
   {
@@ -54,12 +64,14 @@ export const BLOCOS: readonly BlocoHome[] = [
     titulo: 'Pendentes de validação',
     vazio: 'Nenhum atendimento aguardando sua validação.',
     permissao: 'atendimento:validar',
+    fonte: 'pendentes',
   },
   {
     id: 'gestao',
     titulo: 'Filas e alertas de SLA',
-    vazio: 'Nenhum alerta de SLA ativo.',
+    vazio: 'Nenhum alerta de SLA em aberto.',
     permissao: 'indicadores:consultar',
+    fonte: 'alertas',
   },
   {
     id: 'administracao',
@@ -74,26 +86,34 @@ export const INDICADORES: readonly IndicadorHome[] = [
   {
     rotulo: 'Aguardando na fila',
     unidade: 'senhas',
+    unidadeNoSingular: 'senha',
     rota: '/fila?status=aguardando',
     permissao: 'fila:consultar',
+    fonte: 'filas',
   },
   {
     rotulo: 'Triagens hoje',
     unidade: 'triagens',
+    unidadeNoSingular: 'triagem',
     rota: '/triagem?periodo=hoje',
     permissao: 'triagem:consultar',
+    fonte: 'triagens',
   },
   {
     rotulo: 'Em atendimento',
     unidade: 'atendimentos',
+    unidadeNoSingular: 'atendimento',
     rota: '/atendimento?status=em_atendimento',
     permissao: 'atendimento:consultar',
+    fonte: 'atendimentos',
   },
   {
     rotulo: 'Alertas de SLA',
     unidade: 'alertas',
+    unidadeNoSingular: 'alerta',
     rota: '/indicadores/alertas',
     permissao: 'alertas:consultar',
+    fonte: 'alertas',
   },
 ];
 
@@ -111,9 +131,12 @@ export function montarHome(permissoes: readonly string[]) {
   };
 }
 
+export const unidadeDoIndicador = (indicador: IndicadorHome, valor: number) =>
+  valor === 1 ? indicador.unidadeNoSingular : indicador.unidade;
+
 /** Rótulo completo para leitor de tela: nome, valor e unidade. */
 export function rotuloIndicador(indicador: IndicadorHome, valor: number | null) {
   return valor === null
     ? `${indicador.rotulo}: sem dados no momento`
-    : `${indicador.rotulo}: ${valor} ${indicador.unidade}`;
+    : `${indicador.rotulo}: ${valor} ${unidadeDoIndicador(indicador, valor)}`;
 }
