@@ -19,9 +19,15 @@ export function reiniciarMockAuth() {
   bloqueios.clear();
 }
 
-function problema(status: number, codigo: string, title: string, detail: string) {
+function problema(
+  status: number,
+  codigo: string,
+  title: string,
+  detail: string,
+  extras: Record<string, unknown> = {},
+) {
   return HttpResponse.json(
-    { title, status, codigo, detail },
+    { title, status, codigo, detail, ...extras },
     { status, headers: { 'Content-Type': 'application/problem+json' } },
   );
 }
@@ -64,6 +70,7 @@ export const handlers = [
         'BLOQUEIO_TEMPORARIO',
         'Acesso bloqueado temporariamente',
         `Excesso de tentativas. Tente novamente em ${minutos} minutos.`,
+        { minutosRestantes: minutos },
       );
     }
 
@@ -79,6 +86,7 @@ export const handlers = [
           'BLOQUEIO_TEMPORARIO',
           'Acesso bloqueado temporariamente',
           `Excesso de tentativas. Tente novamente em ${BLOQUEIO_MINUTOS} minutos.`,
+          { minutosRestantes: BLOQUEIO_MINUTOS },
         );
       }
       return problema(
@@ -90,14 +98,6 @@ export const handlers = [
     }
 
     tentativas.delete(chave);
-    if (!usuario.sessao) {
-      return problema(
-        403,
-        'SEM_PERFIL',
-        'Conta sem perfil',
-        'Sua conta ainda não tem perfil de acesso. Procure a administração da unidade.',
-      );
-    }
     return HttpResponse.json(
       {
         accessToken: tokenPara(usuario.sessao.id),

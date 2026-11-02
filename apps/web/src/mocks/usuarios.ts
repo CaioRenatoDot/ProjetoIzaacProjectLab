@@ -27,8 +27,7 @@ const UNIDADE = { unidadeId: 'unidade-mock', unidadeNome: 'Clínica-Escola' };
 
 interface UsuarioMock {
   identificacoes: readonly string[];
-  /** `null` simula conta sem perfil vinculado (403 no login). */
-  sessao: UsuarioSessao | null;
+  sessao: UsuarioSessao;
 }
 
 export const USUARIOS_MOCK: readonly UsuarioMock[] = [
@@ -60,7 +59,6 @@ export const USUARIOS_MOCK: readonly UsuarioMock[] = [
       ...UNIDADE,
     },
   },
-  { identificacoes: ['semperfil@clinica.edu.br', '2021000003'], sessao: null },
 ];
 
 export function buscarUsuarioMock(identificacao: string) {
@@ -69,5 +67,5 @@ export function buscarUsuarioMock(identificacao: string) {
 }
 
 export function usuarioMockPorId(id: string) {
-  return USUARIOS_MOCK.find((u) => u.sessao?.id === id)?.sessao ?? null;
+  return USUARIOS_MOCK.find((u) => u.sessao.id === id)?.sessao ?? null;
 }
