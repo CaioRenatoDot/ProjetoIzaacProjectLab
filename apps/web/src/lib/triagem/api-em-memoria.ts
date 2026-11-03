@@ -13,7 +13,7 @@ import {
 const PACIENTES: PacienteBusca[] = [
   {
     id: 'pac-1',
-    iniciais: 'M. A. S.',
+    nomeCompleto: 'Maria Aparecida Souza',
     documento: '12345678900',
     vinculo: 'EXTERNO',
     restricaoAtiva: false,
@@ -21,7 +21,7 @@ const PACIENTES: PacienteBusca[] = [
   },
   {
     id: 'pac-2',
-    iniciais: 'J. P. O.',
+    nomeCompleto: 'João Pedro Oliveira',
     documento: '98765432100',
     vinculo: 'ALUNO',
     restricaoAtiva: true,
@@ -29,7 +29,7 @@ const PACIENTES: PacienteBusca[] = [
   },
   {
     id: 'pac-3',
-    iniciais: 'A. C. L.',
+    nomeCompleto: 'Ana Clara Lima',
     documento: '11122233344',
     vinculo: 'SERVIDOR',
     restricaoAtiva: false,
@@ -37,12 +37,12 @@ const PACIENTES: PacienteBusca[] = [
   },
 ];
 
-/** Nomes completos só existem aqui para a busca por nome; nunca saem do mock (P-03). */
-const NOMES: Record<string, string> = {
-  'pac-1': 'Maria Aparecida Souza',
-  'pac-2': 'João Pedro Oliveira',
-  'pac-3': 'Ana Clara Lima',
-};
+/** Iniciais como a API devolve na triagem e na senha (a abreviação é do servidor). */
+const iniciais = (nome: string) =>
+  nome
+    .split(/\s+/)
+    .map((parte) => `${parte[0]}.`)
+    .join(' ');
 
 const ESPECIALIDADES: EspecialidadeTriagem[] = [
   { id: 'esp-fisio', nome: 'Fisioterapia', ativa: true, filasVinculadas: 1 },
@@ -92,7 +92,7 @@ export function criarTriagemApiEmMemoria(opcoes: OpcoesTriagemEmMemoria = {}): T
       return Promise.resolve(
         PACIENTES.filter(
           (p) =>
-            semAcento(NOMES[p.id] ?? '').includes(alvo) ||
+            semAcento(p.nomeCompleto).includes(alvo) ||
             (digitos.length > 0 && p.documento.includes(digitos)),
         ),
       );
@@ -115,7 +115,7 @@ export function criarTriagemApiEmMemoria(opcoes: OpcoesTriagemEmMemoria = {}): T
       sequencia += 1;
       const triagem: TriagemRegistrada = {
         id: `tri-${sequencia}`,
-        pacienteIniciais: paciente.iniciais,
+        pacienteIniciais: iniciais(paciente.nomeCompleto),
         especialidadeId: especialidade.id,
         especialidade: especialidade.nome,
         tipoAtendimento: entrada.tipoAtendimento,

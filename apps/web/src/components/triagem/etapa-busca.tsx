@@ -20,7 +20,7 @@ export interface EtapaBuscaProps {
   onSelecionar: (paciente: PacienteBusca) => void;
 }
 
-/** Etapa 1 de W-06: busca por nome ou documento, resultado com nome abreviado (P-03). */
+/** Etapa 1 de W-06: busca por nome ou documento, resultado com o nome completo (#152). */
 export function EtapaBusca({ api, onSelecionar }: EtapaBuscaProps) {
   const titulo = useFocoNoTitulo();
   const idBusca = useId();
@@ -97,14 +97,14 @@ export function EtapaBusca({ api, onSelecionar }: EtapaBuscaProps) {
                 className="flex items-center justify-between gap-3 rounded-md border border-borda-suave p-3"
               >
                 <span className="flex flex-col">
-                  <span className="font-semibold">{p.iniciais}</span>
+                  <span className="font-semibold">{p.nomeCompleto}</span>
                   <span className="text-secundario text-texto-secundario">
                     Documento {mascararDocumento(p.documento)}
                     {p.restricaoAtiva ? ' · com restrição por ausências' : ''}
                   </span>
                 </span>
                 <Button variante="secundario" onClick={() => onSelecionar(p)}>
-                  Selecionar<span className="sr-only"> paciente {p.iniciais}</span>
+                  Selecionar<span className="sr-only"> paciente {p.nomeCompleto}</span>
                 </Button>
               </li>
             ))}

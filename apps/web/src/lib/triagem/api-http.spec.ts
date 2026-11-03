@@ -20,7 +20,7 @@ const paciente = (id: string, ativo = true) => ({
 });
 
 describe('cliente HTTP da triagem (W-06, W-07)', () => {
-  it('P-03: a busca não repassa o nome completo para a tela e ignora inativos', async () => {
+  it('#152: a busca traz o nome completo, sem os demais dados do cadastro, e ignora inativos', async () => {
     const requisitar = vi
       .fn()
       .mockResolvedValue({ dados: [paciente('p1'), paciente('p2', false)] });
@@ -30,7 +30,7 @@ describe('cliente HTTP da triagem (W-06, W-07)', () => {
     expect(pacientes).toEqual([
       {
         id: 'p1',
-        iniciais: 'N. C. F.',
+        nomeCompleto: 'Nome Completo Fictício',
         documento: '00000000001',
         vinculo: 'ALUNO',
         restricaoAtiva: false,

@@ -6,8 +6,10 @@ async function buscarEAbrirFicha(page: Page, termo = 'maria') {
   await page.goto('/triagem');
   await page.getByLabel('Nome ou documento').fill(termo);
   await page.getByRole('button', { name: 'Buscar' }).click();
-  await page.getByRole('button', { name: /Selecionar paciente M\. A\. S\./ }).click();
-  await expect(page.getByRole('heading', { name: /Triagem: ficha de M\. A\. S\./ })).toBeFocused();
+  await page.getByRole('button', { name: /Selecionar paciente Maria Aparecida Souza/ }).click();
+  await expect(
+    page.getByRole('heading', { name: /Triagem: ficha de Maria Aparecida Souza/ }),
+  ).toBeFocused();
 }
 
 async function preencherFicha(page: Page) {
@@ -61,7 +63,7 @@ test.describe('triagem e emissão de senha (#39, #40)', () => {
     await page.goto('/triagem');
     await page.getByLabel('Nome ou documento').fill('joão');
     await page.getByRole('button', { name: 'Buscar' }).click();
-    await page.getByRole('button', { name: /Selecionar paciente J\. P\. O\./ }).click();
+    await page.getByRole('button', { name: /Selecionar paciente João Pedro Oliveira/ }).click();
     await expect(page.getByText('Paciente com restrição por ausências repetidas.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Concluir triagem' })).toBeEnabled();
   });
@@ -119,7 +121,7 @@ test.describe('triagem e emissão de senha (#39, #40)', () => {
 
     await page.getByLabel('Nome ou documento').fill('maria');
     await page.getByRole('button', { name: 'Buscar' }).click();
-    await page.getByRole('button', { name: /Selecionar paciente M\. A\. S\./ }).click();
+    await page.getByRole('button', { name: /Selecionar paciente Maria Aparecida Souza/ }).click();
     await semViolacoesDeAcessibilidade(page);
 
     await page.getByLabel(/^Prioridade/).selectOption('URGENTE');

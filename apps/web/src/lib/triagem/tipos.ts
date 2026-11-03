@@ -7,10 +7,13 @@ import {
 
 /** Tipos conforme `docs/api/openapi.yaml` (tags "Triagem" e "Senhas"). */
 
-/** Resultado da busca de paciente: só o necessário para escolher (nome abreviado, P-03). */
+/**
+ * Resultado da busca de paciente: o necessário para escolher a pessoa certa. O nome vai completo
+ * (#152): a busca identifica o paciente, como a lista de cadastros; diverge da P-03 (`docs/08` §4).
+ */
 export interface PacienteBusca {
   id: string;
-  iniciais: string;
+  nomeCompleto: string;
   documento: string;
   vinculo: VinculoPaciente;
   /** Reincidência de ausências (RN-13): avisa, mas não impede a triagem. */

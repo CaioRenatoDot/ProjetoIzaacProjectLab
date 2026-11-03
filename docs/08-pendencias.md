@@ -137,6 +137,7 @@ o modelo não tem onde configurar esse protocolo. Hoje o motivo é sempre opcion
 | Base legal e prazo de retenção de triagem e atendimento   | `docs/03` §6   | Sem rotina de retenção                                                                                                                                             |
 | Alocar antes de chamar (diverge da pré-condição do UC-10) | #149           | Quem tem `alocacao:criar` escolhe os recursos no "Chamar próxima" e o telão mostra a sala; sem recurso apto, não chama. Sem essa permissão, a chamada segue direta |
 | Recepcionista e atendente (UC-01, UC-09, UC-10)           | #150           | Mesmo perfil, Recepção: cadastra, chama e aloca                                                                                                                    |
+| Nome completo na triagem (diverge da P-03)                | #152           | Busca, ficha e senha da triagem mostram o nome completo; fila, alocação e ausências seguem com iniciais; telão sem nome                                            |
 
 ## 5. Front-end: o que fazer ao integrar com a API real
 

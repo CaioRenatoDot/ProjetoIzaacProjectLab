@@ -38,7 +38,7 @@ test('MVP: cadastro → triagem → senha → chamada no telão → alocação �
   await page.goto('/triagem');
   await page.getByLabel('Nome ou documento').fill(documento);
   await page.getByRole('button', { name: 'Buscar' }).click();
-  await page.getByRole('button', { name: /Selecionar paciente P\. F\. R\./ }).click();
+  await page.getByRole('button', { name: /Selecionar paciente Paciente Fluxo Real/ }).click();
   await page.getByLabel(/Especialidade de destino/).selectOption({ label: 'Nutrição' });
   await page.getByLabel(/Motivo do atendimento/).fill('Reeducação alimentar (dado fictício)');
   await page.getByRole('button', { name: 'Concluir triagem' }).click();

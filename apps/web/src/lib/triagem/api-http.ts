@@ -45,9 +45,9 @@ export function criarTriagemHttp(cliente: ClienteHttp): TriagemApi {
       );
       return pagina.dados
         .filter((paciente) => paciente.ativo)
-        .map(({ id, iniciais, documento, vinculo, restricaoAtiva, restricaoAte }) => ({
+        .map(({ id, nomeCompleto, documento, vinculo, restricaoAtiva, restricaoAte }) => ({
           id,
-          iniciais,
+          nomeCompleto,
           documento,
           vinculo,
           restricaoAtiva,

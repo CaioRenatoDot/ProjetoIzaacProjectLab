@@ -9,7 +9,7 @@ import { renderizar } from '@/test/renderizar';
 
 const paciente: PacienteBusca = {
   id: 'pac-1',
-  iniciais: 'M. A. S.',
+  nomeCompleto: 'Maria Aparecida Souza',
   documento: '12345678900',
   vinculo: 'EXTERNO',
   restricaoAtiva: false,
@@ -117,6 +117,8 @@ describe('EtapaFicha (W-06)', () => {
 
   it('a mudança de etapa leva o foco para o título', async () => {
     await abrir();
-    expect(screen.getByRole('heading', { name: /Triagem: ficha de M\. A\. S\./ })).toHaveFocus();
+    expect(
+      screen.getByRole('heading', { name: /Triagem: ficha de Maria Aparecida Souza/ }),
+    ).toHaveFocus();
   });
 });
