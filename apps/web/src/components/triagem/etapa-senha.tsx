@@ -22,13 +22,15 @@ import {
 export interface EtapaSenhaProps {
   api: TriagemApi;
   triagem: TriagemRegistrada;
+  /** Nome completo do paciente escolhido na busca (#152). */
+  pacienteNome: string;
   onNovaTriagem: () => void;
 }
 
 /**
  * Etapa 3 de W-06 / W-07: resumo da triagem sem o motivo clínico (P-03), emissão e senha em destaque.
  */
-export function EtapaSenha({ api, triagem, onNovaTriagem }: EtapaSenhaProps) {
+export function EtapaSenha({ api, triagem, pacienteNome, onNovaTriagem }: EtapaSenhaProps) {
   const titulo = useFocoNoTitulo();
   const idTipo = useId();
   const { podeEscrever } = useConexao();
@@ -64,7 +66,7 @@ export function EtapaSenha({ api, triagem, onNovaTriagem }: EtapaSenhaProps) {
         <>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-md border border-borda-suave p-4">
             <dt className="text-texto-secundario">Paciente</dt>
-            <dd>{triagem.pacienteIniciais}</dd>
+            <dd>{pacienteNome}</dd>
             <dt className="text-texto-secundario">Especialidade</dt>
             <dd>{triagem.especialidade}</dd>
             <dt className="text-texto-secundario">Prioridade</dt>

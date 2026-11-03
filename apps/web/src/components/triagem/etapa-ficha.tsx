@@ -141,7 +141,7 @@ export function EtapaFicha({ api, paciente, onTrocarPaciente, onConcluir }: Etap
   return (
     <section aria-labelledby="titulo-ficha" className="flex max-w-2xl flex-col gap-4">
       <h1 id="titulo-ficha" ref={titulo} tabIndex={-1} className="text-pagina font-semibold">
-        Triagem: ficha de {paciente.iniciais}
+        Triagem: ficha de {paciente.nomeCompleto}
       </h1>
       <p className="text-texto-secundario">Etapa 2 de 3</p>
 
