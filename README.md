@@ -170,12 +170,18 @@ Usuários de teste (senha `senha-dev`, ou o valor de `SEED_SENHA_USUARIOS` no `.
 | Usuário                      | Perfil                                                    |
 | ---------------------------- | --------------------------------------------------------- |
 | `admin@clinica.invalid`      | Administrador (todas as permissões, perfil do sistema)    |
-| `recepcao@clinica.invalid`   | Recepção                                                  |
+| `recepcao@clinica.invalid`   | Recepção (cadastra, chama a fila e aloca os recursos)     |
+| `recepcao2@clinica.invalid`  | Recepção (segundo atendente, mesmo perfil)                |
 | `triagem@clinica.invalid`    | Triagem                                                   |
 | `estudante@clinica.invalid`  | Estudante                                                 |
 | `supervisao@clinica.invalid` | Supervisão                                                |
 | `gestao@clinica.invalid`     | Gestão                                                    |
 | `inativo@clinica.invalid`    | Conta inativa (o login responde como credencial inválida) |
+
+Perfil é o papel e usuário é a pessoa: vários atendentes usam o mesmo perfil Recepção, que faz o
+papel de recepcionista e de atendente do PDF (UC-01, UC-09, UC-10). O **Administrador** configura
+o sistema (perfis, permissões, cadastros e parâmetros, UC-04); a **Gestão** acompanha a clínica
+(indicadores, alertas de espera e auditoria, UC-18 a UC-20), sem mudar regras.
 
 O seed cria também 5 especialidades, salas, estudantes, supervisores, cadastros de apoio e 24
 pacientes fictícios (o segundo com restrição por reincidência). Cada especialidade tem uma fila
