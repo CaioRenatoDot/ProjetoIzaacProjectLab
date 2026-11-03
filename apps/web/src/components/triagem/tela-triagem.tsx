@@ -11,7 +11,7 @@ import { type PacienteBusca, type TriagemApi, type TriagemRegistrada } from '@/l
 type Etapa =
   | { passo: 'busca' }
   | { passo: 'ficha'; paciente: PacienteBusca }
-  | { passo: 'senha'; triagem: TriagemRegistrada };
+  | { passo: 'senha'; triagem: TriagemRegistrada; paciente: PacienteBusca };
 
 /** W-06 e W-07: busca de paciente → ficha de triagem → emissão da senha (UC-05, UC-06). */
 export function TelaTriagem({ api }: { api: TriagemApi }) {
@@ -31,7 +31,7 @@ export function TelaTriagem({ api }: { api: TriagemApi }) {
         api={api}
         paciente={etapa.paciente}
         onTrocarPaciente={() => setEtapa({ passo: 'busca' })}
-        onConcluir={(triagem) => setEtapa({ passo: 'senha', triagem })}
+        onConcluir={(triagem) => setEtapa({ passo: 'senha', triagem, paciente: etapa.paciente })}
       />
     );
   }
@@ -39,6 +39,7 @@ export function TelaTriagem({ api }: { api: TriagemApi }) {
     <EtapaSenha
       api={api}
       triagem={etapa.triagem}
+      pacienteNome={etapa.paciente.nomeCompleto}
       onNovaTriagem={() => setEtapa({ passo: 'busca' })}
     />
   );

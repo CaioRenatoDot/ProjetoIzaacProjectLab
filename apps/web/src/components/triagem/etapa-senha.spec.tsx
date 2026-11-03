@@ -18,7 +18,15 @@ async function triagemRegistrada(api: TriagemApi, especialidadeDestinoId = 'esp-
 }
 
 function abrir(api: TriagemApi, triagem: TriagemRegistrada, permissoes: string[] = []) {
-  renderizar(<EtapaSenha api={api} triagem={triagem} onNovaTriagem={vi.fn()} />, permissoes);
+  renderizar(
+    <EtapaSenha
+      api={api}
+      triagem={triagem}
+      pacienteNome="Maria Aparecida Souza"
+      onNovaTriagem={vi.fn()}
+    />,
+    permissoes,
+  );
   return userEvent.setup();
 }
 
@@ -26,7 +34,7 @@ describe('EtapaSenha (W-07)', () => {
   it('mostra o resumo sem o motivo clínico (P-03)', async () => {
     const api = criarTriagemApiEmMemoria();
     abrir(api, await triagemRegistrada(api));
-    expect(screen.getByText('M. A. S.')).toBeVisible();
+    expect(screen.getByText('Maria Aparecida Souza')).toBeVisible();
     expect(screen.getByText('Fisioterapia')).toBeVisible();
     expect(screen.queryByText(/Dor lombar/)).toBeNull();
   });
