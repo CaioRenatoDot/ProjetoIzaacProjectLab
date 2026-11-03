@@ -46,7 +46,12 @@ test.describe('painel de fila (#41)', () => {
     await expect(chamar(page)).toBeEnabled();
   });
 
-  test('RN-03: chamada urgente pede confirmação e a senha vai para "Chamada"', async ({ page }) => {
+  test('RN-03: chamada urgente pede confirmação e a senha vai para "Chamada"', async ({
+    page,
+    context,
+  }) => {
+    // Sem permissão de alocar, a chamada é direta (só a confirmação da urgência).
+    await entrarComPermissoes(context, ['fila:consultar', 'fila:chamar']);
     await abrirFila(page, 'Nutrição');
     await chamar(page).click();
     const dialogo = page.getByRole('dialog', { name: 'Chamar senha urgente' });
@@ -60,10 +65,22 @@ test.describe('painel de fila (#41)', () => {
     );
   });
 
-  test('duplo clique chama uma senha só', async ({ page }) => {
+  test('#149: com alocação, escolhe os recursos e chama já para a sala; duplo clique chama uma só', async ({
+    page,
+  }) => {
     await abrirFila(page, 'Fisioterapia');
     await expect(coluna(page, /^Aguardando/).getByRole('article')).toHaveCount(1);
-    await chamar(page).dblclick();
+    await chamar(page).click();
+    const dialogo = page.getByRole('dialog', { name: 'Chamar próxima senha · Fisioterapia' });
+    await expect(dialogo.getByText(/Próxima pela ordem da fila/)).toContainText('F015');
+    await expect(dialogo.getByRole('radio', { name: /Bruno Lima/ })).toBeChecked();
+    await expect(dialogo.getByText('No telão: senha e Sala 03.')).toBeVisible();
+    await semViolacoesDeAcessibilidade(page);
+
+    await dialogo.getByRole('button', { name: 'Confirmar e chamar' }).dblclick();
+    await expect(
+      page.getByText('Senha F015 chamada para a Sala 03.', { exact: true }),
+    ).toBeVisible();
     await expect(coluna(page, /^Aguardando/).getByText('Nenhuma senha aguardando')).toBeVisible();
     await expect(page.getByText(/Não há senha aguardando/)).toHaveCount(0);
   });

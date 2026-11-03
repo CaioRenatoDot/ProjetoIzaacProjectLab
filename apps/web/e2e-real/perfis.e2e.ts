@@ -71,18 +71,18 @@ test('UC-04: perfil criado na tela fica gravado e define o menu de quem o usa', 
 test('perfil em uso: avisa os usuários afetados e não pode ser excluído', async ({ page }) => {
   await entrar(page, ADMIN, SENHA_DO_SEED);
 
-  // O seed tem 2 usuários com o perfil Recepção.
+  // O seed tem 3 usuários com o perfil Recepção (dois atendentes e a conta inativa).
   await abrirPerfil(page, 'Recepção');
   await page.getByRole('checkbox', { name: 'Fila — Excluir' }).check();
   await page.getByRole('button', { name: 'Salvar' }).click();
   const confirmacao = page.getByRole('dialog', { name: 'Confirmar alteração do perfil' });
-  await expect(confirmacao).toContainText('muda as permissões de 2 usuários');
+  await expect(confirmacao).toContainText('muda as permissões de 3 usuários');
   await page.keyboard.press('Escape');
 
   await abrirPerfil(page, 'Recepção');
   await page.getByRole('button', { name: 'Excluir perfil' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Excluir perfil' }).click();
   await expect(
-    page.getByRole('region', { name: /Notificações/ }).getByText(/vinculado a 2 usuário/),
+    page.getByRole('region', { name: /Notificações/ }).getByText(/vinculado a 3 usuário/),
   ).toBeVisible();
 });

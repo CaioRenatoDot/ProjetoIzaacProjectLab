@@ -1,7 +1,13 @@
 import { expect, test } from '@playwright/test';
 
 import { semViolacoesDeAcessibilidade } from '../e2e/apoio';
-import { abrirFilaDaNutricao, detalhes, emitirSenhaPelaApi, entrar } from './apoio';
+import {
+  abrirFilaDaNutricao,
+  chamarComRecursos,
+  detalhes,
+  emitirSenhaPelaApi,
+  entrar,
+} from './apoio';
 
 /**
  * Fluxo da demonstração do MVP (docs/06-etapas.md) com API e banco reais (#52). Nutrição não exige
@@ -45,25 +51,23 @@ test('MVP: cadastro → triagem → senha → chamada no telão → alocação �
   const telao = await context.newPage();
   await telao.goto(TELAO);
 
-  // Chamada (UC-09): a senha aparece no telão sem recarregar
+  // Chamada já com a alocação (UC-09, UC-10, #149): o telão mostra a senha e a sala
   await abrirFilaDaNutricao(page);
   await page.getByRole('button', { name: 'Chamar próxima' }).click();
+  const modal = page.getByRole('dialog', { name: 'Chamar próxima senha · Nutrição' });
+  await expect(modal.getByText(/Próxima pela ordem da fila/)).toContainText(numero);
+  await expect(modal.getByText('No telão: senha e Sala 04.')).toBeVisible();
+  await semViolacoesDeAcessibilidade(page);
+  await modal.getByRole('button', { name: 'Confirmar e chamar' }).click();
+  await expect(page.getByText(`Senha ${numero} chamada para a Sala 04.`).first()).toBeVisible();
   await expect(
     page
       .getByRole('region', { name: /^Chamada/ })
       .getByRole('article', { name: `Senha ${numero}` }),
   ).toBeVisible();
   await expect(telao.getByText(numero).first()).toBeVisible();
+  await expect(telao.getByText('Sala 04').first()).toBeVisible();
   await expect(telao.getByText('Paciente Fluxo Real')).toHaveCount(0);
-
-  // Alocação (UC-10) com as sugestões do sistema
-  await (await detalhes(page, numero)).getByRole('link', { name: 'Alocar recursos' }).click();
-  await expect(
-    page.getByRole('heading', { name: `Alocação de recursos: senha ${numero}` }),
-  ).toBeVisible();
-  await semViolacoesDeAcessibilidade(page);
-  await page.getByRole('button', { name: 'Confirmar alocação' }).click();
-  await expect(page.getByText(`Recursos alocados à senha ${numero}:`).first()).toBeVisible();
 
   // Atendimento (UC-11) e encerramento com desfecho (UC-13)
   await abrirFilaDaNutricao(page);
@@ -86,7 +90,7 @@ test('ausência manual (UC-16): senha chamada sai da fila como ausente', async (
   const numero = await emitirSenhaPelaApi(request, 5);
   await entrar(page);
   await abrirFilaDaNutricao(page);
-  await page.getByRole('button', { name: 'Chamar próxima' }).click();
+  await chamarComRecursos(page, numero);
 
   await (await detalhes(page, numero)).getByRole('button', { name: 'Registrar ausência' }).click();
   const modal = page.getByRole('dialog', { name: `Registrar ausência — senha ${numero}` });

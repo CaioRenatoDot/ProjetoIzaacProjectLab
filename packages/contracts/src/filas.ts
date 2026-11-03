@@ -1,8 +1,9 @@
 import { z } from 'zod';
 
+import { AlocacaoEntrada } from './alocacao';
 import { StatusSenha, TipoAtendimento } from './enums';
 import { Meta, ParametrosPaginacao } from './paginacao';
-import { SenhaResumo } from './senhas';
+import { Alocacao, SenhaResumo } from './senhas';
 
 const booleanoDaQuery = z
   .enum(['true', 'false'], { error: 'Use true ou false.' })
@@ -109,15 +110,23 @@ export const Chamada = z.object({
 });
 export type Chamada = z.infer<typeof Chamada>;
 
+/**
+ * Recursos escolhidos antes de chamar (#149): a senha já sai alocada e o telão mostra a sala.
+ * Mesmas regras de `POST /senhas/{id}/alocacao`, sem versão (a senha só é escolhida na chamada).
+ */
+export const RecursosChamada = AlocacaoEntrada.omit({ versao: true });
+export type RecursosChamada = z.infer<typeof RecursosChamada>;
+
 export const ChamarProximaEntrada = z
   .object({
-    /** Texto do telão (ex.: "Sala 03"); sem valor, o nome da fila. */
+    /** Texto do telão (ex.: "Sala 03"); sem valor, o nome da fila. Com `alocacao`, vale a sala. */
     localExibicao: z
       .string()
       .trim()
       .max(60, { error: 'No máximo 60 caracteres.' })
       .transform((valor) => valor || undefined)
       .optional(),
+    alocacao: RecursosChamada.optional(),
   })
   .default({});
 export type ChamarProximaEntrada = z.infer<typeof ChamarProximaEntrada>;
@@ -128,5 +137,7 @@ export const ResultadoChamada = z.object({
   /** Urgente chamada antes de senha não urgente que chegou antes (confirmação de T-09, RN-03). */
   furouFilaPorUrgencia: z.boolean(),
   toleranciaAte: z.string(),
+  /** Só quando a chamada levou os recursos (#149). */
+  alocacao: Alocacao.optional(),
 });
 export type ResultadoChamada = z.infer<typeof ResultadoChamada>;

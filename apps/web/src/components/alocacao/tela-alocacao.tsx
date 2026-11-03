@@ -18,7 +18,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
-import { candidatosDoBloco, criarAlocacaoApi, escolhaInicial, temApto } from '@/lib/alocacao/api';
+import {
+  candidatosDoBloco,
+  criarAlocacaoApi,
+  escolhaInicial,
+  manterOuSugestao,
+  temApto,
+} from '@/lib/alocacao/api';
 import {
   type BlocoAlocacao,
   type RecursoFaltante,
@@ -42,12 +48,6 @@ const ROTULO_FALTANTE: Record<RecursoFaltante, string> = {
   SUPERVISOR: 'Supervisor',
   SALA: 'Sala',
 };
-
-/** Mantém a escolha se ela continua apta; senão, volta para a sugestão (após recarga, T-10). */
-function manterOuSugestao(anterior: string | null, bloco: BlocoAlocacao) {
-  const ainda = candidatosDoBloco(bloco).find((c) => c.id === anterior && c.apto);
-  return ainda ? ainda.id : escolhaInicial(bloco);
-}
 
 const nomeEscolhido = (bloco: BlocoAlocacao, id: string | null) =>
   candidatosDoBloco(bloco).find((c) => c.id === id)?.nome ?? null;

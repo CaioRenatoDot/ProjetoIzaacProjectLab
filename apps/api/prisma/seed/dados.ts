@@ -20,7 +20,8 @@ export const PERFIS = [
   {
     id: id(1, 2),
     nome: 'Recepção',
-    descricao: 'Cadastros, chamada da fila e registro de ausência.',
+    // O atendente do PDF: cadastra o paciente (UC-01), chama (UC-09) e aloca (UC-10).
+    descricao: 'Cadastros, chamada da fila, alocação de recursos e registro de ausência.',
     sistema: false,
     permissoes: [
       'cadastros:consultar',
@@ -28,6 +29,9 @@ export const PERFIS = [
       'cadastros:editar',
       'fila:consultar',
       'fila:chamar',
+      'alocacao:consultar',
+      'alocacao:criar',
+      'alocacao:editar',
       'senha:consultar',
       'ausencia:consultar',
       'ausencia:criar',
@@ -100,7 +104,10 @@ export const PERFIS = [
   },
 ];
 
-/** Um usuário por perfil, mais um inativo para testar a resposta neutra do login. */
+/**
+ * Um usuário por perfil, um segundo de Recepção (vários atendentes no mesmo perfil) e um inativo
+ * para testar a resposta neutra do login.
+ */
 export const USUARIOS = [
   {
     id: id(2, 1),
@@ -150,6 +157,13 @@ export const USUARIOS = [
     identificacao: 'inativo@clinica.invalid',
     perfilId: id(1, 2),
     ativo: false,
+  },
+  {
+    id: id(2, 8),
+    nome: 'Recepção 2 (fictício)',
+    identificacao: 'recepcao2@clinica.invalid',
+    perfilId: id(1, 2),
+    ativo: true,
   },
 ];
 

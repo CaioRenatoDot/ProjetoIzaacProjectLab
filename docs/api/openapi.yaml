@@ -1592,6 +1592,10 @@ paths:
         - Cria a chamada com `sequencia` 1, leva a senha a CHAMADA pela máquina de estados e
           grava `tolerancia_ate` pelo parâmetro `tolerancia_minutos`
         - Sem `localExibicao`, o telão mostra o nome da fila
+        - Com `alocacao` (#149, exige também `alocacao:criar`), a senha escolhida já sai alocada
+          na mesma transação e o telão mostra a sala. As regras são as de
+          `POST /senhas/{id}/alocacao` (RN-05 a RN-09); qualquer recusa (409 RECURSO_INDISPONIVEL,
+          422 VALIDACAO) desfaz a chamada e a senha continua aguardando
         - `Idempotency-Key` (UUID): a mesma chave do mesmo usuário em até 10 minutos devolve a
           resposta original sem chamar outra senha, inclusive em requisições simultâneas. Chave
           já usada em outra operação ou com outro corpo volta 422 VALIDACAO no campo
@@ -1607,7 +1611,18 @@ paths:
               properties:
                 localExibicao:
                   type: string
-                  description: Texto exibido no telão, ex. "Sala 03"
+                  description: Texto exibido no telão, ex. "Sala 03". Com `alocacao`, vale a sala
+                alocacao:
+                  type: object
+                  description: Recursos escolhidos na prévia (`GET /filas/{id}/chamadas/sugestoes`)
+                  required: [estudanteId, salaId]
+                  properties:
+                    estudanteId: { type: string, format: uuid }
+                    supervisorId:
+                      type: [string, 'null']
+                      format: uuid
+                      description: Obrigatório só se a especialidade exige supervisão (RN-07)
+                    salaId: { type: string, format: uuid }
       responses:
         '201':
           description: Senha chamada
@@ -1620,8 +1635,12 @@ paths:
                   chamada: { $ref: '#/components/schemas/Chamada' }
                   furouFilaPorUrgencia: { type: boolean }
                   toleranciaAte: { type: string, format: date-time }
+                  alocacao:
+                    $ref: '#/components/schemas/Alocacao'
+                    description: Só quando a chamada levou os recursos
+        '403': { $ref: '#/components/responses/SemPermissao' }
         '409':
-          description: Fila bloqueada ou vazia
+          description: Fila bloqueada ou vazia, ou recurso escolhido deixou de estar disponível
           content:
             application/problem+json:
               schema: { $ref: '#/components/schemas/Problema' }
@@ -1638,6 +1657,43 @@ paths:
                     status: 409
                     codigo: FILA_VAZIA
                     detail: Não há senha aguardando nesta fila no momento.
+
+  /filas/{id}/chamadas/sugestoes:
+    parameters:
+      - { $ref: '#/components/parameters/Id' }
+    get:
+      tags: [Filas e chamadas]
+      summary: Prévia dos recursos para chamar a próxima senha
+      operationId: sugestoesParaChamar
+      description: |
+        #149. Alimenta o modal de "Chamar próxima": as sugestões de W-11 calculadas pela
+        especialidade da fila (RN-05 a RN-09) e a senha que vem a seguir pela RN-04, só para
+        exibição. Nada é reservado: a senha é escolhida, com trava, na chamada, e os recursos são
+        revalidados lá. `proxima` é nulo com a fila vazia.
+      responses:
+        '200':
+          description: Prévia
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  proxima:
+                    oneOf:
+                      - type: object
+                        properties:
+                          numero: { type: string, example: N012 }
+                          prioridade: { type: string, example: PREFERENCIAL }
+                      - type: 'null'
+                  estudante: { $ref: '#/components/schemas/BlocoAlocacao' }
+                  supervisor:
+                    allOf:
+                      - $ref: '#/components/schemas/BlocoAlocacao'
+                      - type: object
+                        properties:
+                          aplicavel: { type: boolean }
+                  sala: { $ref: '#/components/schemas/BlocoAlocacao' }
+        '403': { $ref: '#/components/responses/SemPermissao' }
 
   /chamadas/{id}/rechamada:
     parameters:

@@ -19,6 +19,7 @@ import {
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 
+import { type RecursosChamada } from '@/lib/alocacao/tipos';
 import { ErroApi } from '@/lib/api/cliente-http';
 import { criarFilaApi } from '@/lib/fila/api';
 import {
@@ -35,6 +36,7 @@ import { PREFIXO_ESTADO_LOCAL } from '@/lib/sessao/estado-local';
 import { useSessao } from '@/lib/sessao/sessao';
 
 import { CartaoSenha, useAgora } from './cartao-senha';
+import { ModalChamarProxima } from './modal-chamar-proxima';
 import { PainelSenha } from './painel-senha';
 import { useTempoRealFila } from './use-tempo-real-fila';
 
@@ -291,6 +293,8 @@ function BarraDeContexto({
  * "Chamar próxima" por especialidade (UC-09). Sem permissão, não aparece; com permissão e fila
  * bloqueada ou vazia, aparece desabilitado com a causa em texto (RN-10, nota D-27).
  * A `Idempotency-Key` é a mesma até a chamada terminar: duplo clique não chama duas senhas.
+ * Quem também aloca (`alocacao:criar`) escolhe os recursos antes, num modal, e a senha já sai
+ * alocada, com a sala no telão (#149). Sem essa permissão, a chamada segue direta.
  */
 function ChamarProxima({ quadro }: { quadro: QuadroFila }) {
   const { cliente } = useSessao();
@@ -298,19 +302,25 @@ function ChamarProxima({ quadro }: { quadro: QuadroFila }) {
   const queryClient = useQueryClient();
   const mostrarToast = useToast();
   const { podeEscrever } = useConexao();
+  const { tem } = usePermissoes();
+  // A prévia lê as sugestões (`alocacao:consultar`) e a chamada aloca (`alocacao:criar`).
+  const comRecursos = tem('alocacao:criar') && tem('alocacao:consultar');
   const idCausa = useId();
   const chave = useRef<string | null>(null);
   // Trava síncrona: o `isPending` só aparece no render seguinte, e o duplo clique é mais rápido.
   const emAndamento = useRef(false);
   const [urgente, setUrgente] = useState<SenhaResumo | null>(null);
+  const [comModal, setComModal] = useState(false);
+  const [erroModal, setErroModal] = useState<string | null>(null);
 
   const chamar = useMutation({
-    mutationFn: () => {
+    mutationFn: (recursos?: RecursosChamada) => {
       chave.current ??= crypto.randomUUID();
-      return api.chamarProxima(quadro.fila.id, chave.current);
+      return api.chamarProxima(quadro.fila.id, chave.current, recursos);
     },
     onSuccess: (resultado) => {
       chave.current = null;
+      setComModal(false);
       // O quadro reflete a chamada na hora: um segundo clique já vê a fila sem essa senha.
       queryClient.setQueriesData<QuadroFila>(
         { queryKey: ['fila', 'quadro', quadro.fila.id] },
@@ -329,14 +339,27 @@ function ChamarProxima({ quadro }: { quadro: QuadroFila }) {
         },
       );
       const porUrgencia = resultado.furouFilaPorUrgencia ? ' por urgência clínica (RN-03)' : '';
+      const local = resultado.alocacao ? ` para a ${resultado.chamada.local}` : '';
       mostrarToast({
         tipo: 'sucesso',
-        mensagem: `Senha ${resultado.senha.numero} chamada${porUrgencia}.`,
+        mensagem: `Senha ${resultado.senha.numero} chamada${local}${porUrgencia}.`,
       });
     },
-    onError: (erro) => {
+    onError: async (erro, recursos) => {
       // Falha de rede mantém a chave: o reenvio devolve a mesma chamada, sem duplicar.
       if (!(erro instanceof ErroApi && erro.status === 0)) chave.current = null;
+      if (recursos) {
+        // Recusa com recursos: nada foi chamado. O modal fica aberto com as sugestões atualizadas.
+        setErroModal(
+          erro instanceof ErroApi
+            ? erro.detail
+            : 'Não foi possível chamar. Verifique a conexão e tente novamente.',
+        );
+        await queryClient.invalidateQueries({
+          queryKey: ['fila', 'sugestoes-chamada', quadro.fila.id],
+        });
+        return;
+      }
       mostrarToast({
         tipo: 'erro',
         mensagem:
@@ -360,10 +383,11 @@ function ChamarProxima({ quadro }: { quadro: QuadroFila }) {
         ? 'Nenhuma senha aguardando nesta fila.'
         : null;
 
-  function iniciarChamada() {
+  function iniciarChamada(recursos?: RecursosChamada) {
     if (emAndamento.current) return;
     emAndamento.current = true;
-    chamar.mutate();
+    setErroModal(null);
+    chamar.mutate(recursos);
   }
 
   /** Lê o cache, não o render: depois de uma chamada ele já tem a fila atualizada. */
@@ -376,7 +400,11 @@ function ChamarProxima({ quadro }: { quadro: QuadroFila }) {
   function aoChamar() {
     if (emAndamento.current || semSenhaAguardando()) return;
     const proximaUrgente = proximaFuraFila(quadro.dados);
-    if (proximaUrgente) setUrgente(proximaUrgente);
+    if (comRecursos) {
+      setUrgente(proximaUrgente);
+      setErroModal(null);
+      setComModal(true);
+    } else if (proximaUrgente) setUrgente(proximaUrgente);
     else iniciarChamada();
   }
 
@@ -397,8 +425,22 @@ function ChamarProxima({ quadro }: { quadro: QuadroFila }) {
           </p>
         )}
       </div>
+      {comRecursos && (
+        <ModalChamarProxima
+          api={api}
+          fila={fila}
+          aberto={comModal}
+          onAbertoChange={(aberto) => {
+            if (!aberto && !chamar.isPending) setComModal(false);
+          }}
+          urgente={urgente}
+          onConfirmar={iniciarChamada}
+          chamando={chamar.isPending}
+          erro={erroModal}
+        />
+      )}
       <ModalConfirmacao
-        aberto={urgente !== null}
+        aberto={!comRecursos && urgente !== null}
         onAbertoChange={(aberto) => !aberto && setUrgente(null)}
         titulo="Chamar senha urgente"
         descricao={

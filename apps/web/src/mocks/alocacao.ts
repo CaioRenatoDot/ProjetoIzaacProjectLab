@@ -8,7 +8,7 @@ import {
   type RecursoFaltante,
 } from '@/lib/alocacao/tipos';
 
-import { semCamposInternos, senhasDaSimulacao } from './filas';
+import { filasDaSimulacao, ordemRn04, semCamposInternos, senhasDaSimulacao } from './filas';
 import { usuarioMockDaRequisicao } from './handlers';
 
 /**
@@ -168,10 +168,13 @@ function bloco(candidatos: CandidatoAlocacao[], regras: string[]) {
 }
 
 function sugestoesPara(senhaId: string, especialidade: string) {
+  return { senhaId, ...blocosPara(especialidade, SEM_SALA_COMPATIVEL.has(senhaId)) };
+}
+
+function blocosPara(especialidade: string, semSalaCompativel = false) {
   const cenario = cenarioDa(especialidade);
-  const salas = SEM_SALA_COMPATIVEL.has(senhaId) ? SALAS_INCOMPATIVEIS : cenario.salas;
+  const salas = semSalaCompativel ? SALAS_INCOMPATIVEIS : cenario.salas;
   return {
-    senhaId,
     estudante: bloco(cenario.estudantes, ['RN-05', 'RN-06']),
     supervisor: {
       ...bloco(cenario.supervisores, ['RN-07', 'RN-08']),
@@ -292,10 +295,28 @@ async function confirmarAlocacao(
     );
   }
 
+  const alocacao = registrarAlocacao(senha.id, { estudante, supervisor, sala }, request, cookies);
+  senha.status = 'CHAMADA';
+  senha.versao += 1;
+  return { status: 201, corpo: { ...alocacao } };
+}
+
+interface Escolhidos {
+  estudante: CandidatoAlocacao;
+  supervisor: CandidatoAlocacao | null | undefined;
+  sala: CandidatoAlocacao;
+}
+
+function registrarAlocacao(
+  senhaId: string,
+  { estudante, supervisor, sala }: Escolhidos,
+  request: Request,
+  cookies: Record<string, string>,
+): Alocacao {
   sequencia += 1;
   const alocacao: Alocacao = {
     id: `alocacao-simulada-${sequencia}`,
-    senhaId: senha.id,
+    senhaId,
     estudante: { id: estudante.id, nome: estudante.nome },
     supervisor: supervisor ? { id: supervisor.id, nome: supervisor.nome } : null,
     sala: { id: sala.id, nome: sala.nome },
@@ -304,13 +325,72 @@ async function confirmarAlocacao(
     liberadaEm: null,
   };
   indisponiveis.add(estudante.id);
-  alocacoes.set(senha.id, alocacao);
-  senha.status = 'CHAMADA';
-  senha.versao += 1;
-  return { status: 201, corpo: { ...alocacao } };
+  alocacoes.set(senhaId, alocacao);
+  return alocacao;
+}
+
+/**
+ * Alocação dentro de "Chamar próxima" (#149), antes de a senha mudar de status: devolve a falha
+ * sem tocar em nada, ou a alocação já registrada.
+ */
+export function alocarNaChamada(
+  senha: { id: string; especialidade: string },
+  recursos: { estudanteId?: string; supervisorId?: string | null; salaId?: string },
+  request: Request,
+  cookies: Record<string, string>,
+): { falha: Resultado } | { alocacao: Alocacao } {
+  // Mesma corrida da T-10: a estudante é tomada entre a prévia e a confirmação.
+  if (recursos.estudanteId === ESTUDANTE_VOLATIL && !indisponiveis.has(ESTUDANTE_VOLATIL)) {
+    indisponiveis.add(ESTUDANTE_VOLATIL);
+    return {
+      falha: falha(
+        409,
+        'RECURSO_INDISPONIVEL',
+        'Ana Ribeiro acabou de iniciar outro atendimento. Nenhuma senha foi chamada: escolha outro estudante.',
+        'Recurso indisponível',
+      ),
+    };
+  }
+  const sugestoes = blocosPara(senha.especialidade);
+  const todos = (b: { sugestao: CandidatoAlocacao | null; alternativas: CandidatoAlocacao[] }) =>
+    b.sugestao ? [b.sugestao, ...b.alternativas] : b.alternativas;
+  const escolhido = (lista: CandidatoAlocacao[], id: string | null | undefined) =>
+    lista.find((c) => c.id === id && c.apto);
+  const estudante = escolhido(todos(sugestoes.estudante), recursos.estudanteId);
+  const sala = escolhido(todos(sugestoes.sala), recursos.salaId);
+  const supervisor = sugestoes.supervisor.aplicavel
+    ? escolhido(todos(sugestoes.supervisor), recursos.supervisorId)
+    : null;
+  if (!estudante || !sala || (sugestoes.supervisor.aplicavel && !supervisor)) {
+    return {
+      falha: falha(
+        409,
+        'RECURSO_INDISPONIVEL',
+        'Um dos recursos escolhidos não está mais disponível. As sugestões foram atualizadas: confira antes de chamar.',
+        'Recurso indisponível',
+      ),
+    };
+  }
+  return {
+    alocacao: registrarAlocacao(senha.id, { estudante, supervisor, sala }, request, cookies),
+  };
 }
 
 export const handlersAlocacao = [
+  http.get(`${API_URL}/filas/:id/chamadas/sugestoes`, ({ request, cookies, params }) => {
+    const erro = autorizar(request, cookies, 'alocacao:consultar');
+    if (erro) return erro;
+    const fila = filasDaSimulacao().find((f) => f.id === params.id);
+    if (!fila) return problema(404, 'NAO_ENCONTRADO', 'Fila não encontrada. Atualize a lista.');
+    const proxima = senhasDaSimulacao()
+      .filter((s) => s.filaId === fila.id && s.status === 'AGUARDANDO')
+      .sort(ordemRn04)[0];
+    return HttpResponse.json({
+      proxima: proxima ? { numero: proxima.numero, prioridade: proxima.prioridade } : null,
+      ...blocosPara(fila.especialidade),
+    });
+  }),
+
   http.get(`${API_URL}/senhas/:id/alocacao/sugestoes`, ({ request, cookies, params }) => {
     const erro = autorizar(request, cookies, 'alocacao:consultar');
     if (erro) return erro;

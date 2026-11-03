@@ -4,6 +4,7 @@ import {
   type Alocacao,
   type AlocacaoEntrada,
   type CampoInvalido,
+  type RecursosChamada,
   type SenhaResumo,
   type StatusSenha,
 } from '@filas/contracts';
@@ -84,6 +85,48 @@ export class AlocacaoService {
     return this.comBloqueioPorFaltaDeSupervisor(senhaId, usuario, () =>
       this.senhas.transacao((tx) => this.alocar(tx, senhaId, entrada, usuario, true)),
     );
+  }
+
+  /**
+   * Alocação dentro de "Chamar próxima" (#149), na transação da chamada: a senha acabou de ir a
+   * CHAMADA. Qualquer recusa desfaz a chamada junto. Sem supervisor disponível, a recusa é 409
+   * comum: a senha nem chegou a ser chamada, e o bloqueio da fila (RN-10) fica com a chamada.
+   */
+  async alocarNaChamada(
+    tx: Transacao,
+    senhaId: string,
+    recursos: RecursosChamada,
+    usuario: Usuario,
+  ): Promise<Alocacao> {
+    const senha = await this.repositorio.senhaParaAlocar(tx, senhaId, usuario.unidadeId);
+    try {
+      const alocacao = await this.alocar(
+        tx,
+        senhaId,
+        { ...recursos, versao: senha!.versao },
+        usuario,
+        false,
+      );
+      await this.auditoria.registrar(
+        {
+          operacao: 'CRIAR',
+          modulo: 'alocacao',
+          entidade: 'alocacao',
+          entidadeId: alocacao.id,
+          usuarioId: usuario.id,
+          perfilNomeNoMomento: usuario.perfilNome,
+        },
+        tx,
+      );
+      return alocacao;
+    } catch (erro) {
+      if (erro instanceof SemSupervisorDisponivel) {
+        throw indisponivel(
+          'Nenhum supervisor habilitado desta especialidade está disponível agora.',
+        );
+      }
+      throw erro;
+    }
   }
 
   /** "Manter aguardando" (W-11): CHAMADA → AGUARDANDO_RECURSO com o recurso faltante. */

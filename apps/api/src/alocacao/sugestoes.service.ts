@@ -4,11 +4,25 @@ import { ErroDominio } from '../common/errors/erro-dominio';
 import { Relogio } from '../common/relogio';
 import { turnoAtual } from '../common/turno';
 import { ParametrosService } from '../parametros/parametros.service';
-import { SenhasRepository } from '../senhas/senhas.repository';
+import { ORDEM_RN04 } from '../filas/filas.repository';
+import { SenhasRepository, type Transacao } from '../senhas/senhas.repository';
 import { AlocacaoRepository } from './alocacao.repository';
 import { ALOCAVEIS } from './alocacao.service';
 import { AptidaoAlocacaoService, type Inaptidao } from './aptidao-alocacao.service';
-import { type BlocoAlocacao, type CandidatoAlocacao, SugestoesAlocacao } from './dto/sugestoes.dto';
+import {
+  type BlocoAlocacao,
+  type CandidatoAlocacao,
+  SugestoesAlocacao,
+  SugestoesChamada,
+} from './dto/sugestoes.dto';
+
+interface EspecialidadeAlocada {
+  especialidadeId: string;
+  especialidade: { exigeSupervisaoDocente: boolean; recursosExigidos: { recursoId: string }[] };
+}
+
+const naoEncontrado = (titulo: string) =>
+  new ErroDominio('NAO_ENCONTRADO', 404, titulo, 'O registro não existe ou foi removido.');
 
 @Injectable()
 export class SugestoesService {
@@ -23,67 +37,88 @@ export class SugestoesService {
   consultar(senhaId: string, unidadeId: string): Promise<SugestoesAlocacao> {
     return this.senhas.transacao(async (tx) => {
       const senha = await this.repository.senhaParaAlocar(tx, senhaId, unidadeId);
-      if (!senha)
-        throw new ErroDominio(
-          'NAO_ENCONTRADO',
-          404,
-          'Senha não encontrada',
-          'O registro não existe ou foi removido.',
-        );
+      if (!senha) throw naoEncontrado('Senha não encontrada');
       if (!ALOCAVEIS.includes(senha.status))
         throw new ErroDominio('TRANSICAO_INVALIDA', 409, 'Ação indisponível para esta senha');
-      const especialidadeId = senha.fila.especialidadeId;
-      const { limiteEstudantesSupervisor: limite } = await this.parametros.vigentes(
-        unidadeId,
-        especialidadeId,
-        tx,
-      );
-      const turno = turnoAtual(this.relogio.agora());
-      const dia = turno?.diaSemana ?? null;
-      const periodo = turno?.turno ?? null;
-      const estudante = await this.bloco(
-        (cursor) => this.repository.estudantes(tx, unidadeId, dia, periodo, cursor),
-        (e) =>
-          candidato(
-            e.id,
-            e.nome,
-            `${e.especialidade.nome} · ${e.nivelFormacao}`,
-            this.aptidao.estudante(e, unidadeId, especialidadeId),
-          ),
-        ['RN-05', 'RN-06'],
-      );
-      const aplicavel = senha.fila.especialidade.exigeSupervisaoDocente;
-      const supervisor = aplicavel
-        ? await this.bloco(
-            (cursor) => this.repository.supervisores(tx, unidadeId, dia, periodo, cursor),
-            (s) =>
-              candidato(
-                s.id,
-                s.nome,
-                `${s._count.alocacoes} de ${s.limiteEstudantesSimultaneos ?? limite} estudantes`,
-                this.aptidao.supervisor(s, especialidadeId, limite),
-              ),
-            ['RN-07', 'RN-08'],
-          )
-        : { sugestao: null, alternativas: [], regrasVerificadas: [] };
-      const sala = await this.bloco(
-        (cursor) => this.repository.salas(tx, unidadeId, cursor),
-        (s) =>
-          candidato(
-            s.id,
-            s.identificacao,
-            s.recursos.map((r) => r.recurso.nome).join(', '),
-            this.aptidao.sala(s, unidadeId, senha.fila.especialidade.recursosExigidos),
-          ),
-        ['RN-09'],
-      );
       return SugestoesAlocacao.parse({
         senhaId,
-        estudante,
-        supervisor: { ...supervisor, aplicavel },
-        sala,
+        ...(await this.blocos(tx, unidadeId, senha.fila)),
       });
     });
+  }
+
+  /** Prévia do "Chamar próxima" (#149): sem senha escolhida, pela especialidade da fila. */
+  paraChamada(filaId: string, unidadeId: string): Promise<SugestoesChamada> {
+    return this.senhas.transacao(async (tx) => {
+      const fila = await tx.fila.findFirst({
+        where: { id: filaId, unidadeId },
+        select: {
+          especialidadeId: true,
+          especialidade: {
+            select: {
+              exigeSupervisaoDocente: true,
+              recursosExigidos: { select: { recursoId: true } },
+            },
+          },
+        },
+      });
+      if (!fila) throw naoEncontrado('Fila não encontrada');
+      const proxima = await tx.senha.findFirst({
+        where: { filaId, status: 'AGUARDANDO' },
+        orderBy: ORDEM_RN04,
+        select: { numero: true, prioridade: true },
+      });
+      return SugestoesChamada.parse({ proxima, ...(await this.blocos(tx, unidadeId, fila)) });
+    });
+  }
+
+  private async blocos(tx: Transacao, unidadeId: string, fila: EspecialidadeAlocada) {
+    const { especialidadeId } = fila;
+    const { limiteEstudantesSupervisor: limite } = await this.parametros.vigentes(
+      unidadeId,
+      especialidadeId,
+      tx,
+    );
+    const turno = turnoAtual(this.relogio.agora());
+    const dia = turno?.diaSemana ?? null;
+    const periodo = turno?.turno ?? null;
+    const estudante = await this.bloco(
+      (cursor) => this.repository.estudantes(tx, unidadeId, dia, periodo, cursor),
+      (e) =>
+        candidato(
+          e.id,
+          e.nome,
+          `${e.especialidade.nome} · ${e.nivelFormacao}`,
+          this.aptidao.estudante(e, unidadeId, especialidadeId),
+        ),
+      ['RN-05', 'RN-06'],
+    );
+    const aplicavel = fila.especialidade.exigeSupervisaoDocente;
+    const supervisor = aplicavel
+      ? await this.bloco(
+          (cursor) => this.repository.supervisores(tx, unidadeId, dia, periodo, cursor),
+          (s) =>
+            candidato(
+              s.id,
+              s.nome,
+              `${s._count.alocacoes} de ${s.limiteEstudantesSimultaneos ?? limite} estudantes`,
+              this.aptidao.supervisor(s, especialidadeId, limite),
+            ),
+          ['RN-07', 'RN-08'],
+        )
+      : { sugestao: null, alternativas: [], regrasVerificadas: [] };
+    const sala = await this.bloco(
+      (cursor) => this.repository.salas(tx, unidadeId, cursor),
+      (s) =>
+        candidato(
+          s.id,
+          s.identificacao,
+          s.recursos.map((r) => r.recurso.nome).join(', '),
+          this.aptidao.sala(s, unidadeId, fila.especialidade.recursosExigidos),
+        ),
+      ['RN-09'],
+    );
+    return { estudante, supervisor: { ...supervisor, aplicavel }, sala };
   }
 
   /** Snapshot de até vinte alternativas; busca em lotes até encontrar uma sugestão apta. */

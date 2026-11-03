@@ -1,7 +1,15 @@
 import { expect, type Page, test } from '@playwright/test';
 
 import { SENHA_DO_SEED } from './ambiente';
-import { abrirFilaDaNutricao, ADMIN, API, detalhes, emitirSenhaPelaApi, entrar } from './apoio';
+import {
+  abrirFilaDaNutricao,
+  chamarComRecursos,
+  ADMIN,
+  API,
+  detalhes,
+  emitirSenhaPelaApi,
+  entrar,
+} from './apoio';
 
 /**
  * Pontos que seguiam fixos com a API real (#146): números da home, filtro e exportação da trilha
@@ -38,7 +46,7 @@ test('W-02: a home mostra as senhas aguardando e o bloco da fila', async ({ page
 
   // Tira a senha da fila, para os testes seguintes começarem sem ela.
   await abrirFilaDaNutricao(page);
-  await page.getByRole('button', { name: 'Chamar próxima' }).click();
+  await chamarComRecursos(page, numero);
   const painel = await detalhes(page, numero);
   await painel.getByRole('button', { name: 'Registrar ausência' }).click();
   const modal = page.getByRole('dialog', { name: /Registrar ausência/ });
@@ -90,11 +98,7 @@ test('T-13: pausa feita por outra pessoa aparece no atendimento aberto, sem reca
   const numero = await emitirSenhaPelaApi(request, 9);
   await entrar(page);
   await abrirFilaDaNutricao(page);
-  await page.getByRole('button', { name: 'Chamar próxima' }).click();
-  await (await detalhes(page, numero)).getByRole('link', { name: 'Alocar recursos' }).click();
-  await page.getByRole('button', { name: 'Confirmar alocação' }).click();
-  await expect(page.getByText(`Recursos alocados à senha ${numero}:`).first()).toBeVisible();
-  await abrirFilaDaNutricao(page);
+  await chamarComRecursos(page, numero);
   await (await detalhes(page, numero)).getByRole('link', { name: 'Iniciar atendimento' }).click();
   await page.getByRole('button', { name: 'Iniciar atendimento' }).click();
   await expect(page.getByRole('button', { name: 'Pausar' })).toBeVisible();
