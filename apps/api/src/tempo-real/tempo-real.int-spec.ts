@@ -357,7 +357,7 @@ describe('RN-10 e tempo real da #19', () => {
     }
   });
 
-  it('RNF-02 chamada e rechamada chegam ao painel sem paciente ou prioridade; reconexão recupera quatro anteriores', async () => {
+  it('RNF-02 chamada e rechamada chegam ao painel sem paciente ou prioridade; reconexão não repete a senha rechamada', async () => {
     // Chamadas são gravadas pelo relógio do PostgreSQL; o histórico deve consultar esse dia.
     vi.spyOn(contexto.app.get(Relogio), 'agora').mockImplementation(() => new Date());
     const c = await cenario();
@@ -386,7 +386,10 @@ describe('RN-10 e tempo real da #19', () => {
       expect(await recebeu).toMatchObject({ numero: c.senha.numero, sequencia });
     }
     s.disconnect();
-    const estado = evento<{ atual: object; anteriores: object[] }>(s, 'painel.estado');
+    const estado = evento<{ atual: object; anteriores: { especialidade: string }[] }>(
+      s,
+      'painel.estado',
+    );
     s.connect();
     const painel = await estado;
     expect(painel.atual).toEqual({
@@ -394,7 +397,8 @@ describe('RN-10 e tempo real da #19', () => {
       especialidade: c.especialidade.nome,
       local: 'Sala 03',
     });
-    expect(painel.anteriores).toHaveLength(4);
+    // Outros testes usam o mesmo número em outra especialidade: a senha é número + especialidade.
+    expect(painel.anteriores.map((a) => a.especialidade)).not.toContain(c.especialidade.nome);
     for (const carga of [painel.atual, ...painel.anteriores])
       expect(Object.keys(carga).sort()).toEqual(['especialidade', 'local', 'numero']);
   });

@@ -22,11 +22,21 @@ describe('RNF-06: sinal sonoro configurável', () => {
         volume: '0.8',
         arquivo: '/sons/base.wav',
       }),
-    ).toEqual({ ligado: false, volume: 0.2, arquivo: '/sons/outro.wav' });
+    ).toMatchObject({ ligado: false, volume: 0.2, arquivo: '/sons/outro.wav' });
     expect(configurarSom(new URLSearchParams(), { ligado: 'false', volume: '0.7' })).toMatchObject({
       ligado: false,
       volume: 0.7,
     });
+  });
+  it('#157: voz ligada com 2 repetições por padrão; URL prevalece sobre ambiente', () => {
+    expect(configurarSom(new URLSearchParams())).toMatchObject({ voz: true, vozRepeticoes: 2 });
+    expect(
+      configurarSom(new URLSearchParams('voz=off&vozRepeticoes=1'), {
+        voz: 'true',
+        vozRepeticoes: '3',
+      }),
+    ).toMatchObject({ voz: false, vozRepeticoes: 1 });
+    expect(configurarSom(new URLSearchParams('vozRepeticoes=9')).vozRepeticoes).toBe(2);
   });
   it.each(['-1', '2', '', 'NaN'])('volume inválido %s usa o padrão', (volume) => {
     expect(configurarSom(new URLSearchParams({ volume })).volume).toBe(0.5);
@@ -101,6 +111,68 @@ describe('RNF-06: sinal sonoro configurável', () => {
     f.audio.dispatchEvent(new Event('ended'));
     f.som.chamada();
     expect(f.play).toHaveBeenCalledTimes(chamadas);
+  });
+  describe('#157: fala depois do sinal', () => {
+    function comFala() {
+      const audio = new EventTarget() as HTMLAudioElement;
+      const play = vi.fn<() => Promise<void>>().mockResolvedValue(undefined);
+      audio.play = play;
+      audio.pause = vi.fn();
+      const fala = { falar: vi.fn<(texto: string, fim: () => void) => void>(), cancelar: vi.fn() };
+      const som = new SomTelao(
+        { ligado: true, volume: 0.5, arquivo: '/sons/chamada.wav' },
+        vi.fn(),
+        () => audio,
+        fala,
+      );
+      const fimDaFala = () => fala.falar.mock.lastCall![1]();
+      return { audio, play, fala, som, fimDaFala };
+    }
+
+    it('ativar testa o sinal e a voz; a próxima chamada espera a fala terminar', () => {
+      const f = comFala();
+      f.som.ativar();
+      expect(f.fala.falar).not.toHaveBeenCalled();
+      f.audio.dispatchEvent(new Event('ended'));
+      expect(f.fala.falar.mock.lastCall![0]).toBe('Som ativado.');
+
+      f.som.chamada('Senha um.');
+      f.som.chamada('Senha dois.');
+      expect(f.play).toHaveBeenCalledOnce();
+      f.fimDaFala();
+      expect(f.play).toHaveBeenCalledTimes(2);
+      expect(f.fala.falar).toHaveBeenCalledOnce();
+
+      f.audio.dispatchEvent(new Event('ended'));
+      expect(f.fala.falar.mock.lastCall![0]).toBe('Senha um.');
+      f.fimDaFala();
+      f.audio.dispatchEvent(new Event('ended'));
+      expect(f.fala.falar.mock.lastCall![0]).toBe('Senha dois.');
+      expect(f.play).toHaveBeenCalledTimes(3);
+    });
+
+    it('desativar cancela a fala e descarta a fila; fim atrasado não toca nada', () => {
+      const f = comFala();
+      f.som.ativar();
+      f.audio.dispatchEvent(new Event('ended'));
+      f.som.chamada('Senha um.');
+      const fimAtrasado = f.fala.falar.mock.lastCall![1];
+      f.som.desativar();
+      expect(f.fala.cancelar).toHaveBeenCalledOnce();
+      fimAtrasado();
+      expect(f.play).toHaveBeenCalledOnce();
+    });
+
+    it('exceção na fala não vira erro de som e a fila segue', () => {
+      const f = comFala();
+      f.fala.falar.mockImplementationOnce(() => {
+        throw new Error('sem voz');
+      });
+      f.som.ativar();
+      f.som.chamada('Senha um.');
+      f.audio.dispatchEvent(new Event('ended'));
+      expect(f.play).toHaveBeenCalledTimes(2);
+    });
   });
   it('resolução atrasada de play não reativa som desativado', async () => {
     const f = preparar();

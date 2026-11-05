@@ -32,14 +32,19 @@ export class TempoRealRepository {
   }
 
   chamadasPublicas(unidadeId: string, agora: Date): Promise<ChamadaPublica[]> {
-    // A consulta não seleciona identificação de paciente, triagem ou prioridade.
+    // A consulta não seleciona identificação de paciente, triagem ou prioridade. Rechamar cria outra
+    // linha de chamada: cada senha entra uma vez, pela chamada mais recente (#157).
     return this.prisma.$queryRaw<ChamadaPublica[]>`
-      SELECT s.numero, e.nome AS especialidade, c.local_exibicao AS local
-        FROM chamada c JOIN senha s ON s.id = c.senha_id
-        JOIN fila f ON f.id = s.fila_id JOIN especialidade e ON e.id = f.especialidade_id
-       WHERE f.unidade_id = ${unidadeId}::uuid
-         AND (c.chamado_em AT TIME ZONE 'America/Sao_Paulo')::date
-           = (${agora}::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date
-       ORDER BY c.chamado_em DESC, c.id DESC LIMIT 5`;
+      SELECT numero, especialidade, local FROM (
+        SELECT DISTINCT ON (s.id) s.numero, e.nome AS especialidade,
+               c.local_exibicao AS local, c.chamado_em, c.id AS chamada_id
+          FROM chamada c JOIN senha s ON s.id = c.senha_id
+          JOIN fila f ON f.id = s.fila_id JOIN especialidade e ON e.id = f.especialidade_id
+         WHERE f.unidade_id = ${unidadeId}::uuid
+           AND (c.chamado_em AT TIME ZONE 'America/Sao_Paulo')::date
+             = (${agora}::timestamptz AT TIME ZONE 'America/Sao_Paulo')::date
+         ORDER BY s.id, c.chamado_em DESC, c.id DESC
+      ) ultimas
+       ORDER BY chamado_em DESC, chamada_id DESC LIMIT 5`;
   }
 }

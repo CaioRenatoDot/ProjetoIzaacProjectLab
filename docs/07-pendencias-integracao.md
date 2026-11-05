@@ -365,6 +365,12 @@ A aplicação não importa `web` nem autenticação.
 - O simulador é local, isolado em `apps/publico/src/mocks`, com eventos entre abas. Substitui
   apenas as dependências indisponíveis; não cria endpoints de API nem regras de produção.
 - Sinal sonoro fica na #51. Relatório e capturas em [entregas/GH-42-validacao.md](entregas/GH-42-validacao.md).
+- Fala da chamada (#157): depois do "tan tan", a voz do navegador diz "Senha ene, zero, zero, um.
+  Nutrição. Sala 4.", duas vezes. Configuração por URL ou ambiente: `voz` /
+  `NEXT_PUBLIC_TELAO_VOZ_ATIVA` e `vozRepeticoes` / `NEXT_PUBLIC_TELAO_VOZ_REPETICOES` (1 a 3).
+  A voz depende da máquina do telão: sem voz em português, toca só o sinal. Como o som, exige um
+  clique em "Ativar som" a cada recarga. Com chamadas em sequência, a fala segue a ordem de chegada
+  e a tela já mostra a mais recente.
 
 ## Painel de indicadores (W-17 / T-16, #48)
 
