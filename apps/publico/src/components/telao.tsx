@@ -63,7 +63,7 @@ export function Telao({ fonte, unidade }: { fonte: FontePublica; unidade: string
       chamada(chamada) {
         const proximo = aplicarChamada(estadoAtual.current, chamada);
         if (!ativo || proximo === estadoAtual.current) return;
-        tocar();
+        tocar(chamada);
         revisao += 1;
         estadoAtual.current = proximo;
         setEstado(proximo);
@@ -133,7 +133,7 @@ export function Telao({ fonte, unidade }: { fonte: FontePublica; unidade: string
                   ? 'Som ativado.'
                   : som.estado === 'desligado'
                     ? 'Som desativado na configuração.'
-                    : 'Ao ativar, um sinal de teste será reproduzido.'}
+                    : 'Ao ativar, um sinal e uma fala de teste serão reproduzidos.'}
             </p>
           </div>
         </div>

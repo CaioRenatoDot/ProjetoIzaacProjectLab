@@ -1,6 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { criarFala, textoDaChamada } from './fala-telao';
+import { type ChamadaPublica } from './publico';
 import { configurarSom, SomTelao, type EstadoSom } from './som-telao';
 
 export function useSomTelao() {
@@ -11,12 +13,17 @@ export function useSomTelao() {
       ligado: process.env.NEXT_PUBLIC_TELAO_SOM_ATIVO,
       volume: process.env.NEXT_PUBLIC_TELAO_SOM_VOLUME,
       arquivo: process.env.NEXT_PUBLIC_TELAO_SOM_ARQUIVO,
+      voz: process.env.NEXT_PUBLIC_TELAO_VOZ_ATIVA,
+      vozRepeticoes: process.env.NEXT_PUBLIC_TELAO_VOZ_REPETICOES,
     });
     if (!config.ligado || config.volume === 0) {
       setEstado('desligado');
       return;
     }
-    const som = new SomTelao(config, setEstado);
+    const fala = config.voz
+      ? criarFala({ volume: config.volume, repeticoes: config.vozRepeticoes })
+      : null;
+    const som = new SomTelao(config, setEstado, undefined, fala);
     controle.current = som;
     setEstado('inativo');
     return () => {
@@ -24,7 +31,10 @@ export function useSomTelao() {
       som.encerrar();
     };
   }, []);
-  const tocar = useCallback(() => controle.current?.chamada(), []);
+  const tocar = useCallback(
+    (chamada: ChamadaPublica) => controle.current?.chamada(textoDaChamada(chamada)),
+    [],
+  );
   return {
     estado,
     tocar,

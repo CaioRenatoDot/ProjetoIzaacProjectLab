@@ -31,7 +31,7 @@ test('RNF-06: arquivo real toca ao ativar, chamar e rechamar, sem sobreposição
           }
         ).somTeste,
     );
-  await page.goto('/telao?volume=0.2');
+  await page.goto('/telao?volume=0.2&voz=0');
   const som = page.getByRole('button', { name: 'Ativar som', exact: true });
   await som.focus();
   await page.keyboard.press('Enter');
@@ -49,6 +49,46 @@ test('RNF-06: arquivo real toca ao ativar, chamar e rechamar, sem sobreposição
   await expect.poll(async () => (await dados()).encerrados).toBe(3);
   expect((await dados()).sobrepostos).toBe(0);
   await page.screenshot({ path: 'test-results/telao-som-ativo.png' });
+});
+
+test('#157: depois do sinal, a chamada e a rechamada são faladas duas vezes', async ({ page }) => {
+  await page.addInitScript(() => {
+    const falas: string[] = [];
+    Object.assign(window, { falas });
+    Object.defineProperty(window, 'SpeechSynthesisUtterance', {
+      value: class {
+        onend: (() => void) | null = null;
+        constructor(readonly text: string) {}
+      },
+    });
+    Object.defineProperty(window, 'speechSynthesis', {
+      value: {
+        getVoices: () => [{ lang: 'pt-BR', localService: true }],
+        cancel: () => {},
+        speak(frase: { text: string; onend: () => void }) {
+          falas.push(frase.text);
+          setTimeout(() => frase.onend(), 10);
+        },
+      },
+    });
+  });
+  const falas = () => page.evaluate(() => (window as unknown as { falas: string[] }).falas);
+  await page.goto('/telao?volume=0.2');
+  await page.getByRole('button', { name: 'Ativar som', exact: true }).click();
+  await expect.poll(falas).toEqual(['Som ativado.', 'Som ativado.']);
+
+  const controle = await page.context().newPage();
+  await controle.goto('/demonstracao');
+  await controle.getByRole('button', { name: 'Nova chamada', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'F015' })).toBeVisible();
+  const frase = 'Senha efe, zero, um, cinco. Fisioterapia. Sala 3.';
+  await expect
+    .poll(falas, { timeout: 10_000 })
+    .toEqual(['Som ativado.', 'Som ativado.', frase, frase]);
+
+  await controle.getByRole('button', { name: 'Rechamar', exact: true }).click();
+  await expect.poll(async () => (await falas()).length, { timeout: 10_000 }).toBe(6);
+  expect((await falas()).slice(4)).toEqual([frase, frase]);
 });
 
 test('RNF-06: som desligado não reproduz arquivo e preserva o telão', async ({ page }) => {
