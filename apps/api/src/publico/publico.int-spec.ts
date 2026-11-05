@@ -176,13 +176,8 @@ describe('HTTP público da #20 (PostgreSQL, sem token)', () => {
       especialidade: c.especialidade.nome,
       local: 'Sala 6',
     });
-    expect(estado.anteriores).toEqual(
-      [5, 4, 3, 2].map((i) => ({
-        numero: s.numero,
-        especialidade: c.especialidade.nome,
-        local: `Sala ${i}`,
-      })),
-    );
+    // #157: rechamadas da mesma senha não repetem o número em "anteriores".
+    expect(estado.anteriores).toEqual([]);
     expect((await api().get(`/api/v1/publico/senhas/${s.numero}`).expect(200)).body).toMatchObject({
       status: 'CHAMADA',
       posicao: null,
@@ -191,6 +186,25 @@ describe('HTTP público da #20 (PostgreSQL, sem token)', () => {
     });
     await api().get(`/api/v1/publico/painel/${randomUUID()}`).expect(404);
     await api().get('/api/v1/publico/painel/invalida').expect(404);
+  });
+
+  it('#157: rechamada volta a senha ao topo sem repetir; o painel traz cinco senhas diferentes', async () => {
+    const c = await cenario();
+    const senhas: Awaited<ReturnType<typeof c.emitir>>[] = [];
+    for (let i = 0; i < 6; i++) senhas.push(await c.emitir({ status: 'CHAMADA' }));
+    for (const [i, s] of senhas.entries()) {
+      await chamar(s.id, new Date(agora.getTime() - (10 - i) * 1000));
+    }
+    await chamar(senhas[1]!.id, agora, 2);
+
+    const estado = EstadoPainelPublico.parse(
+      (await api().get(`/api/v1/publico/painel/${c.unidade.id}`).expect(200)).body,
+    );
+
+    expect(estado.atual).toMatchObject({ numero: senhas[1]!.numero, local: 'Sala 2' });
+    expect(estado.anteriores.map((a) => a.numero)).toEqual(
+      [5, 4, 3, 2].map((i) => senhas[i]!.numero),
+    );
   });
 
   it('RNF-02: 31ª requisição retorna 429 entre rotas; X-Forwarded-For não contorna o limite', async () => {
